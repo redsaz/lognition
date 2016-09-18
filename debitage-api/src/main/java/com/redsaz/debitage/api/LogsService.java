@@ -15,15 +15,29 @@
  */
 package com.redsaz.debitage.api;
 
+import com.redsaz.debitage.api.model.LogBrief;
+import com.redsaz.debitage.api.model.Log;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+
 /**
- * All of the media types accepted and sent.
+ * Stores and accesses logs/measurements.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class DebitageMediaType {
+public interface LogsService {
 
-    public static final String LOGBRIEFS_V1_JSON = "application/x-debitage-v1-logbriefs+json";
-    public static final String LOGBRIEF_V1_JSON = "application/x-debitage-v1-logbrief+json";
-    public static final String NOTES_V1_JSON = "application/x-debitage-v1-notes+json";
-    public static final String NOTE_V1_JSON = "application/x-debitage-v1-note+json";
+//    List<LogBrief> getLogBriefs();
+//    LogBrief getLogBrief(long id);
+    public OutputStream getLogContent(long id);
+
+    public Log getLog(long id);
+
+    public List<Log> getLogs();
+
+//    public LogBrief createLog(LogBrief source);
+    public Log createLog(InputStream raw);
+
+    public void deleteLog(long id);
 }

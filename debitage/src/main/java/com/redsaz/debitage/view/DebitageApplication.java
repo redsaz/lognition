@@ -37,6 +37,8 @@ public class DebitageApplication extends Application {
         classes.add(DebitageResource.class);
         classes.add(NotesResource.class);
         classes.add(BrowserNotesResource.class);
+        classes.add(LogsResource.class);
+        classes.add(BrowserLogsResource.class);
         classes.add(JacksonJsonProvider.class);
         classes.add(StaticContentFilter.class);
         classes.add(Templater.class);

@@ -27,6 +27,7 @@ databaseChangeLog:
                   name: id
                   type: bigint
                   autoIncrement: true
+                  startWith: 101
                   constraints:
                     primaryKey: true
               - column:
@@ -44,4 +45,52 @@ databaseChangeLog:
               - column:
                   name: body
                   type: clob
+            schemaName: PUBLIC
+        - createTable:
+            tableName: log
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  startWith: 101
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: storedFilename
+                  type: varchar(1024)
+                  constraints:
+                    nullable: false
+#              - column:
+#                  name: uriname
+#                  type: varchar(1024)
+#                  constraints:
+#                    unique: true
+#                    nullable: false
+#              - column:
+#                  name: title
+#                  type: varchar(1024)
+#                  constraints:
+#                    unique: true
+#                    nullable: false
+#              - column:
+#                  name: originalFilename
+#                  type: varchar(1024)
+#                  constraints:
+#                    nullable: false
+#              - column:
+#                  name: uploadedUtcMillis
+#                  type: bigint
+#                  constraints:
+#                    nullable: false
+#              - column:
+#                  name: contentId
+#                  type: bigint
+#                  constraints:
+#                    nullable: false
+#                    foreignKeyName: fk_brief_content_id
+#                    references: content(id)
+#              - column:
+#                  name: notes
+#                  type: clob
             schemaName: PUBLIC
