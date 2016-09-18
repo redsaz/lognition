@@ -150,7 +150,7 @@
                     <plugin>
                         <groupId>org.wildfly.swarm</groupId>
                         <artifactId>wildfly-swarm-plugin</artifactId>
-                        <version>${version.wildfly-swarm}</version>
+                        <version>1.0.0.Final</version>
                         <executions>
                             <execution>
                                 <goals>

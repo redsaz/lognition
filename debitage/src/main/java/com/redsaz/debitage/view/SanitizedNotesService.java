@@ -144,13 +144,7 @@ public class SanitizedNotesService implements NotesService {
     }
 
     private static Slugify initSlug() {
-        Slugify sluggy;
-        try {
-            sluggy = new Slugify();
-        } catch (IOException ex) {
-            throw new AppServerException("Couldn't initialize Slugify.");
-        }
-        return sluggy;
+        return new Slugify();
     }
 
 }
