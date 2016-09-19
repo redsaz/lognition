@@ -17,11 +17,9 @@ package com.redsaz.debitage.view;
 
 import com.github.slugify.Slugify;
 import com.redsaz.debitage.api.exceptions.AppClientException;
-import com.redsaz.debitage.api.exceptions.AppServerException;
 import com.redsaz.debitage.api.model.LogBrief;
 import com.redsaz.debitage.api.model.Log;
 import com.redsaz.debitage.store.HsqlLogsService;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;

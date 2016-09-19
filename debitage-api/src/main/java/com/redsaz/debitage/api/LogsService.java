@@ -15,7 +15,6 @@
  */
 package com.redsaz.debitage.api;
 
-import com.redsaz.debitage.api.model.LogBrief;
 import com.redsaz.debitage.api.model.Log;
 import java.io.InputStream;
 import java.io.OutputStream;

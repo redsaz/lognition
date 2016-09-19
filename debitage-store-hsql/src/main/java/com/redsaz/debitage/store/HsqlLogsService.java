@@ -43,10 +43,10 @@ import org.jooq.impl.DSL;
 import com.redsaz.debitage.api.LogsService;
 import static com.redsaz.debitage.model.tables.Log.LOG;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Stores and accesses logs.
@@ -55,7 +55,7 @@ import org.jooq.RecordMapper;
  */
 public class HsqlLogsService implements LogsService {
 
-    private static final Logger LOGGER = Logger.getLogger(HsqlLogsService.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(HsqlLogsService.class);
 
     private static final JDBCPool POOL = initPool();
 
@@ -119,7 +119,7 @@ public class HsqlLogsService implements LogsService {
 
         LOGGER.info("Storing log file...");
         File firstFile = getRandomFile();
-        LOGGER.log(Level.INFO, "Storing initially into {0}", firstFile.getAbsolutePath());
+        LOGGER.info("Storing initially into {}", firstFile.getAbsolutePath());
         File digestFile;
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(firstFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -137,34 +137,34 @@ public class HsqlLogsService implements LogsService {
         }
         if (!Files.exists(digestFile.toPath())) {
             try {
-                LOGGER.log(Level.INFO, "Moving content to permanent home {0}...", digestFile);
+                LOGGER.info("Moving content to permanent home {}...", digestFile);
                 Files.move(firstFile.toPath(), digestFile.toPath());
-                LOGGER.log(Level.INFO, "Moved  content to permanent home {0}...", digestFile);
+                LOGGER.info("Moved  content to permanent home {}...", digestFile);
             } catch (IOException ex) {
                 firstFile.delete(); // Assume the move failed so delete original.
                 throw new AppServerException("Failed to upload content.", ex);
             }
         } else {
-            LOGGER.log(Level.INFO, String.format("Destination %s already exists. Deleting %s...", digestFile, firstFile));
+            LOGGER.info("Destination {} already exists. Deleting {}...", digestFile, firstFile);
             if (digestFile.delete()) {
-                LOGGER.log(Level.INFO, "Deleted {0}");
+                LOGGER.info("Deleted {}", digestFile);
             } else {
-                LOGGER.log(Level.SEVERE, "Unable to delete {0} for some reason.", firstFile);
+                LOGGER.error("Unable to delete {} for some reason.", firstFile);
             }
         }
 
-        LOGGER.log(Level.INFO, "Creating entry in DB...");
+        LOGGER.info("Creating entry in DB...");
         try (Connection c = POOL.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             // TODO make relative to storage.
             LogRecord logRec = new LogRecord(null, digestFile.getAbsolutePath());
             context.executeInsert(logRec);
-            LOGGER.log(Level.INFO, "Created entry in DB. Retrieving from DB...");
+            LOGGER.info("Created entry in DB. Retrieving from DB...");
             Log result = context.selectFrom(LOG)
                     .where(LOG.STOREDFILENAME.eq(logRec.getStoredfilename()))
                     .fetchOne(r2lMapper);
-            LOGGER.log(Level.INFO, "Finished creating Log {0} {1}.", new Object[]{result.getId(), result.getStoredFilename()});
+            LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getStoredFilename());
             return result;
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create log content: " + ex.getMessage(), ex);
@@ -283,7 +283,7 @@ public class HsqlLogsService implements LogsService {
 
         @Override
         public void next(LogRecord record) {
-            LOGGER.log(Level.INFO, "Retrieved {0} Log record.", record.getId());
+            LOGGER.info("Retrieved {} Log record.", record.getId());
             logs.add(r2lMapper.map(record));
         }
 

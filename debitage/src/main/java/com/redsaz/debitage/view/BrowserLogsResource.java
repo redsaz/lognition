@@ -38,9 +38,9 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import com.redsaz.debitage.api.LogsService;
 import com.redsaz.debitage.api.model.Log;
 import com.redsaz.debitage.api.model.LogBrief;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An endpoint for accessing measurements/logs. The REST endpoints and browser
@@ -51,7 +51,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartInput;
 @Path("/logs")
 public class BrowserLogsResource {
 
-    private static final Logger LOGGER = Logger.getLogger(BrowserLogsResource.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrowserLogsResource.class);
 
     private LogsService logsSrv;
     private Templater cfg;
@@ -118,7 +118,7 @@ public class BrowserLogsResource {
     @Consumes("multipart/form-data")
     @Produces({MediaType.TEXT_HTML})
     public Response finishCreateLog(MultipartInput input) {
-        LOGGER.log(Level.INFO, "Creating log...");
+        LOGGER.info("Creating log...");
         try {
             String title = null;
             String notes = null;
@@ -133,15 +133,15 @@ public class BrowserLogsResource {
                 switch (subParts.getName()) {
                     case "content":
                         try (InputStream contentStream = part.getBody(InputStream.class, null)) {
-                            LOGGER.log(Level.INFO, "Retrieving filename...");
+                            LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
-                            LOGGER.log(Level.INFO, "Uploading content from {0}...", filename);
+                            LOGGER.info("Uploading content from {}...", filename);
                             content = logsSrv.createLog(contentStream);
-                            LOGGER.log(Level.INFO, "Uploaded  content from {0}.", filename);
-                            LOGGER.log(Level.INFO, "Created Log {0}.", content.getId());
+                            LOGGER.info("Uploaded  content from {}.", filename);
+                            LOGGER.info("Created Log {}.", content.getId());
                             break;
                         } catch (IOException ex) {
-                            LOGGER.log(Level.SEVERE, "BAD STUFF:" + ex.getMessage(), ex);
+                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
                             Response resp = Response.serverError().entity(ex).build();
                             return resp;
                         }
@@ -149,7 +149,7 @@ public class BrowserLogsResource {
                         try {
                             title = part.getBodyAsString();
                         } catch (IOException ex) {
-                            LOGGER.log(Level.SEVERE, "BAD STUFF:" + ex.getMessage(), ex);
+                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
                             Response resp = Response.serverError().entity(ex).build();
                             return resp;
                         }
@@ -158,7 +158,7 @@ public class BrowserLogsResource {
                         try {
                             notes = part.getBodyAsString();
                         } catch (IOException ex) {
-                            LOGGER.log(Level.SEVERE, "BAD STUFF:" + ex.getMessage(), ex);
+                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
                             Response resp = Response.serverError().entity(ex).build();
                             return resp;
                         }
@@ -173,10 +173,10 @@ public class BrowserLogsResource {
 //                logsSrv.createBrief(source);
 //            }
             Response resp = Response.seeOther(URI.create("logs")).build();
-            LOGGER.log(Level.INFO, "Finished creating log {0}", content);
+            LOGGER.info("Finished creating log {}", content);
             return resp;
         } catch (RuntimeException ex) {
-            LOGGER.log(Level.SEVERE, "BAD STUFF:" + ex.getMessage(), ex);
+            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
             throw ex;
         } finally {
             if (input != null) {

@@ -33,6 +33,7 @@
         <version.liquibase>3.5.1</version.liquibase>
         <version.jooq>3.8.4</version.jooq>
         <version.snakeyaml>1.17</version.snakeyaml>
+        <version.logback>1.1.7</version.logback>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <temporaryBuildDbDriver>org.hsqldb.jdbcDriver</temporaryBuildDbDriver>
@@ -146,6 +147,21 @@
                 <groupId>org.wildfly.swarm</groupId>
                 <artifactId>weld</artifactId>
                 <version>${version.wildfly-swarm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.21</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${version.logback}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${version.logback}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
