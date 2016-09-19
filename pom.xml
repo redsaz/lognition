@@ -16,14 +16,14 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.redsaz.debitage</groupId>
-    <artifactId>debitage-parent</artifactId>
+    <groupId>com.redsaz.meterrier</groupId>
+    <artifactId>meterrier-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>debitage-api</module>
-        <module>debitage-store-hsql</module>
-        <module>debitage</module>
+        <module>meterrier-api</module>
+        <module>meterrier-store-hsql</module>
+        <module>meterrier</module>
     </modules>
     <properties>
         <version.wildfly-swarm>1.0.0.Beta4</version.wildfly-swarm>
@@ -182,7 +182,7 @@
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <version>${version.liquibase}</version>
                     <configuration>
-                        <changeLogFile>src/main/resources/debitage-db.yaml</changeLogFile>
+                        <changeLogFile>src/main/resources/meterrier-db.yaml</changeLogFile>
                         <driver>${temporaryBuildDbDriver}</driver>
                         <url>${temporaryBuildDb}</url>
                         <username>${temporaryBuildDbUser}</username>
@@ -239,7 +239,7 @@
                                 <inputSchema>PUBLIC</inputSchema>
                             </database>
                             <target>
-                                <packageName>com.redsaz.debitage.model</packageName>
+                                <packageName>com.redsaz.meterrier.model</packageName>
                                 <directory>target/generated-sources/jooq</directory>
                             </target>
                         </generator>
