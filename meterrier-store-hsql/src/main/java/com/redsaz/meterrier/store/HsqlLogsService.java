@@ -27,12 +27,6 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.exception.LiquibaseException;
-import liquibase.resource.ClassLoaderResourceAccessor;
 import org.hsqldb.jdbc.JDBCPool;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -57,9 +51,19 @@ public class HsqlLogsService implements LogsService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsqlLogsService.class);
 
-    private static final JDBCPool POOL = initPool();
-
     private static final RecordToLogMapper r2lMapper = new RecordToLogMapper();
+
+    private final JDBCPool pool;
+
+    /**
+     * Create a new HSQLDB-base LogsService.
+     *
+     * @param jdbcPool opens connections to database
+     */
+    public HsqlLogsService(JDBCPool jdbcPool) {
+        LOGGER.info("Using given JDBC Pool.");
+        pool = jdbcPool;
+    }
 
 //    @Override
 //    public List<LogBrief> getLogBriefs() {
@@ -154,7 +158,7 @@ public class HsqlLogsService implements LogsService {
         }
 
         LOGGER.info("Creating entry in DB...");
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             // TODO make relative to storage.
@@ -186,7 +190,7 @@ public class HsqlLogsService implements LogsService {
 
     @Override
     public Log getLog(long id) {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
             return context.selectFrom(LOG)
                     .where(LOG.ID.eq(id))
@@ -198,7 +202,7 @@ public class HsqlLogsService implements LogsService {
 
     @Override
     public List<Log> getLogs() {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
             RecordsToListHandler r2lHandler = new RecordsToListHandler();
             return context.selectFrom(LOG).fetchInto(r2lHandler).getLogs();
@@ -209,7 +213,7 @@ public class HsqlLogsService implements LogsService {
 
     @Override
     public void deleteLog(long id) {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             context.delete(LOG).where(LOG.ID.eq(id)).execute();
@@ -217,28 +221,6 @@ public class HsqlLogsService implements LogsService {
             throw new AppServerException("Failed to delete log_id=" + id
                     + " because: " + ex.getMessage(), ex);
         }
-    }
-
-    private static JDBCPool initPool() {
-        System.out.println("Initing DB...");
-        File deciDir = new File("./meterrier");
-        if (!deciDir.exists() && !deciDir.mkdirs()) {
-            throw new RuntimeException("Could not create " + deciDir);
-        }
-        File deciDb = new File(deciDir, "meterrierdb");
-        JDBCPool jdbc = new JDBCPool();
-        jdbc.setUrl("jdbc:hsqldb:" + deciDb.toURI());
-        jdbc.setUser("SA");
-        jdbc.setPassword("SA");
-
-        try (Connection c = jdbc.getConnection()) {
-            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(c));
-            Liquibase liquibase = new Liquibase("meterrier-db.yaml", new ClassLoaderResourceAccessor(), database);
-            liquibase.update((String) null);
-        } catch (SQLException | LiquibaseException ex) {
-            throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
-        }
-        return jdbc;
     }
 
     final protected static char[] HEX_ARRAY = "0123456789abcdef".toCharArray();

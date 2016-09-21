@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.view;
+package com.redsaz.meterrier.services;
 
 import com.github.slugify.Slugify;
-import com.redsaz.meterrier.store.HsqlNotesService;
 import com.redsaz.meterrier.api.NotesService;
 import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.Note;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
 
 /**
  * Does not directly store notes, but is responsible for ensuring that the notes
@@ -33,8 +30,6 @@ import javax.enterprise.inject.Default;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-@Default
-@ApplicationScoped
 public class SanitizedNotesService implements NotesService {
 
     private static final Slugify SLG = initSlug();
@@ -43,8 +38,8 @@ public class SanitizedNotesService implements NotesService {
 
     private final NotesService srv;
 
-    public SanitizedNotesService() {
-        srv = new HsqlNotesService();
+    public SanitizedNotesService(NotesService notesService) {
+        srv = notesService;
     }
 
     @Override

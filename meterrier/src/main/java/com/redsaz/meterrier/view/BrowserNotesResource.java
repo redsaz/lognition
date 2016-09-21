@@ -52,7 +52,7 @@ public class BrowserNotesResource {
     }
 
     @Inject
-    public BrowserNotesResource(NotesService notesService, Templater config) {
+    public BrowserNotesResource(@Sanitizer NotesService notesService, Templater config) {
         notesSrv = notesService;
         cfg = config;
     }

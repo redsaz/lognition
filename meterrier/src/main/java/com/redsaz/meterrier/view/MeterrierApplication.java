@@ -15,6 +15,9 @@
  */
 package com.redsaz.meterrier.view;
 
+import com.redsaz.meterrier.services.ServiceProducers;
+import com.redsaz.meterrier.services.SanitizedLogsService;
+import com.redsaz.meterrier.services.SanitizedNotesService;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.redsaz.meterrier.api.exceptions.ExceptionMappers;
 import java.util.HashSet;
@@ -40,10 +43,10 @@ public class MeterrierApplication extends Application {
         classes.add(LogsResource.class);
         classes.add(BrowserLogsResource.class);
         classes.add(JacksonJsonProvider.class);
+        classes.add(ServiceProducers.class);
         classes.add(StaticContentFilter.class);
         classes.add(Templater.class);
         classes.add(FreemarkerTemplater.class);
-        classes.add(SanitizedNotesService.class);
         classes.add(ExceptionMappers.class);
         classes.add(ExceptionMappers.AppExceptionMapper.class);
         classes.add(ExceptionMappers.NotFoundMapper.class);

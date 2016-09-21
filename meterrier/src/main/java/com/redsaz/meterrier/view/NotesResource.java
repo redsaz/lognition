@@ -48,7 +48,7 @@ public class NotesResource {
     }
 
     @Inject
-    public NotesResource(NotesService notesService) {
+    public NotesResource(@Sanitizer NotesService notesService) {
         notesSrv = notesService;
     }
 

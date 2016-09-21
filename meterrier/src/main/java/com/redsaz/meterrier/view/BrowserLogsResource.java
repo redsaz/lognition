@@ -60,7 +60,7 @@ public class BrowserLogsResource {
     }
 
     @Inject
-    public BrowserLogsResource(LogsService logsService, Templater config) {
+    public BrowserLogsResource(@Sanitizer LogsService logsService, Templater config) {
         logsSrv = logsService;
         cfg = config;
     }

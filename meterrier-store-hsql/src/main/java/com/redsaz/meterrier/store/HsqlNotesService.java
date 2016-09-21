@@ -48,11 +48,20 @@ import org.jooq.impl.DSL;
  */
 public class HsqlNotesService implements NotesService {
 
-    private static final JDBCPool POOL = initPool();
+    private final JDBCPool pool;
+
+    /**
+     * Create a new HSQLDB-base NotesService.
+     *
+     * @param jdbcPool opens connections to database
+     */
+    public HsqlNotesService(JDBCPool jdbcPool) {
+        pool = jdbcPool;
+    }
 
     @Override
     public List<Note> getNotes() {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
             List<NoteRecord> nrs = context.selectFrom(NOTE).fetch();
             return recordsToNotes(nrs);
@@ -63,7 +72,7 @@ public class HsqlNotesService implements NotesService {
 
     @Override
     public Note getNote(long id) {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             NoteRecord nr = context.selectFrom(NOTE).where(NOTE.ID.eq(id)).fetchOne();
@@ -78,7 +87,7 @@ public class HsqlNotesService implements NotesService {
         if (notes == null || notes.isEmpty()) {
             return Collections.emptyList();
         }
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             InsertValuesStep3<NoteRecord, String, String, String> query = context.insertInto(NOTE).columns(NOTE.URINAME, NOTE.TITLE, NOTE.BODY);
@@ -100,7 +109,7 @@ public class HsqlNotesService implements NotesService {
         RuntimeException updateFailure = null;
         List<Long> ids = new ArrayList<>(notes.size());
         for (Note note : notes) {
-            try (Connection c = POOL.getConnection()) {
+            try (Connection c = pool.getConnection()) {
                 DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
                 int numNotesAffected = context.update(NOTE)
@@ -130,7 +139,7 @@ public class HsqlNotesService implements NotesService {
             throw updateFailure;
         }
 
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             Result<NoteRecord> records = context.selectFrom(NOTE).where(NOTE.ID.in(ids)).fetch();
@@ -143,7 +152,7 @@ public class HsqlNotesService implements NotesService {
 
     @Override
     public void deleteNote(long id) {
-        try (Connection c = POOL.getConnection()) {
+        try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             context.delete(NOTE).where(NOTE.ID.eq(id)).execute();

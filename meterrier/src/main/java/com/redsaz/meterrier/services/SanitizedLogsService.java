@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.view;
+package com.redsaz.meterrier.services;
 
 import com.github.slugify.Slugify;
-import com.redsaz.meterrier.store.HsqlLogsService;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Does not directly store logs, but is responsible for ensuring that the logs
@@ -38,9 +38,9 @@ import com.redsaz.meterrier.api.model.LogBrief;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-@Default
-@ApplicationScoped
 public class SanitizedLogsService implements LogsService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizedLogsService.class);
 
     private static final Slugify SLG = initSlug();
     private static final int SHORTENED_MAX = 60;
@@ -48,8 +48,8 @@ public class SanitizedLogsService implements LogsService {
 
     private final LogsService srv;
 
-    public SanitizedLogsService() {
-        srv = new HsqlLogsService();
+    public SanitizedLogsService(LogsService logsService) {
+        srv = logsService;
     }
 
 //    @Override

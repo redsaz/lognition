@@ -46,7 +46,7 @@ public class LogsResource {
     }
 
     @Inject
-    public LogsResource(LogsService logsService) {
+    public LogsResource(@Sanitizer LogsService logsService) {
         logsSrv = logsService;
     }
 
