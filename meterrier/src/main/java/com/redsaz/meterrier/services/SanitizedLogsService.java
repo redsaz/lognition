@@ -24,7 +24,6 @@ import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
-import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

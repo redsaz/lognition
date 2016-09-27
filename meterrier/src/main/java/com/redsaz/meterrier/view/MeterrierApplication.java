@@ -16,8 +16,6 @@
 package com.redsaz.meterrier.view;
 
 import com.redsaz.meterrier.services.ServiceProducers;
-import com.redsaz.meterrier.services.SanitizedLogsService;
-import com.redsaz.meterrier.services.SanitizedNotesService;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.redsaz.meterrier.api.exceptions.ExceptionMappers;
 import java.util.HashSet;

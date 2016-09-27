@@ -15,8 +15,6 @@
  */
 package com.redsaz.meterrier.services;
 
-import com.redsaz.meterrier.services.SanitizedLogsService;
-import com.redsaz.meterrier.services.SanitizedNotesService;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.NotesService;
 import com.redsaz.meterrier.store.HsqlJdbc;
@@ -24,8 +22,13 @@ import com.redsaz.meterrier.store.HsqlLogsService;
 import com.redsaz.meterrier.store.HsqlNotesService;
 import com.redsaz.meterrier.view.Sanitizer;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Destroyed;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
 import org.hsqldb.jdbc.JDBCPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -33,19 +36,32 @@ import org.hsqldb.jdbc.JDBCPool;
  */
 public class ServiceProducers {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
     private static final JDBCPool POOL = HsqlJdbc.initPool();
+    private static final LogsService LOGS_SERVICE = new SanitizedLogsService(new HsqlLogsService(POOL));
+    private static final NotesService NOTES_SERVICE = new SanitizedNotesService(new HsqlNotesService(POOL));
 
     @Produces
     @ApplicationScoped
     @Sanitizer
     public LogsService createSanitizedLogsService() {
-        return new SanitizedLogsService(new HsqlLogsService(POOL));
+        return LOGS_SERVICE;
     }
 
     @Produces
     @ApplicationScoped
     @Sanitizer
     public NotesService createSanitizedNotesService() {
-        return new SanitizedNotesService(new HsqlNotesService(POOL));
+        return NOTES_SERVICE;
     }
+
+    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+        LOGS_SERVICE.getLog(-1L); // Grab any non-existing item from the service
+        LOGGER.info("Started Meterrier.");
+    }
+
+    public void destroy(@Observes @Destroyed(ApplicationScoped.class) Object init) {
+        LOGGER.info("Shutting down Meterrier.");
+    }
+
 }
