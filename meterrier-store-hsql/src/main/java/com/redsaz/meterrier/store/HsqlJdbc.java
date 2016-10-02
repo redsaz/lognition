@@ -19,6 +19,7 @@ import com.redsaz.meterrier.api.exceptions.AppServerException;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map.Entry;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
@@ -51,7 +52,7 @@ public class HsqlJdbc {
      */
     public static JDBCPool initPool() {
         LOGGER.info("Initing DB...");
-        File deciDir = new File("./meterrier");
+        File deciDir = new File("./meterrier-data");
         if (!deciDir.exists() && !deciDir.mkdirs()) {
             throw new RuntimeException("Could not create " + deciDir);
         }

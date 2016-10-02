@@ -51,7 +51,7 @@ public class HsqlLogsService implements LogsService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HsqlLogsService.class);
 
-    private static final RecordToLogMapper r2lMapper = new RecordToLogMapper();
+    private static final RecordToLogMapper R2L = new RecordToLogMapper();
 
     private final JDBCPool pool;
 
@@ -63,6 +63,12 @@ public class HsqlLogsService implements LogsService {
     public HsqlLogsService(JDBCPool jdbcPool) {
         LOGGER.info("Using given JDBC Pool.");
         pool = jdbcPool;
+        File originalLogsDir = new File("./meterrier-data/original-logs");
+        try {
+            Files.createDirectories(originalLogsDir.toPath());
+        } catch (IOException ex) {
+            throw new RuntimeException("Unable to create data directories.", ex);
+        }
     }
 
 //    @Override
@@ -122,16 +128,16 @@ public class HsqlLogsService implements LogsService {
         }
 
         LOGGER.info("Storing log file...");
-        File firstFile = getRandomFile();
+        File firstFile = getTempFile();
         LOGGER.info("Storing initially into {}", firstFile.getAbsolutePath());
         File digestFile;
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(firstFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] buff = new byte[256];
+            byte[] buff = new byte[4096];
             int num;
             while ((num = raw.read(buff)) >= 0) {
                 md.update(buff, 0, num);
-                os.write(buff);
+                os.write(buff, 0, num);
             }
             os.flush();
             String digestHex = bytesToHex(md.digest());
@@ -150,8 +156,8 @@ public class HsqlLogsService implements LogsService {
             }
         } else {
             LOGGER.info("Destination {} already exists. Deleting {}...", digestFile, firstFile);
-            if (digestFile.delete()) {
-                LOGGER.info("Deleted {}", digestFile);
+            if (firstFile.delete()) {
+                LOGGER.info("Deleted {}", firstFile);
             } else {
                 LOGGER.error("Unable to delete {} for some reason.", firstFile);
             }
@@ -162,14 +168,12 @@ public class HsqlLogsService implements LogsService {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             // TODO make relative to storage.
-            LogRecord logRec = new LogRecord(null, digestFile.getAbsolutePath());
-            context.executeInsert(logRec);
+            LogRecord result = context.insertInto(LOG, LOG.STOREDFILENAME)
+                    .values(digestFile.getAbsolutePath())
+                    .returning().fetchOne();
             LOGGER.info("Created entry in DB. Retrieving from DB...");
-            Log result = context.selectFrom(LOG)
-                    .where(LOG.STOREDFILENAME.eq(logRec.getStoredfilename()))
-                    .fetchOne(r2lMapper);
-            LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getStoredFilename());
-            return result;
+            LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getStoredfilename());
+            return R2L.map(result);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create log content: " + ex.getMessage(), ex);
         }
@@ -194,7 +198,7 @@ public class HsqlLogsService implements LogsService {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
             return context.selectFrom(LOG)
                     .where(LOG.ID.eq(id))
-                    .fetchOne(r2lMapper);
+                    .fetchOne(R2L);
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get log_id=" + id + " because: " + ex.getMessage(), ex);
         }
@@ -235,20 +239,16 @@ public class HsqlLogsService implements LogsService {
         return new String(hexChars);
     }
 
-    private static File getRandomFile() {
+    private static File getTempFile() {
         try {
-            return File.createTempFile("temporary", ".tmp");
+            return File.createTempFile("meterrier-upload-", ".tmp");
         } catch (IOException ex) {
-            throw new AppServerException("Failed to upload content: " + ex.getMessage(), ex);
+            throw new AppServerException("Unable to create temporary file to store upload.", ex);
         }
     }
 
     private static File getDigestFile(String digestHex) {
-        try {
-            return File.createTempFile(digestHex, ".tmp");
-        } catch (IOException ex) {
-            throw new AppServerException("Failed to upload content: " + ex.getMessage(), ex);
-        }
+        return new File("./meterrier-data/original-logs", digestHex);
     }
 
     private static class RecordToLogMapper implements RecordMapper<LogRecord, Log> {
@@ -266,7 +266,7 @@ public class HsqlLogsService implements LogsService {
         @Override
         public void next(LogRecord record) {
             LOGGER.info("Retrieved {} Log record.", record.getId());
-            logs.add(r2lMapper.map(record));
+            logs.add(R2L.map(record));
         }
 
         public List<Log> getLogs() {
