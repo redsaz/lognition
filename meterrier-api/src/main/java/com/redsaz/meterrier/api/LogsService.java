@@ -27,16 +27,15 @@ import java.util.List;
  */
 public interface LogsService {
 
-//    List<LogBrief> getLogBriefs();
-//    LogBrief getLogBrief(long id);
     public OutputStream getLogContent(long id);
 
     public Log getLog(long id);
 
     public List<Log> getLogs();
 
-//    public LogBrief createLog(LogBrief source);
-    public Log createLog(InputStream raw);
+    public Log createLog(InputStream raw, Log source);
+
+    public Log updateLog(Log source);
 
     public void deleteLog(long id);
 }

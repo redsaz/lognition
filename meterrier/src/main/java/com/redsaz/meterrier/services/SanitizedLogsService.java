@@ -18,12 +18,13 @@ package com.redsaz.meterrier.services;
 import com.github.slugify.Slugify;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import com.redsaz.meterrier.api.LogsService;
-import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.Log;
-import com.redsaz.meterrier.api.model.LogBrief;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,15 @@ public class SanitizedLogsService implements LogsService {
     private static final Slugify SLG = initSlug();
     private static final int SHORTENED_MAX = 60;
     private static final int SHORTENED_MIN = 12;
+    private static final ThreadLocal<SimpleDateFormat> LONG_DATE
+            = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf;
+        }
+    };
 
     private final LogsService srv;
 
@@ -85,62 +95,125 @@ public class SanitizedLogsService implements LogsService {
         srv.deleteLog(id);
     }
 
-    /**
-     * Sanitizes a group of notes according to the
-     * {@link #sanitize(com.redsaz.meterrier.api.model.Note)} method.
-     *
-     * @param notes The notes to sanitize
-     * @return A List of new note instances with sanitized data.
-     */
-    private static List<LogBrief> sanitizeAll(List<LogBrief> briefs) {
-        List<LogBrief> sanitizeds = new ArrayList<>(briefs.size());
-        for (LogBrief brief : briefs) {
-            sanitizeds.add(sanitize(brief));
-        }
-        return sanitizeds;
+    @Override
+    public Log getLog(long id) {
+        return srv.getLog(id);
     }
 
+    @Override
+    public List<Log> getLogs() {
+        return srv.getLogs();
+    }
+
+    @Override
+    public Log createLog(InputStream raw, Log source) {
+        source = sanitize(source);
+        return srv.createLog(raw, source);
+    }
+
+    @Override
+    public Log updateLog(Log source) {
+        source = sanitize(source);
+        return srv.updateLog(source);
+    }
+
+//    /**
+//     * Sanitizes a group of notes according to the
+//     * {@link #sanitize(com.redsaz.meterrier.api.model.Note)} method.
+//     *
+//     * @param notes The notes to sanitize
+//     * @return A List of new note instances with sanitized data.
+//     */
+//    private static List<LogBrief> sanitizeAll(List<LogBrief> briefs) {
+//        List<LogBrief> sanitizeds = new ArrayList<>(briefs.size());
+//        for (LogBrief brief : briefs) {
+//            sanitizeds.add(sanitize(brief));
+//        }
+//        return sanitizeds;
+//    }
+//
+//    /**
+//     * A brief must have at least a uri and a title. If neither are present, nor
+//     * filename or notes, then it cannot be sanitized. The ID will remain
+//     * unchanged.
+//     *
+//     * @param brief The brief to sanitize
+//     * @return A new brief instance with sanitized data.
+//     */
+//    private static LogBrief sanitize(LogBrief brief) {
+//        String uriName = brief.getUriName();
+//        if (uriName == null || uriName.isEmpty()) {
+//            uriName = brief.getTitle();
+//            if (uriName == null || uriName.isEmpty()) {
+//                uriName = shortened(brief.getFilename());
+//                if (uriName == null || uriName.isEmpty()) {
+//                    uriName = shortened(brief.getNotes());
+//                    if (uriName == null || uriName.isEmpty()) {
+//                        throw new AppClientException("Brief must have at least a uri, title, filename, or notes.");
+//                    }
+//                }
+//            }
+//        }
+//        uriName = SLG.slugify(uriName);
+//
+//        String title = brief.getTitle();
+//        if (title == null) {
+//            title = shortened(brief.getNotes());
+//            if (title == null) {
+//                title = "";
+//            }
+//        }
+//        String notes = brief.getNotes();
+//        if (notes == null) {
+//            notes = "";
+//        }
+//        String filename = brief.getFilename();
+//        if (filename == null) {
+//            filename = "";
+//        }
+//
+//        return new LogBrief(brief.getId(), uriName, title, notes, filename, brief.getUploadedTimestampMillis(), brief.getContentId());
+//    }
     /**
-     * A brief must have at least a uri and a title. If neither are present, nor
-     * filename or notes, then it cannot be sanitized. The ID will remain
-     * unchanged.
+     * A log must have at least a uri and a title. If neither are present, then
+     * it will be generated. The ID will remain unchanged.
      *
-     * @param brief The brief to sanitize
+     * @param source The log to sanitize
      * @return A new brief instance with sanitized data.
      */
-    private static LogBrief sanitize(LogBrief brief) {
-        String uriName = brief.getUriName();
+    private static Log sanitize(Log source) {
+        if (source == null) {
+            source = Log.emptyLog();
+        }
+        String uriName = source.getUriName();
+        String title = source.getTitle();
         if (uriName == null || uriName.isEmpty()) {
-            uriName = brief.getTitle();
+            uriName = source.getTitle();
             if (uriName == null || uriName.isEmpty()) {
-                uriName = shortened(brief.getFilename());
+                uriName = shortened(source.getNotes());
                 if (uriName == null || uriName.isEmpty()) {
-                    uriName = shortened(brief.getNotes());
-                    if (uriName == null || uriName.isEmpty()) {
-                        throw new AppClientException("Brief must have at least a uri, title, filename, or notes.");
-                    }
+                    // At this point, there is nothing to latch onto to identify
+                    // the log, so we'll use the upload date for
+                    // the uriName and title.
+                    title = LONG_DATE.get().format(new Date(source.getUploadedUtcMillis()));
+                    uriName = title;
                 }
             }
         }
         uriName = SLG.slugify(uriName);
 
-        String title = brief.getTitle();
         if (title == null) {
-            title = shortened(brief.getNotes());
+            title = shortened(source.getNotes());
             if (title == null) {
                 title = "";
             }
         }
-        String notes = brief.getNotes();
+        String notes = source.getNotes();
         if (notes == null) {
             notes = "";
         }
-        String filename = brief.getFilename();
-        if (filename == null) {
-            filename = "";
-        }
 
-        return new LogBrief(brief.getId(), uriName, title, notes, filename, brief.getUploadedTimestampMillis(), brief.getContentId());
+        return new Log(source.getId(), source.getStoredFilename(), uriName, title, source.getUploadedUtcMillis(), notes);
     }
 
     private static String shortened(String text) {
@@ -158,21 +231,6 @@ public class SanitizedLogsService implements LogsService {
 
     private static Slugify initSlug() {
         return new Slugify();
-    }
-
-    @Override
-    public Log getLog(long id) {
-        return srv.getLog(id);
-    }
-
-    @Override
-    public List<Log> getLogs() {
-        return srv.getLogs();
-    }
-
-    @Override
-    public Log createLog(InputStream raw) {
-        return srv.createLog(raw);
     }
 
 }

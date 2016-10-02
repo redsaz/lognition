@@ -18,6 +18,7 @@ package com.redsaz.meterrier.api.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.beans.ConstructorProperties;
+import java.util.Objects;
 
 /**
  * The log data.
@@ -28,14 +29,30 @@ public class Log {
 
     private final long id;
     private final String storedFilename;
+    private final String uriName;
+    private final String title;
+    private final long uploadedUtcMillis;
+    private final String notes;
 
     @JsonCreator
     @ConstructorProperties({"storedFilename"})
     public Log(
             @JsonProperty("id") long inId,
-            @JsonProperty("storedFilename") String inStoredFilename) {
+            @JsonProperty("storedFilename") String inStoredFilename,
+            @JsonProperty("uriName") String inUriName,
+            @JsonProperty("title") String inTitle,
+            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
+            @JsonProperty("notes") String inNotes) {
         id = inId;
         storedFilename = inStoredFilename;
+        uriName = inUriName;
+        title = inTitle;
+        uploadedUtcMillis = inUploadedUtcMillis;
+        notes = inNotes;
+    }
+
+    public static Log emptyLog() {
+        return new Log(0, null, null, null, System.currentTimeMillis(), null);
     }
 
     public long getId() {
@@ -46,9 +63,65 @@ public class Log {
         return storedFilename;
     }
 
-    @Override
-    public String toString() {
-        return "log_id=" + id + " storedFilename=" + storedFilename;
+    public String getUriName() {
+        return uriName;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public long getUploadedUtcMillis() {
+        return uploadedUtcMillis;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    @Override
+    public String toString() {
+        return "log_id=" + id
+                + " storedFilename=" + storedFilename
+                + " uriName=" + uriName
+                + " title=" + title
+                + " uploadedUtcMillis=" + uploadedUtcMillis
+                + " notes=" + notes;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(id)
+                ^ Objects.hashCode(storedFilename)
+                ^ Objects.hashCode(uriName.hashCode())
+                ^ Objects.hashCode(title.hashCode())
+                ^ Long.hashCode(uploadedUtcMillis)
+                ^ Objects.hashCode(notes.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        } else if (obj == null) {
+            return false;
+        } else if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Log other = (Log) obj;
+        if (this.id != other.id) {
+            return false;
+        } else if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
+            return false;
+        } else if (!Objects.equals(this.storedFilename, other.storedFilename)) {
+            return false;
+        } else if (!Objects.equals(this.uriName, other.uriName)) {
+            return false;
+        } else if (!Objects.equals(this.title, other.title)) {
+            return false;
+        } else if (!Objects.equals(this.notes, other.notes)) {
+            return false;
+        }
+        return true;
+    }
 }

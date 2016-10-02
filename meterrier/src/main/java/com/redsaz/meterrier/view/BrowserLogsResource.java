@@ -76,10 +76,10 @@ public class BrowserLogsResource {
     public Response listLogBriefs(@Context HttpServletRequest httpRequest) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
-        List<Log> briefs = logsSrv.getLogs();
+        List<Log> logs = logsSrv.getLogs();
 
         Map<String, Object> root = new HashMap<>();
-        root.put("briefs", briefs);
+        root.put("briefs", logs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", "Logs");
@@ -100,15 +100,15 @@ public class BrowserLogsResource {
     public Response getLogBrief(@Context HttpServletRequest httpRequest, @PathParam("id") long id) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
-        Log brief = logsSrv.getLog(id);
-        if (brief == null) {
+        Log log = logsSrv.getLog(id);
+        if (log == null) {
             throw new NotFoundException("Could not find note id=" + id);
         }
         Map<String, Object> root = new HashMap<>();
-        root.put("brief", brief);
+        root.put("brief", log);
         root.put("base", base);
         root.put("dist", dist);
-        root.put("title", brief.getId());
+        root.put("title", log.getId());
 //        root.put("title", brief.getTitle());
         root.put("content", "log-view.ftl");
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
@@ -136,7 +136,8 @@ public class BrowserLogsResource {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from {}...", filename);
-                            content = logsSrv.createLog(contentStream);
+                            Log meta = new Log(0, null, null, title, updateMillis, notes);
+                            content = logsSrv.createLog(contentStream, meta);
                             LOGGER.info("Uploaded  content from {}.", filename);
                             LOGGER.info("Created Log {}.", content.getId());
                             break;
@@ -168,10 +169,10 @@ public class BrowserLogsResource {
                         break;
                 }
             }
-//            if (content != null) {
-//                LogBrief source = new LogBrief(0L, null, title, notes, filename, updateMillis, content.getId());
-//                logsSrv.createBrief(source);
-//            }
+            if (content != null) {
+                Log source = new Log(content.getId(), content.getStoredFilename(), null, title, updateMillis, notes);
+                logsSrv.updateLog(source);
+            }
             Response resp = Response.seeOther(URI.create("logs")).build();
             LOGGER.info("Finished creating log {}", content);
             return resp;

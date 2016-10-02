@@ -71,60 +71,18 @@ public class HsqlLogsService implements LogsService {
         }
     }
 
-//    @Override
-//    public List<LogBrief> getLogBriefs() {
-//        try (Connection c = POOL.getConnection()) {
-//            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
-//            List<LogBrief> briefRecords = context.selectFrom(BRIEF).fetch().into(LogBrief.class);
-//            return briefRecords;
-//        } catch (SQLException ex) {
-//            throw new AppServerException("Cannot retrieve log briefs: " + ex.getMessage(), ex);
-//        }
-//    }
-//
-//    @Override
-//    public LogBrief getLogBrief(long id) {
-//        try (Connection c = POOL.getConnection()) {
-//            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
-//            LogBrief mbr = context.selectFrom(BRIEF).where(BRIEF.ID.eq(id)).fetchOneInto(LogBrief.class);
-//            return mbr;
-//        } catch (SQLException ex) {
-//            throw new AppServerException("Cannot retrieve log briefs: " + ex.getMessage(), ex);
-//        }
-//    }
-//
-//    @Override
-//    public OutputStream getLog(long id) {
-////        try (Connection c = POOL.getConnection()) {
-////            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
-////
-////            LogRecord nr = context.selectFrom(LOG).where(LOG.ID.eq(id)).fetchOne();
-////            return recordToLog(nr);
-////        } catch (SQLException ex) {
-////            throw new AppServerException("Cannot get log_id=" + id + " because: " + ex.getMessage(), ex);
-////        }
-//        return null;
-//    }
-//
-//    @Override
-//    public LogBrief createBrief(LogBrief source) {
-//        if (source == null) {
-//            throw new NullPointerException("No log brief was specified.");
-//        }
-//        try (Connection c = POOL.getConnection()) {
-//            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
-//
-//            BriefRecord mbr = context.newRecord(BRIEF, source);
-//            context.executeInsert(mbr);
-//            return null;
-//        } catch (SQLException ex) {
-//            throw new AppServerException("Failed to create log brief: " + ex.getMessage(), ex);
-//        }
-//    }
     @Override
-    public Log createLog(InputStream raw) {
+    public Log createLog(InputStream raw, Log source) {
         if (raw == null) {
             throw new NullPointerException("No log was specified.");
+        } else if (source == null) {
+            throw new NullPointerException("No log information was specified.");
+        } else if (source.getNotes() == null) {
+            throw new NullPointerException("Log notes must not be null.");
+        } else if (source.getTitle() == null) {
+            throw new NullPointerException("Log title must not be null.");
+        } else if (source.getUriName() == null) {
+            throw new NullPointerException("Log uriName must not be null.");
         }
 
         LOGGER.info("Storing log file...");
@@ -164,14 +122,24 @@ public class HsqlLogsService implements LogsService {
         }
 
         LOGGER.info("Creating entry in DB...");
+        LOGGER.info("Log: {}", source);
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             // TODO make relative to storage.
-            LogRecord result = context.insertInto(LOG, LOG.STOREDFILENAME)
-                    .values(digestFile.getAbsolutePath())
+            LogRecord result = context.insertInto(LOG,
+                    LOG.STOREDFILENAME,
+                    LOG.URINAME,
+                    LOG.TITLE,
+                    LOG.UPLOADEDUTCMILLIS,
+                    LOG.NOTES)
+                    .values(digestFile.getAbsolutePath(),
+                            source.getUriName(),
+                            source.getTitle(),
+                            source.getUploadedUtcMillis(),
+                            source.getNotes())
                     .returning().fetchOne();
-            LOGGER.info("Created entry in DB. Retrieving from DB...");
+            LOGGER.info("...Created entry in DB.");
             LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getStoredfilename());
             return R2L.map(result);
         } catch (SQLException ex) {
@@ -227,6 +195,36 @@ public class HsqlLogsService implements LogsService {
         }
     }
 
+    @Override
+    public Log updateLog(Log source) {
+        if (source == null) {
+            throw new NullPointerException("No log information was specified.");
+        } else if (source.getNotes() == null) {
+            throw new NullPointerException("Log notes must not be null.");
+        } else if (source.getTitle() == null) {
+            throw new NullPointerException("Log title must not be null.");
+        } else if (source.getUriName() == null) {
+            throw new NullPointerException("Log uriName must not be null.");
+        }
+
+        LOGGER.info("Updating entry in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+
+            LogRecord result = context.update(LOG)
+                    .set(LOG.URINAME, source.getUriName())
+                    .set(LOG.TITLE, source.getTitle())
+                    .set(LOG.UPLOADEDUTCMILLIS, source.getUploadedUtcMillis())
+                    .set(LOG.NOTES, source.getNotes())
+                    .where(LOG.ID.eq(source.getId()))
+                    .returning().fetchOne();
+            LOGGER.info("...Updated entry in DB.");
+            return R2L.map(result);
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to update log: " + ex.getMessage(), ex);
+        }
+    }
+
     final protected static char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     private static String bytesToHex(byte[] bytes) {
@@ -255,7 +253,16 @@ public class HsqlLogsService implements LogsService {
 
         @Override
         public Log map(LogRecord record) {
-            return new Log(record.getId(), record.getStoredfilename());
+            if (record == null) {
+                return null;
+            }
+            return new Log(record.getId(),
+                    record.getStoredfilename(),
+                    record.getUriname(),
+                    record.getTitle(),
+                    record.getUploadedutcmillis(),
+                    record.getNotes()
+            );
         }
     }
 
@@ -265,7 +272,6 @@ public class HsqlLogsService implements LogsService {
 
         @Override
         public void next(LogRecord record) {
-            LOGGER.info("Retrieved {} Log record.", record.getId());
             logs.add(R2L.map(record));
         }
 
