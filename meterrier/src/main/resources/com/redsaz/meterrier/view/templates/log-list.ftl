@@ -19,7 +19,7 @@
           <h1 class="page-header">Logs</h1>
 
           <div class="table-responsive">
-            <a href="logs/create" class="btn btn-default">Create</a>
+            <a href="logs/import" class="btn btn-default">Import</a>
             <table class="table table-striped">
               <thead>
                 <tr>

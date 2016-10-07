@@ -117,7 +117,7 @@ public class BrowserLogsResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces({MediaType.TEXT_HTML})
-    public Response finishCreateLog(MultipartInput input) {
+    public Response finishImportLog(MultipartInput input) {
         LOGGER.info("Creating log...");
         try {
             String title = null;
@@ -194,15 +194,15 @@ public class BrowserLogsResource {
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
-    @Path("create")
-    public Response createLog(@Context HttpServletRequest httpRequest) {
+    @Path("import")
+    public Response importLog(@Context HttpServletRequest httpRequest) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
         Map<String, Object> root = new HashMap<>();
         root.put("base", base);
         root.put("dist", dist);
-        root.put("title", "Create Log");
-        root.put("content", "log-create.ftl");
+        root.put("title", "Import Log");
+        root.put("content", "log-import.ftl");
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
     }
 

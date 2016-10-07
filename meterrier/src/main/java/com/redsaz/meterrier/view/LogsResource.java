@@ -81,7 +81,7 @@ public class LogsResource {
     @POST
     @Consumes("application/octet-stream")
     @Produces({MeterrierMediaType.LOGBRIEF_V1_JSON})
-    public Response createLog(InputStream source) {
+    public Response importLog(InputStream source) {
         return Response.status(Status.CREATED).entity(logsSrv.createLog(source, null)).build();
     }
 
