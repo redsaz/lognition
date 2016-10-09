@@ -47,6 +47,34 @@
                 </#list>
               </tbody>
             </table>
+            <h2>Pending Imports</h2>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Notes</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <#list imports as import>
+                <tr>
+                  <td><a href="logs/${import.id}">${import.id}</a></td>
+                  <td>${import.importedFilename}</td>
+                  <td>
+                    <form action="${base}/logs/delete" method="POST">
+                      <a href="logs/${import.id}/edit">
+                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                        <span class="sr-only">Edit</span>
+                      </a>
+                      <input type="hidden" name="id" value="${import.id}"/>
+                      <button type="submit" class="btn btn-link glyphicon glyphicon-trash"><span class="sr-only">Trash</span></button>
+                    </form>
+                  </td>
+                </tr>
+                </#list>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

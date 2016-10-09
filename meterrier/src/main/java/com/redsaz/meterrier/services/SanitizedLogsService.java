@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -106,9 +107,20 @@ public class SanitizedLogsService implements LogsService {
     }
 
     @Override
-    public Log createLog(InputStream raw, Log source) {
+    public ImportInfo importLog(InputStream raw, ImportInfo source) {
         source = sanitize(source);
-        return srv.createLog(raw, source);
+        ImportInfo result = srv.importLog(raw, source);
+        return result;
+    }
+
+    @Override
+    public ImportInfo getImport(long id) {
+        return srv.getImport(id);
+    }
+
+    @Override
+    public List<ImportInfo> getImports() {
+        return srv.getImports();
     }
 
     @Override
@@ -214,6 +226,22 @@ public class SanitizedLogsService implements LogsService {
         }
 
         return new Log(source.getId(), source.getStoredFilename(), uriName, title, source.getUploadedUtcMillis(), notes);
+    }
+
+    /**
+     * @param source The item to sanitize
+     * @return A new brief instance with sanitized data.
+     */
+    private static ImportInfo sanitize(ImportInfo source) {
+        if (source == null) {
+            source = new ImportInfo(0, null, null, null, System.currentTimeMillis());
+        }
+        String title = source.getTitle();
+        if (title != null && title.length() > 512) {
+            title = SLG.slugify(title.substring(0, 512));
+        }
+
+        return new ImportInfo(source.getId(), source.getImportedFilename(), title, source.getUserSpecifiedType(), source.getUploadedUtcMillis());
     }
 
     private static String shortened(String text) {

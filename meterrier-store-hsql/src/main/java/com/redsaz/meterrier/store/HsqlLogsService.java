@@ -31,11 +31,14 @@ import org.hsqldb.jdbc.JDBCPool;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import static com.redsaz.meterrier.model.tables.Log.LOG;
+import static com.redsaz.meterrier.model.tables.Pendingimport.PENDINGIMPORT;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
+import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
+import static com.redsaz.meterrier.model.tables.Log.LOG;
 import com.redsaz.meterrier.model.tables.records.LogRecord;
+import com.redsaz.meterrier.model.tables.records.PendingimportRecord;
 import java.util.ArrayList;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
@@ -52,6 +55,8 @@ public class HsqlLogsService implements LogsService {
     private static final Logger LOGGER = LoggerFactory.getLogger(HsqlLogsService.class);
 
     private static final RecordToLogMapper R2L = new RecordToLogMapper();
+
+    private static final RecordToImportMapper R2I = new RecordToImportMapper();
 
     private final JDBCPool pool;
 
@@ -72,17 +77,11 @@ public class HsqlLogsService implements LogsService {
     }
 
     @Override
-    public Log createLog(InputStream raw, Log source) {
+    public ImportInfo importLog(InputStream raw, ImportInfo source) {
         if (raw == null) {
             throw new NullPointerException("No log was specified.");
         } else if (source == null) {
             throw new NullPointerException("No log information was specified.");
-        } else if (source.getNotes() == null) {
-            throw new NullPointerException("Log notes must not be null.");
-        } else if (source.getTitle() == null) {
-            throw new NullPointerException("Log title must not be null.");
-        } else if (source.getUriName() == null) {
-            throw new NullPointerException("Log uriName must not be null.");
         }
 
         LOGGER.info("Storing log file...");
@@ -127,23 +126,44 @@ public class HsqlLogsService implements LogsService {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
             // TODO make relative to storage.
-            LogRecord result = context.insertInto(LOG,
-                    LOG.STOREDFILENAME,
-                    LOG.URINAME,
-                    LOG.TITLE,
-                    LOG.UPLOADEDUTCMILLIS,
-                    LOG.NOTES)
+            PendingimportRecord result = context.insertInto(PENDINGIMPORT,
+                    PENDINGIMPORT.IMPORTEDFILENAME,
+                    PENDINGIMPORT.TITLE,
+                    PENDINGIMPORT.USERSPECIFIEDTYPE,
+                    PENDINGIMPORT.UPLOADEDUTCMILLIS)
                     .values(digestFile.getAbsolutePath(),
-                            source.getUriName(),
                             source.getTitle(),
-                            source.getUploadedUtcMillis(),
-                            source.getNotes())
+                            source.getUserSpecifiedType(),
+                            source.getUploadedUtcMillis())
                     .returning().fetchOne();
             LOGGER.info("...Created entry in DB.");
-            LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getStoredfilename());
-            return R2L.map(result);
+            LOGGER.info("Finished creating Log {} {}.", result.getId(), result.getImportedfilename());
+            return R2I.map(result);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create log content: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public ImportInfo getImport(long id) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            return context.selectFrom(PENDINGIMPORT)
+                    .where(PENDINGIMPORT.ID.eq(id))
+                    .fetchOne(R2I);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get import_id=" + id + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public List<ImportInfo> getImports() {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            PendingimportRecordsToListHandler r2iHandler = new PendingimportRecordsToListHandler();
+            return context.selectFrom(PENDINGIMPORT).fetchInto(r2iHandler).getLogs();
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get imports list because: " + ex.getMessage(), ex);
         }
     }
 
@@ -277,6 +297,36 @@ public class HsqlLogsService implements LogsService {
 
         public List<Log> getLogs() {
             return logs;
+        }
+    }
+
+    private static class RecordToImportMapper implements RecordMapper<PendingimportRecord, ImportInfo> {
+
+        @Override
+        public ImportInfo map(PendingimportRecord record) {
+            if (record == null) {
+                return null;
+            }
+            return new ImportInfo(record.getId(),
+                    record.getImportedfilename(),
+                    record.getTitle(),
+                    record.getUserspecifiedtype(),
+                    record.getUploadedutcmillis()
+            );
+        }
+    }
+
+    private static class PendingimportRecordsToListHandler implements RecordHandler<PendingimportRecord> {
+
+        private final List<ImportInfo> imports = new ArrayList<>();
+
+        @Override
+        public void next(PendingimportRecord record) {
+            imports.add(R2I.map(record));
+        }
+
+        public List<ImportInfo> getLogs() {
+            return imports;
         }
     }
 }

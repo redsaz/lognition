@@ -36,6 +36,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartInput;
@@ -77,9 +78,11 @@ public class BrowserLogsResource {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
         List<Log> logs = logsSrv.getLogs();
+        List<ImportInfo> imports = logsSrv.getImports();
 
         Map<String, Object> root = new HashMap<>();
         root.put("briefs", logs);
+        root.put("imports", imports);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", "Logs");
@@ -122,7 +125,7 @@ public class BrowserLogsResource {
         try {
             String title = null;
             String notes = null;
-            Log content = null;
+            ImportInfo content = null;
             String filename = null;
             long updateMillis = System.currentTimeMillis();
             ContentDispositionSubParts subParts = new ContentDispositionSubParts();
@@ -136,8 +139,8 @@ public class BrowserLogsResource {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from {}...", filename);
-                            Log meta = new Log(0, null, null, title, updateMillis, notes);
-                            content = logsSrv.createLog(contentStream, meta);
+                            ImportInfo meta = new ImportInfo(0, null, title, null, updateMillis);
+                            content = logsSrv.importLog(contentStream, meta);
                             LOGGER.info("Uploaded  content from {}.", filename);
                             LOGGER.info("Created Log {}.", content.getId());
                             break;
@@ -169,12 +172,8 @@ public class BrowserLogsResource {
                         break;
                 }
             }
-            if (content != null) {
-                Log source = new Log(content.getId(), content.getStoredFilename(), null, title, updateMillis, notes);
-                logsSrv.updateLog(source);
-            }
             Response resp = Response.seeOther(URI.create("logs")).build();
-            LOGGER.info("Finished creating log {}", content);
+            LOGGER.info("Finished uploading log {}", content);
             return resp;
         } catch (RuntimeException ex) {
             LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);

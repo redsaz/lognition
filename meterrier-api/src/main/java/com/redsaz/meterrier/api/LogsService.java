@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.api;
 
+import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,7 +34,11 @@ public interface LogsService {
 
     public List<Log> getLogs();
 
-    public Log createLog(InputStream raw, Log source);
+    public ImportInfo importLog(InputStream raw, ImportInfo source);
+
+    public ImportInfo getImport(long id);
+
+    public List<ImportInfo> getImports();
 
     public Log updateLog(Log source);
 
