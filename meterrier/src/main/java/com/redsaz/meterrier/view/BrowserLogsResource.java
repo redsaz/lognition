@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.view;
 
+import com.redsaz.meterrier.api.ImportService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -55,14 +56,16 @@ public class BrowserLogsResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(BrowserLogsResource.class);
 
     private LogsService logsSrv;
+    private ImportService importSrv;
     private Templater cfg;
 
     public BrowserLogsResource() {
     }
 
     @Inject
-    public BrowserLogsResource(@Sanitizer LogsService logsService, Templater config) {
+    public BrowserLogsResource(@Sanitizer LogsService logsService, @Processor ImportService importService, Templater config) {
         logsSrv = logsService;
+        importSrv = importService;
         cfg = config;
     }
 
@@ -77,8 +80,8 @@ public class BrowserLogsResource {
     public Response listLogBriefs(@Context HttpServletRequest httpRequest) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
-        List<Log> logs = logsSrv.getLogs();
-        List<ImportInfo> imports = logsSrv.getImports();
+        List<Log> logs = logsSrv.list();
+        List<ImportInfo> imports = importSrv.list();
 
         Map<String, Object> root = new HashMap<>();
         root.put("briefs", logs);
@@ -103,7 +106,7 @@ public class BrowserLogsResource {
     public Response getLogBrief(@Context HttpServletRequest httpRequest, @PathParam("id") long id) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
-        Log log = logsSrv.getLog(id);
+        Log log = logsSrv.get(id);
         if (log == null) {
             throw new NotFoundException("Could not find note id=" + id);
         }
@@ -121,10 +124,8 @@ public class BrowserLogsResource {
     @Consumes("multipart/form-data")
     @Produces({MediaType.TEXT_HTML})
     public Response finishImportLog(MultipartInput input) {
-        LOGGER.info("Creating log...");
+        LOGGER.info("Uploading log for import...");
         try {
-            String title = null;
-            String notes = null;
             ImportInfo content = null;
             String filename = null;
             long updateMillis = System.currentTimeMillis();
@@ -139,41 +140,23 @@ public class BrowserLogsResource {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from {}...", filename);
-                            ImportInfo meta = new ImportInfo(0, null, title, null, updateMillis);
-                            content = logsSrv.importLog(contentStream, meta);
-                            LOGGER.info("Uploaded  content from {}.", filename);
-                            LOGGER.info("Created Log {}.", content.getId());
+                            ImportInfo meta = new ImportInfo(0, null, filename, null, updateMillis, null);
+                            content = importSrv.upload(contentStream, meta);
+                            LOGGER.info("Uploaded content from {}.", filename);
+                            LOGGER.info("Created import_id={}.", content.getId());
                             break;
                         } catch (IOException ex) {
                             LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
                             Response resp = Response.serverError().entity(ex).build();
                             return resp;
                         }
-                    case "title":
-                        try {
-                            title = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
-                            Response resp = Response.serverError().entity(ex).build();
-                            return resp;
-                        }
-                        break;
-                    case "notes":
-                        try {
-                            notes = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
-                            Response resp = Response.serverError().entity(ex).build();
-                            return resp;
-                        }
-                        break;
                     default:
                         // Skip it, we don't use it.
                         break;
                 }
             }
             Response resp = Response.seeOther(URI.create("logs")).build();
-            LOGGER.info("Finished uploading log {}", content);
+            LOGGER.info("Finished uploading log {} for import", content);
             return resp;
         } catch (RuntimeException ex) {
             LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
@@ -208,7 +191,7 @@ public class BrowserLogsResource {
     @POST
     @Path("delete")
     public Response deleteLog(@FormParam("id") long id) {
-        logsSrv.deleteLog(id);
+        logsSrv.delete(id);
         Response resp = Response.seeOther(URI.create("/logs")).build();
         return resp;
     }

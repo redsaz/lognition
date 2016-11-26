@@ -16,11 +16,9 @@
 package com.redsaz.meterrier.services;
 
 import com.github.slugify.Slugify;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import com.redsaz.meterrier.api.LogsService;
-import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,9 +37,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class SanitizedLogsService implements LogsService {
+public class SanitizerLogsService implements LogsService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizedLogsService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerLogsService.class);
 
     private static final Slugify SLG = initSlug();
     private static final int SHORTENED_MAX = 60;
@@ -58,8 +56,13 @@ public class SanitizedLogsService implements LogsService {
 
     private final LogsService srv;
 
-    public SanitizedLogsService(LogsService logsService) {
+    public SanitizerLogsService(LogsService logsService) {
         srv = logsService;
+    }
+
+    @Override
+    public Log create(Log source) {
+        return srv.create(sanitize(source));
     }
 
 //    @Override
@@ -72,8 +75,8 @@ public class SanitizedLogsService implements LogsService {
 //        return sanitize(srv.getLogBrief(id));
 //    }
     @Override
-    public OutputStream getLogContent(long id) {
-        return srv.getLogContent(id);
+    public OutputStream getContent(long id) {
+        return srv.getContent(id);
     }
 
 //    @Override
@@ -92,41 +95,24 @@ public class SanitizedLogsService implements LogsService {
 //        return srv.createContent(raw);
 //    }
     @Override
-    public void deleteLog(long id) {
-        srv.deleteLog(id);
+    public void delete(long id) {
+        srv.delete(id);
     }
 
     @Override
-    public Log getLog(long id) {
-        return srv.getLog(id);
+    public Log get(long id) {
+        return srv.get(id);
     }
 
     @Override
-    public List<Log> getLogs() {
-        return srv.getLogs();
+    public List<Log> list() {
+        return srv.list();
     }
 
     @Override
-    public ImportInfo importLog(InputStream raw, ImportInfo source) {
+    public Log update(Log source) {
         source = sanitize(source);
-        ImportInfo result = srv.importLog(raw, source);
-        return result;
-    }
-
-    @Override
-    public ImportInfo getImport(long id) {
-        return srv.getImport(id);
-    }
-
-    @Override
-    public List<ImportInfo> getImports() {
-        return srv.getImports();
-    }
-
-    @Override
-    public Log updateLog(Log source) {
-        source = sanitize(source);
-        return srv.updateLog(source);
+        return srv.update(source);
     }
 
 //    /**
@@ -225,23 +211,7 @@ public class SanitizedLogsService implements LogsService {
             notes = "";
         }
 
-        return new Log(source.getId(), source.getStoredFilename(), uriName, title, source.getUploadedUtcMillis(), notes);
-    }
-
-    /**
-     * @param source The item to sanitize
-     * @return A new brief instance with sanitized data.
-     */
-    private static ImportInfo sanitize(ImportInfo source) {
-        if (source == null) {
-            source = new ImportInfo(0, null, null, null, System.currentTimeMillis());
-        }
-        String title = source.getTitle();
-        if (title != null && title.length() > 512) {
-            title = SLG.slugify(title.substring(0, 512));
-        }
-
-        return new ImportInfo(source.getId(), source.getImportedFilename(), title, source.getUserSpecifiedType(), source.getUploadedUtcMillis());
+        return new Log(source.getId(), uriName, title, source.getUploadedUtcMillis(), notes);
     }
 
     private static String shortened(String text) {

@@ -28,7 +28,6 @@ import java.util.Objects;
 public class Log {
 
     private final long id;
-    private final String storedFilename;
     private final String uriName;
     private final String title;
     private final long uploadedUtcMillis;
@@ -38,13 +37,11 @@ public class Log {
     @ConstructorProperties({"storedFilename"})
     public Log(
             @JsonProperty("id") long inId,
-            @JsonProperty("storedFilename") String inStoredFilename,
             @JsonProperty("uriName") String inUriName,
             @JsonProperty("title") String inTitle,
             @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
             @JsonProperty("notes") String inNotes) {
         id = inId;
-        storedFilename = inStoredFilename;
         uriName = inUriName;
         title = inTitle;
         uploadedUtcMillis = inUploadedUtcMillis;
@@ -52,15 +49,11 @@ public class Log {
     }
 
     public static Log emptyLog() {
-        return new Log(0, null, null, null, System.currentTimeMillis(), null);
+        return new Log(0, null, null, System.currentTimeMillis(), null);
     }
 
     public long getId() {
         return id;
-    }
-
-    public String getStoredFilename() {
-        return storedFilename;
     }
 
     public String getUriName() {
@@ -82,7 +75,6 @@ public class Log {
     @Override
     public String toString() {
         return "log_id=" + id
-                + " storedFilename=" + storedFilename
                 + " uriName=" + uriName
                 + " title=" + title
                 + " uploadedUtcMillis=" + uploadedUtcMillis
@@ -92,7 +84,6 @@ public class Log {
     @Override
     public int hashCode() {
         return Long.hashCode(id)
-                ^ Objects.hashCode(storedFilename)
                 ^ Objects.hashCode(uriName.hashCode())
                 ^ Objects.hashCode(title.hashCode())
                 ^ Long.hashCode(uploadedUtcMillis)
@@ -112,8 +103,6 @@ public class Log {
         if (this.id != other.id) {
             return false;
         } else if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
-            return false;
-        } else if (!Objects.equals(this.storedFilename, other.storedFilename)) {
             return false;
         } else if (!Objects.equals(this.uriName, other.uriName)) {
             return false;

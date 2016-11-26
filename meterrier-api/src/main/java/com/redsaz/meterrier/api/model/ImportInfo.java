@@ -31,6 +31,7 @@ public class ImportInfo {
     private final String title;
     private final String userSpecifiedType;
     private final long uploadedUtcMillis;
+    private final String status;
 
     @JsonCreator
     public ImportInfo(
@@ -38,12 +39,14 @@ public class ImportInfo {
             @JsonProperty("importedFilename") String inImportedFilename,
             @JsonProperty("title") String inTitle,
             @JsonProperty("userSpecifiedType") String inUserSpecifiedType,
-            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis) {
+            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
+            @JsonProperty("status") String inStatus) {
         id = inId;
         importedFilename = inImportedFilename;
         title = inTitle;
         userSpecifiedType = inUserSpecifiedType;
         uploadedUtcMillis = inUploadedUtcMillis;
+        status = inStatus;
     }
 
     public long getId() {
@@ -66,21 +69,23 @@ public class ImportInfo {
         return userSpecifiedType;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     @Override
     public String toString() {
         return "imported_id=" + id
                 + " importedFilename=" + importedFilename
                 + " titled=" + title
-                + " uploadedUtcMillis=" + uploadedUtcMillis;
+                + " uploadedUtcMillis=" + uploadedUtcMillis
+                + " status=" + status;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(id)
-                ^ Objects.hashCode(importedFilename)
-                ^ Objects.hashCode(title.hashCode())
-                ^ Objects.hashCode(userSpecifiedType.hashCode())
-                ^ Long.hashCode(uploadedUtcMillis);
+        return Long.hashCode(id) ^ Long.hashCode(uploadedUtcMillis)
+                ^ Objects.hash(importedFilename, title, userSpecifiedType, status);
     }
 
     @Override
@@ -93,17 +98,11 @@ public class ImportInfo {
             return false;
         }
         final ImportInfo other = (ImportInfo) obj;
-        if (this.id != other.id) {
-            return false;
-        } else if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
-            return false;
-        } else if (!Objects.equals(this.importedFilename, other.importedFilename)) {
-            return false;
-        } else if (!Objects.equals(this.title, other.title)) {
-            return false;
-        } else if (!Objects.equals(this.userSpecifiedType, other.userSpecifiedType)) {
-            return false;
-        }
-        return true;
+        return this.id == other.id
+                && this.uploadedUtcMillis == other.uploadedUtcMillis
+                && Objects.equals(this.importedFilename, other.importedFilename)
+                && Objects.equals(this.title, other.title)
+                && Objects.equals(this.userSpecifiedType, other.userSpecifiedType)
+                && Objects.equals(this.status, other.status);
     }
 }

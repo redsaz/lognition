@@ -13,28 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.api;
+package com.redsaz.meterrier.view;
 
-import com.redsaz.meterrier.api.model.Log;
-import java.io.OutputStream;
-import java.util.List;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
+import javax.inject.Qualifier;
 
 /**
- * Stores and accesses logs/measurements.
+ * Signifies that the bean to inject should be one for processing of tasks,
+ * foreground, background, or both.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public interface LogsService {
+@Qualifier
+@Retention(RUNTIME)
+@Target({METHOD, FIELD, PARAMETER, TYPE})
+public @interface Processor {
 
-    public Log create(Log source);
-
-    public OutputStream getContent(long id);
-
-    public Log get(long id);
-
-    public List<Log> list();
-
-    public Log update(Log source);
-
-    public void delete(long id);
 }

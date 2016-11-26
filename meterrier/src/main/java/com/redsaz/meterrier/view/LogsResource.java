@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.view;
 
+import com.redsaz.meterrier.api.ImportService;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -41,13 +42,15 @@ import java.io.InputStream;
 public class LogsResource {
 
     private LogsService logsSrv;
+    private ImportService importSrv;
 
     public LogsResource() {
     }
 
     @Inject
-    public LogsResource(@Sanitizer LogsService logsService) {
+    public LogsResource(@Sanitizer LogsService logsService, @Processor ImportService importService) {
         logsSrv = logsService;
+        importSrv = importService;
     }
 
     /**
@@ -58,7 +61,7 @@ public class LogsResource {
     @GET
     @Produces(MeterrierMediaType.LOGBRIEFS_V1_JSON)
     public Response listLogBriefs() {
-        return Response.ok(logsSrv.getLogs()).build();
+        return Response.ok(logsSrv.list()).build();
     }
 
     /**
@@ -71,7 +74,7 @@ public class LogsResource {
     @Produces({MeterrierMediaType.LOGBRIEF_V1_JSON})
     @Path("{id}")
     public Response getLogBrief(@PathParam("id") long id) {
-        Log brief = logsSrv.getLog(id);
+        Log brief = logsSrv.get(id);
         if (brief == null) {
             throw new NotFoundException("Could not find log brief id=" + id);
         }
@@ -82,13 +85,13 @@ public class LogsResource {
     @Consumes("application/octet-stream")
     @Produces({MeterrierMediaType.LOGBRIEF_V1_JSON})
     public Response importLog(InputStream source) {
-        return Response.status(Status.CREATED).entity(logsSrv.importLog(source, null)).build();
+        return Response.status(Status.CREATED).entity(importSrv.upload(source, null)).build();
     }
 
     @DELETE
     @Path("{id}")
     public Response deleteLog(@PathParam("id") long id) {
-        logsSrv.deleteLog(id);
+        logsSrv.delete(id);
         return Response.status(Status.NO_CONTENT).build();
     }
 

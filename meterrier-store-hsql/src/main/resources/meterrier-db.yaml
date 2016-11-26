@@ -57,11 +57,6 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
               - column:
-                  name: storedFilename
-                  type: varchar(1024)
-                  constraints:
-                    nullable: false
-              - column:
                   name: uriName
                   type: varchar(1024)
                   constraints:

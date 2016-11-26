@@ -15,26 +15,24 @@
  */
 package com.redsaz.meterrier.api;
 
-import com.redsaz.meterrier.api.model.Log;
-import java.io.OutputStream;
+import com.redsaz.meterrier.api.model.ImportInfo;
+import java.io.InputStream;
 import java.util.List;
 
 /**
- * Stores and accesses logs/measurements.
+ * Stores, accesses, processes pending imports of logs.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public interface LogsService {
+public interface ImportService {
 
-    public Log create(Log source);
+    public ImportInfo upload(InputStream raw, ImportInfo source);
 
-    public OutputStream getContent(long id);
+    public ImportInfo get(long id);
 
-    public Log get(long id);
+    public List<ImportInfo> list();
 
-    public List<Log> list();
-
-    public Log update(Log source);
+    public ImportInfo update(ImportInfo source);
 
     public void delete(long id);
 }

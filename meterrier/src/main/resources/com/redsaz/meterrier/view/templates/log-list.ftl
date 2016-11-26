@@ -32,7 +32,7 @@
                 <#list briefs as brief>
                 <tr>
                   <td><a href="logs/${brief.id}">${brief.id}</a></td>
-                  <td>${brief.storedFilename}</td>
+                  <td>${brief.title}</td>
                   <td>
                     <form action="${base}/logs/delete" method="POST">
                       <a href="logs/${brief.id}/edit">
