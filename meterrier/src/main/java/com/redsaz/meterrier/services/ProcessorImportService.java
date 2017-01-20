@@ -20,9 +20,10 @@ import com.redsaz.meterrier.api.LogsService;
 import java.io.InputStream;
 import java.util.List;
 import com.redsaz.meterrier.api.model.ImportInfo;
-import com.redsaz.meterrier.api.model.Log;
-import java.io.BufferedReader;
-import java.io.FileReader;
+import com.redsaz.meterrier.services.converter.AvroToCsvJtlConverter;
+import com.redsaz.meterrier.services.converter.Converter;
+import com.redsaz.meterrier.services.converter.CsvJtlToAvroConverter;
+import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,10 +47,19 @@ public class ProcessorImportService implements ImportService {
 
     private final ImportService srv;
     private final LogsService logsSrv;
+    private final Converter converter;
+
+    public static void main(String[] args) throws Exception {
+        ImportInfo ii = new ImportInfo(0, "jtls/real-with-header.jtl", "title", "csv", 1234567890000L, "Good");
+        Converter imp = new CsvJtlToAvroConverter();
+        ImporterCallable ic = new ImporterCallable(imp, ii);
+        ic.call();
+    }
 
     public ProcessorImportService(ImportService importService, LogsService logsService) {
         srv = importService;
         logsSrv = logsService;
+        converter = new CsvJtlToAvroConverter();
     }
 
     @Override
@@ -70,49 +80,34 @@ public class ProcessorImportService implements ImportService {
     @Override
     public ImportInfo upload(InputStream raw, ImportInfo source) {
         ImportInfo result = srv.upload(raw, source);
-        EXEC.submit(new ImporterCallable(srv, logsSrv, result));
+        EXEC.submit(new ImporterCallable(converter, result));
         return result;
     }
 
     @Override
     public ImportInfo update(ImportInfo source) {
         ImportInfo result = srv.update(source);
-        EXEC.submit(new ImporterCallable(srv, logsSrv, result));
+        EXEC.submit(new ImporterCallable(converter, result));
         return result;
     }
 
     private static class ImporterCallable implements Callable<ImportInfo> {
 
-        private final ImportService is;
-        private final LogsService ls;
+        private final Converter conv;
         private final ImportInfo source;
 
-        public ImporterCallable(ImportService isrv, LogsService lsrv, ImportInfo info) {
-            is = isrv;
-            ls = lsrv;
+        public ImporterCallable(Converter converter, ImportInfo info) {
+            conv = converter;
             source = info;
         }
 
         @Override
         public ImportInfo call() throws Exception {
-            try {
-                LOGGER.info("Processing import {}...", source);
-                BufferedReader br = new BufferedReader(new FileReader(source.getImportedFilename()));
-                for (String line = br.readLine(); line != null; line = br.readLine()) {
-                    LOGGER.info(line);
-                }
-                br.close();
-                LOGGER.info("...Finished reading import. Creating Log entry...");
-                Log log = ls.create(new Log(0, null, source.getImportedFilename(), source.getUploadedUtcMillis(), ""));
-                LOGGER.info("...Finished creating Log entry {}. Deleting import entry {}...", log.getId(), source.getId());
-                is.delete(source.getId());
-                LOGGER.info("...Finished deleting import entry {}.", source.getId());
-                LOGGER.info("...Finished processing import {}.", source);
-                return source; // This should return something else, probably.
-            } catch (Exception ex) {
-                LOGGER.error("Unable to process import " + source.getId(), ex);
-                throw ex;
-            }
+            File dest = new File("jtls/real.avro");
+            conv.convert(new File(source.getImportedFilename()), dest);
+            Converter a2j = new AvroToCsvJtlConverter();
+            a2j.convert(dest, new File("jtls/should-equal-real-columntrimmed.jtl"));
+            return source;
         }
 
     }
