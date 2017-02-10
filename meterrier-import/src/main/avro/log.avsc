@@ -1,0 +1,41 @@
+[{"namespace": "com.redsaz.meterrier.importer.model",
+  "type": "record",
+  "name": "HttpSample",
+    "fields": [
+        {"name": "millisOffset", "type": "long", "default": 0},
+        {"name": "millisElapsed", "type": "long", "default": -1},
+        {"name": "labelRef", "type": "int", "default": 0},
+        {"name": "threadNameRef", "type": "int", "default": 0},
+        {"name": "responseCodeRef", "type": "int", "default": 0},
+        {"name": "success", "type": "boolean", "default": true},
+        {"name": "bytesReceived", "type": "long", "default": -1},
+        {"name": "bytesSent", "type": "long", "default": -1},
+        {"name": "urlRef", "type": "int", "default": 0},
+        {"name": "currentThreads", "type": "int", "default": 0}
+    ]
+},
+{"namespace": "com.redsaz.meterrier.importer.model",
+  "type": "record",
+  "name": "StringArray",
+    "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "values", "type": {"type": "array", "items": "string"}}
+    ]
+},
+{"namespace": "com.redsaz.meterrier.importer.model",
+  "type": "record",
+  "name": "Metadata",
+    "fields": [
+        {"name": "earliestMillisUtc", "type": "long"},
+        {"name": "LatestMillisUtc", "type": "long"},
+        {"name": "totalEntries", "type": "long"}
+    ]
+},
+{"namespace": "com.redsaz.meterrier.importer.model",
+  "type": "record",
+  "name": "Entry",
+    "fields": [
+        {"name": "item", "type": ["HttpSample", "StringArray", "Metadata"]}
+    ]
+}
+]

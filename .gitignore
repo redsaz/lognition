@@ -16,3 +16,4 @@ hs_err_pid*
 /meterrier-api/target/
 /meterrier-store-hsql/target/
 /meterrier/target/
+/meterrier-import/target/

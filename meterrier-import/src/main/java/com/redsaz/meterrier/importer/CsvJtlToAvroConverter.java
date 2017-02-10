@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.services.converter;
+package com.redsaz.meterrier.importer;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.model.Entry;
-import com.redsaz.meterrier.model.HttpSample;
-import com.redsaz.meterrier.model.Metadata;
-import com.redsaz.meterrier.model.StringArray;
-import com.redsaz.meterrier.model.jmeter.CsvJtlRow;
+import com.redsaz.meterrier.importer.model.Entry;
+import com.redsaz.meterrier.importer.model.HttpSample;
+import com.redsaz.meterrier.importer.model.Metadata;
+import com.redsaz.meterrier.importer.model.StringArray;
+import com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -66,6 +66,7 @@ public class CsvJtlToAvroConverter implements Converter {
             File intermediateData = new File("jtls/real-intermediate.avro");
             IntermediateInfo info = csvToIntermediate(source, intermediateData);
             info.writeAvro(intermediateData, dest);
+            totalRows = info.numRows;
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to process import.", ex);
         }

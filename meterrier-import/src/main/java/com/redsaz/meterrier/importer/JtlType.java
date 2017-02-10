@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.services.converter;
+package com.redsaz.meterrier.importer;
 
-import com.redsaz.meterrier.model.jmeter.CsvJtlRow;
+import com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;

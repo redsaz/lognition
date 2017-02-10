@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.services.converter;
+package com.redsaz.meterrier.importer;
 
 /**
  * Collection of string converters.

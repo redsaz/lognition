@@ -23,6 +23,7 @@
     <modules>
         <module>meterrier-api</module>
         <module>meterrier-store-hsql</module>
+        <module>meterrier-import</module>
         <module>meterrier</module>
     </modules>
     <properties>

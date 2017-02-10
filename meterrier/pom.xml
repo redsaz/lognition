@@ -59,6 +59,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.redsaz.meterrier</groupId>
+            <artifactId>meterrier-import</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
         </dependency>

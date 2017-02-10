@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.services.converter;
+package com.redsaz.meterrier.importer;
 
-import com.redsaz.meterrier.model.HttpSample;
+import com.redsaz.meterrier.importer.model.HttpSample;
 
 /**
  * Defines columns that can be stored in a generic http sample log, and the
  * Jmeter types to convert from.
  */
- enum HttpSampleType {
+enum HttpSampleType {
     MILLIS_OFFSET(JtlType.TIMESTAMP), // in milliseconds the previous sample, or millis since epoch if first entry.
     MILLIS_ELAPSED(JtlType.ELAPSED), // in milliseconds
     LABEL_REF(JtlType.LABEL), // sampler label
@@ -39,8 +39,8 @@ import com.redsaz.meterrier.model.HttpSample;
     }
 
     /**
-     * Modifies the given sample with the value, the modification determined
-     * by the enum.
+     * Modifies the given sample with the value, the modification determined by
+     * the enum.
      *
      * @param sample target to modify
      * @param value value to put into target.
