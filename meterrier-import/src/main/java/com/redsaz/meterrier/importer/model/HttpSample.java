@@ -10,8 +10,8 @@ import org.apache.avro.specific.SpecificData;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class HttpSample extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 3008963535636828819L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"bytesSent\",\"type\":\"long\",\"default\":-1},{\"name\":\"urlRef\",\"type\":\"int\",\"default\":0},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]}");
+  private static final long serialVersionUID = -230666768562542855L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public long millisOffset;
   @Deprecated public long millisElapsed;
@@ -20,8 +20,6 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
   @Deprecated public int responseCodeRef;
   @Deprecated public boolean success;
   @Deprecated public long bytesReceived;
-  @Deprecated public long bytesSent;
-  @Deprecated public int urlRef;
   @Deprecated public int currentThreads;
 
   /**
@@ -40,11 +38,9 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
    * @param responseCodeRef The new value for responseCodeRef
    * @param success The new value for success
    * @param bytesReceived The new value for bytesReceived
-   * @param bytesSent The new value for bytesSent
-   * @param urlRef The new value for urlRef
    * @param currentThreads The new value for currentThreads
    */
-  public HttpSample(java.lang.Long millisOffset, java.lang.Long millisElapsed, java.lang.Integer labelRef, java.lang.Integer threadNameRef, java.lang.Integer responseCodeRef, java.lang.Boolean success, java.lang.Long bytesReceived, java.lang.Long bytesSent, java.lang.Integer urlRef, java.lang.Integer currentThreads) {
+  public HttpSample(java.lang.Long millisOffset, java.lang.Long millisElapsed, java.lang.Integer labelRef, java.lang.Integer threadNameRef, java.lang.Integer responseCodeRef, java.lang.Boolean success, java.lang.Long bytesReceived, java.lang.Integer currentThreads) {
     this.millisOffset = millisOffset;
     this.millisElapsed = millisElapsed;
     this.labelRef = labelRef;
@@ -52,8 +48,6 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     this.responseCodeRef = responseCodeRef;
     this.success = success;
     this.bytesReceived = bytesReceived;
-    this.bytesSent = bytesSent;
-    this.urlRef = urlRef;
     this.currentThreads = currentThreads;
   }
 
@@ -68,9 +62,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     case 4: return responseCodeRef;
     case 5: return success;
     case 6: return bytesReceived;
-    case 7: return bytesSent;
-    case 8: return urlRef;
-    case 9: return currentThreads;
+    case 7: return currentThreads;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -86,9 +78,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     case 4: responseCodeRef = (java.lang.Integer)value$; break;
     case 5: success = (java.lang.Boolean)value$; break;
     case 6: bytesReceived = (java.lang.Long)value$; break;
-    case 7: bytesSent = (java.lang.Long)value$; break;
-    case 8: urlRef = (java.lang.Integer)value$; break;
-    case 9: currentThreads = (java.lang.Integer)value$; break;
+    case 7: currentThreads = (java.lang.Integer)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -206,38 +196,6 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
   }
 
   /**
-   * Gets the value of the 'bytesSent' field.
-   * @return The value of the 'bytesSent' field.
-   */
-  public java.lang.Long getBytesSent() {
-    return bytesSent;
-  }
-
-  /**
-   * Sets the value of the 'bytesSent' field.
-   * @param value the value to set.
-   */
-  public void setBytesSent(java.lang.Long value) {
-    this.bytesSent = value;
-  }
-
-  /**
-   * Gets the value of the 'urlRef' field.
-   * @return The value of the 'urlRef' field.
-   */
-  public java.lang.Integer getUrlRef() {
-    return urlRef;
-  }
-
-  /**
-   * Sets the value of the 'urlRef' field.
-   * @param value the value to set.
-   */
-  public void setUrlRef(java.lang.Integer value) {
-    this.urlRef = value;
-  }
-
-  /**
    * Gets the value of the 'currentThreads' field.
    * @return The value of the 'currentThreads' field.
    */
@@ -292,8 +250,6 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     private int responseCodeRef;
     private boolean success;
     private long bytesReceived;
-    private long bytesSent;
-    private int urlRef;
     private int currentThreads;
 
     /** Creates a new Builder */
@@ -335,17 +291,9 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         this.bytesReceived = data().deepCopy(fields()[6].schema(), other.bytesReceived);
         fieldSetFlags()[6] = true;
       }
-      if (isValidValue(fields()[7], other.bytesSent)) {
-        this.bytesSent = data().deepCopy(fields()[7].schema(), other.bytesSent);
+      if (isValidValue(fields()[7], other.currentThreads)) {
+        this.currentThreads = data().deepCopy(fields()[7].schema(), other.currentThreads);
         fieldSetFlags()[7] = true;
-      }
-      if (isValidValue(fields()[8], other.urlRef)) {
-        this.urlRef = data().deepCopy(fields()[8].schema(), other.urlRef);
-        fieldSetFlags()[8] = true;
-      }
-      if (isValidValue(fields()[9], other.currentThreads)) {
-        this.currentThreads = data().deepCopy(fields()[9].schema(), other.currentThreads);
-        fieldSetFlags()[9] = true;
       }
     }
 
@@ -383,17 +331,9 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         this.bytesReceived = data().deepCopy(fields()[6].schema(), other.bytesReceived);
         fieldSetFlags()[6] = true;
       }
-      if (isValidValue(fields()[7], other.bytesSent)) {
-        this.bytesSent = data().deepCopy(fields()[7].schema(), other.bytesSent);
+      if (isValidValue(fields()[7], other.currentThreads)) {
+        this.currentThreads = data().deepCopy(fields()[7].schema(), other.currentThreads);
         fieldSetFlags()[7] = true;
-      }
-      if (isValidValue(fields()[8], other.urlRef)) {
-        this.urlRef = data().deepCopy(fields()[8].schema(), other.urlRef);
-        fieldSetFlags()[8] = true;
-      }
-      if (isValidValue(fields()[9], other.currentThreads)) {
-        this.currentThreads = data().deepCopy(fields()[9].schema(), other.currentThreads);
-        fieldSetFlags()[9] = true;
       }
     }
 
@@ -664,82 +604,6 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     }
 
     /**
-      * Gets the value of the 'bytesSent' field.
-      * @return The value.
-      */
-    public java.lang.Long getBytesSent() {
-      return bytesSent;
-    }
-
-    /**
-      * Sets the value of the 'bytesSent' field.
-      * @param value The value of 'bytesSent'.
-      * @return This builder.
-      */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setBytesSent(long value) {
-      validate(fields()[7], value);
-      this.bytesSent = value;
-      fieldSetFlags()[7] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'bytesSent' field has been set.
-      * @return True if the 'bytesSent' field has been set, false otherwise.
-      */
-    public boolean hasBytesSent() {
-      return fieldSetFlags()[7];
-    }
-
-
-    /**
-      * Clears the value of the 'bytesSent' field.
-      * @return This builder.
-      */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearBytesSent() {
-      fieldSetFlags()[7] = false;
-      return this;
-    }
-
-    /**
-      * Gets the value of the 'urlRef' field.
-      * @return The value.
-      */
-    public java.lang.Integer getUrlRef() {
-      return urlRef;
-    }
-
-    /**
-      * Sets the value of the 'urlRef' field.
-      * @param value The value of 'urlRef'.
-      * @return This builder.
-      */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setUrlRef(int value) {
-      validate(fields()[8], value);
-      this.urlRef = value;
-      fieldSetFlags()[8] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'urlRef' field has been set.
-      * @return True if the 'urlRef' field has been set, false otherwise.
-      */
-    public boolean hasUrlRef() {
-      return fieldSetFlags()[8];
-    }
-
-
-    /**
-      * Clears the value of the 'urlRef' field.
-      * @return This builder.
-      */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearUrlRef() {
-      fieldSetFlags()[8] = false;
-      return this;
-    }
-
-    /**
       * Gets the value of the 'currentThreads' field.
       * @return The value.
       */
@@ -753,9 +617,9 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @return This builder.
       */
     public com.redsaz.meterrier.importer.model.HttpSample.Builder setCurrentThreads(int value) {
-      validate(fields()[9], value);
+      validate(fields()[7], value);
       this.currentThreads = value;
-      fieldSetFlags()[9] = true;
+      fieldSetFlags()[7] = true;
       return this;
     }
 
@@ -764,7 +628,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @return True if the 'currentThreads' field has been set, false otherwise.
       */
     public boolean hasCurrentThreads() {
-      return fieldSetFlags()[9];
+      return fieldSetFlags()[7];
     }
 
 
@@ -773,7 +637,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @return This builder.
       */
     public com.redsaz.meterrier.importer.model.HttpSample.Builder clearCurrentThreads() {
-      fieldSetFlags()[9] = false;
+      fieldSetFlags()[7] = false;
       return this;
     }
 
@@ -788,9 +652,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         record.responseCodeRef = fieldSetFlags()[4] ? this.responseCodeRef : (java.lang.Integer) defaultValue(fields()[4]);
         record.success = fieldSetFlags()[5] ? this.success : (java.lang.Boolean) defaultValue(fields()[5]);
         record.bytesReceived = fieldSetFlags()[6] ? this.bytesReceived : (java.lang.Long) defaultValue(fields()[6]);
-        record.bytesSent = fieldSetFlags()[7] ? this.bytesSent : (java.lang.Long) defaultValue(fields()[7]);
-        record.urlRef = fieldSetFlags()[8] ? this.urlRef : (java.lang.Integer) defaultValue(fields()[8]);
-        record.currentThreads = fieldSetFlags()[9] ? this.currentThreads : (java.lang.Integer) defaultValue(fields()[9]);
+        record.currentThreads = fieldSetFlags()[7] ? this.currentThreads : (java.lang.Integer) defaultValue(fields()[7]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

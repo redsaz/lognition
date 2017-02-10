@@ -95,9 +95,6 @@ public class AvroToCsvJtlConverter implements Converter {
                         if (hs.getBytesReceived() != -1) {
                             usedFields.add(JtlType.BYTES);
                         }
-                        if (hs.getBytesSent() != -1) {
-                            usedFields.add(JtlType.SENT_BYTES);
-                        }
                         if (hs.getCurrentThreads() > 0) {
                             usedFields.add(JtlType.ALL_THREADS);
                         }
@@ -178,9 +175,6 @@ public class AvroToCsvJtlConverter implements Converter {
                         }
                         if (hs.getBytesReceived() != -1) {
                             usedFields.add(JtlType.BYTES);
-                        }
-                        if (hs.getBytesSent() != -1) {
-                            usedFields.add(JtlType.SENT_BYTES);
                         }
                         if (hs.getCurrentThreads() > 0) {
                             usedFields.add(JtlType.ALL_THREADS);
