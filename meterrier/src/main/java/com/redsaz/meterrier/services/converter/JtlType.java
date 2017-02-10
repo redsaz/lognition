@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.services.converter;
 
+import com.redsaz.meterrier.model.jmeter.CsvJtlRow;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,30 +25,190 @@ import java.util.Map;
  * https://jmeter.apache.org/usermanual/listeners.html
  */
 enum JtlType {
-    TIMESTAMP("timeStamp", FromStrings.LONG_FS), // in milliseconds since 1/1/1970
-    ELAPSED("elapsed", FromStrings.LONG_FS), // in milliseconds
-    LABEL("label", FromStrings.STRING_FS), // sampler label
-    RESPONSE_CODE("responseCode", FromStrings.INTEGER_FS_OR_ZERO), // e.g. 200, 404
-    RESPONSE_MESSAGE("responseMessage", FromStrings.STRING_FS), // e.g. OK
-    THREAD_NAME("threadName", FromStrings.STRING_FS), // Name of thread
-    DATA_TYPE("dataType", FromStrings.STRING_FS), // e.g. text
-    SUCCESS("success", FromStrings.BOOLEAN_FS), // true or false
-    FAILURE_MESSAGE("failureMessage", FromStrings.STRING_FS), // if any
-    BYTES("bytes", FromStrings.LONG_FS), // number of bytes in the sample
-    SENT_BYTES("sentBytes", FromStrings.LONG_FS), // number of bytes sent for the sample
-    GRP_THREADS("grpThreads", FromStrings.INTEGER_FS), // number of active threads in this thread group
-    ALL_THREADS("allThreads", FromStrings.INTEGER_FS), // total number of active threads in all groups
-    URL("URL", FromStrings.STRING_FS), // Uniform Resource Locator
-    FILENAME("Filename", FromStrings.STRING_FS), // If Save Response to File was used
-    LATENCY("Latency", FromStrings.INTEGER_FS), // Time to first response
-    CONNECT("connect", FromStrings.INTEGER_FS), // Time to establish connection
-    ENCODING("encoding", FromStrings.STRING_FS),
-    SAMPLE_COUNT("SampleCount", FromStrings.INTEGER_FS), // number of samples (1, unless multiple samples are aggregated)
-    ERROR_COUNT("ErrorCount", FromStrings.INTEGER_FS), // ErrorCount - number of errors (0 or 1, unless multiple samples are aggregated)
-    HOSTNAME("Hostname", FromStrings.STRING_FS), // where the sample was generated
-    IDLE_TIME("IdleTime", FromStrings.INTEGER_FS), // number of milliseconds of 'Idle' time (normally 0)
-    VARIABLES("Variables", FromStrings.STRING_FS);
+    // in milliseconds since 1/1/1970
+    TIMESTAMP("timeStamp", FromStrings.LONG_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setTimeStamp((Long) convert(value));
+            return dest;
+        }
+    },
+    // in milliseconds
+    ELAPSED("elapsed", FromStrings.LONG_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setElapsed((Long) convert(value));
+            return dest;
+        }
+    },
+    // sampler label
+    LABEL("label", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setLabel((String) convert(value));
+            return dest;
+        }
+    },
+    // e.g. 200, 404
+    RESPONSE_CODE("responseCode", FromStrings.INTEGER_FS_OR_ZERO) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setResponseCode((Integer) convert(value));
+            return dest;
+        }
+    },
+    // e.g. OK
+    RESPONSE_MESSAGE("responseMessage", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setResponseMessage((String) convert(value));
+            return dest;
+        }
+    },
+    // Name of thread
+    THREAD_NAME("threadName", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setThreadName((String) convert(value));
+            return dest;
+        }
+    },
+    // e.g. text
+    DATA_TYPE("dataType", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setDataType((String) convert(value));
+            return dest;
+        }
+    },
+    // true or false
+    SUCCESS("success", FromStrings.BOOLEAN_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setSuccess((Boolean) convert(value));
+            return dest;
+        }
+    },
+    // if any
+    FAILURE_MESSAGE("failureMessage", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setFailureMessage((String) convert(value));
+            return dest;
+        }
+    },
+    // number of bytes in the sample
+    BYTES("bytes", FromStrings.LONG_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setBytes((Long) convert(value));
+            return dest;
+        }
+    },
+    // number of bytes sent for the sample
+    SENT_BYTES("sentBytes", FromStrings.LONG_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setSentBytes((Long) convert(value));
+            return dest;
+        }
+    },
+    // number of active threads in this thread group
+    GRP_THREADS("grpThreads", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setGrpThreads((Integer) convert(value));
+            return dest;
+        }
+    },
+    // total number of active threads in all groups
+    ALL_THREADS("allThreads", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setAllThreads((Integer) convert(value));
+            return dest;
+        }
+    },
+    // Uniform Resource Locator
+    URL("URL", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setURL((String) convert(value));
+            return dest;
+        }
+    },
+    // If Save Response to File was used
+    FILENAME("Filename", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setFilename((String) convert(value));
+            return dest;
+        }
+    },
+    // Time to first response
+    LATENCY("Latency", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setLatency((Integer) convert(value));
+            return dest;
+        }
+    },
+    // Time to establish connection
+    CONNECT("connect", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setConnect((Integer) convert(value));
+            return dest;
+        }
+    },
+    ENCODING("encoding", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setEncoding((String) convert(value));
+            return dest;
+        }
+    },
+    // number of samples (1, unless multiple samples are aggregated)
+    SAMPLE_COUNT("SampleCount", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setSampleCount((Integer) convert(value));
+            return dest;
+        }
+    },
+    // ErrorCount - number of errors (0 or 1, unless multiple samples are aggregated)
+    ERROR_COUNT("ErrorCount", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setErrorCount((Integer) convert(value));
+            return dest;
+        }
+    },
+    // where the sample was generated
+    HOSTNAME("Hostname", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setHostname((String) convert(value));
+            return dest;
+        }
+    },
+    // number of milliseconds of 'Idle' time (normally 0)
+    IDLE_TIME("IdleTime", FromStrings.INTEGER_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setIdleTime((Integer) convert(value));
+            return dest;
+        }
+    },
     //if specified
+    VARIABLES("Variables", FromStrings.STRING_FS) {
+        @Override
+        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setVariables((String) convert(value));
+            return dest;
+        }
+    };
+
     private final String csvName;
     private final FromString<?> fromStringer;
     private static final Map<String, JtlType> header2Type = initMap();
@@ -64,6 +225,8 @@ enum JtlType {
     public String csvName() {
         return csvName;
     }
+
+    public abstract CsvJtlRow putIn(CsvJtlRow dest, String value);
 
     public static JtlType fromHeader(String header) {
         return header2Type.get(header.toLowerCase(Locale.US));

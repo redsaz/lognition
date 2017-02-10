@@ -3,18 +3,18 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package com.redsaz.meterrier.model;
+package com.redsaz.meterrier.model.jmeter;
 
 import org.apache.avro.specific.SpecificData;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
-public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 4200439164580049814L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"JmeterEntry\",\"namespace\":\"com.redsaz.meterrier.model\",\"fields\":[{\"name\":\"timeStamp\",\"type\":[\"null\",\"long\"]},{\"name\":\"elapsed\",\"type\":[\"null\",\"int\"]},{\"name\":\"label\",\"type\":[\"null\",\"string\"]},{\"name\":\"responseCode\",\"type\":[\"null\",\"int\"]},{\"name\":\"responseMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"threadName\",\"type\":[\"null\",\"string\"]},{\"name\":\"dataType\",\"type\":[\"null\",\"string\"]},{\"name\":\"success\",\"type\":[\"null\",\"boolean\"]},{\"name\":\"failureMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"bytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"sentBytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"grpThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"allThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"URL\",\"type\":[\"null\",\"string\"]},{\"name\":\"Filename\",\"type\":[\"null\",\"string\"]},{\"name\":\"Latency\",\"type\":[\"null\",\"int\"]},{\"name\":\"connect\",\"type\":[\"null\",\"int\"]},{\"name\":\"encoding\",\"type\":[\"null\",\"string\"]},{\"name\":\"SampleCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"ErrorCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"Hostname\",\"type\":[\"null\",\"string\"]},{\"name\":\"IdleTime\",\"type\":[\"null\",\"int\"]},{\"name\":\"Variables\",\"type\":[\"null\",\"string\"]}]}");
+public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  private static final long serialVersionUID = -7407725839634785749L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CsvJtlRow\",\"namespace\":\"com.redsaz.meterrier.model.jmeter\",\"fields\":[{\"name\":\"timeStamp\",\"type\":[\"null\",\"long\"]},{\"name\":\"elapsed\",\"type\":[\"null\",\"long\"]},{\"name\":\"label\",\"type\":[\"null\",\"string\"]},{\"name\":\"responseCode\",\"type\":[\"null\",\"int\"]},{\"name\":\"responseMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"threadName\",\"type\":[\"null\",\"string\"]},{\"name\":\"dataType\",\"type\":[\"null\",\"string\"]},{\"name\":\"success\",\"type\":[\"null\",\"boolean\"]},{\"name\":\"failureMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"bytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"sentBytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"grpThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"allThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"URL\",\"type\":[\"null\",\"string\"]},{\"name\":\"Filename\",\"type\":[\"null\",\"string\"]},{\"name\":\"Latency\",\"type\":[\"null\",\"int\"]},{\"name\":\"connect\",\"type\":[\"null\",\"int\"]},{\"name\":\"encoding\",\"type\":[\"null\",\"string\"]},{\"name\":\"SampleCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"ErrorCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"Hostname\",\"type\":[\"null\",\"string\"]},{\"name\":\"IdleTime\",\"type\":[\"null\",\"int\"]},{\"name\":\"Variables\",\"type\":[\"null\",\"string\"]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public java.lang.Long timeStamp;
-  @Deprecated public java.lang.Integer elapsed;
+  @Deprecated public java.lang.Long elapsed;
   @Deprecated public java.lang.CharSequence label;
   @Deprecated public java.lang.Integer responseCode;
   @Deprecated public java.lang.CharSequence responseMessage;
@@ -42,7 +42,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
    * to their default values from the schema.  If that is desired then
    * one should use <code>newBuilder()</code>.
    */
-  public JmeterEntry() {}
+  public CsvJtlRow() {}
 
   /**
    * All-args constructor.
@@ -70,7 +70,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
    * @param IdleTime The new value for IdleTime
    * @param Variables The new value for Variables
    */
-  public JmeterEntry(java.lang.Long timeStamp, java.lang.Integer elapsed, java.lang.CharSequence label, java.lang.Integer responseCode, java.lang.CharSequence responseMessage, java.lang.CharSequence threadName, java.lang.CharSequence dataType, java.lang.Boolean success, java.lang.CharSequence failureMessage, java.lang.Long bytes, java.lang.Long sentBytes, java.lang.Integer grpThreads, java.lang.Integer allThreads, java.lang.CharSequence URL, java.lang.CharSequence Filename, java.lang.Integer Latency, java.lang.Integer connect, java.lang.CharSequence encoding, java.lang.Integer SampleCount, java.lang.Integer ErrorCount, java.lang.CharSequence Hostname, java.lang.Integer IdleTime, java.lang.CharSequence Variables) {
+  public CsvJtlRow(java.lang.Long timeStamp, java.lang.Long elapsed, java.lang.CharSequence label, java.lang.Integer responseCode, java.lang.CharSequence responseMessage, java.lang.CharSequence threadName, java.lang.CharSequence dataType, java.lang.Boolean success, java.lang.CharSequence failureMessage, java.lang.Long bytes, java.lang.Long sentBytes, java.lang.Integer grpThreads, java.lang.Integer allThreads, java.lang.CharSequence URL, java.lang.CharSequence Filename, java.lang.Integer Latency, java.lang.Integer connect, java.lang.CharSequence encoding, java.lang.Integer SampleCount, java.lang.Integer ErrorCount, java.lang.CharSequence Hostname, java.lang.Integer IdleTime, java.lang.CharSequence Variables) {
     this.timeStamp = timeStamp;
     this.elapsed = elapsed;
     this.label = label;
@@ -132,7 +132,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
     case 0: timeStamp = (java.lang.Long)value$; break;
-    case 1: elapsed = (java.lang.Integer)value$; break;
+    case 1: elapsed = (java.lang.Long)value$; break;
     case 2: label = (java.lang.CharSequence)value$; break;
     case 3: responseCode = (java.lang.Integer)value$; break;
     case 4: responseMessage = (java.lang.CharSequence)value$; break;
@@ -178,7 +178,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
    * Gets the value of the 'elapsed' field.
    * @return The value of the 'elapsed' field.
    */
-  public java.lang.Integer getElapsed() {
+  public java.lang.Long getElapsed() {
     return elapsed;
   }
 
@@ -186,7 +186,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
    * Sets the value of the 'elapsed' field.
    * @param value the value to set.
    */
-  public void setElapsed(java.lang.Integer value) {
+  public void setElapsed(java.lang.Long value) {
     this.elapsed = value;
   }
 
@@ -527,39 +527,39 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
   }
 
   /**
-   * Creates a new JmeterEntry RecordBuilder.
-   * @return A new JmeterEntry RecordBuilder
+   * Creates a new CsvJtlRow RecordBuilder.
+   * @return A new CsvJtlRow RecordBuilder
    */
-  public static com.redsaz.meterrier.model.JmeterEntry.Builder newBuilder() {
-    return new com.redsaz.meterrier.model.JmeterEntry.Builder();
+  public static com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder newBuilder() {
+    return new com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder();
   }
 
   /**
-   * Creates a new JmeterEntry RecordBuilder by copying an existing Builder.
+   * Creates a new CsvJtlRow RecordBuilder by copying an existing Builder.
    * @param other The existing builder to copy.
-   * @return A new JmeterEntry RecordBuilder
+   * @return A new CsvJtlRow RecordBuilder
    */
-  public static com.redsaz.meterrier.model.JmeterEntry.Builder newBuilder(com.redsaz.meterrier.model.JmeterEntry.Builder other) {
-    return new com.redsaz.meterrier.model.JmeterEntry.Builder(other);
+  public static com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder newBuilder(com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder other) {
+    return new com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder(other);
   }
 
   /**
-   * Creates a new JmeterEntry RecordBuilder by copying an existing JmeterEntry instance.
+   * Creates a new CsvJtlRow RecordBuilder by copying an existing CsvJtlRow instance.
    * @param other The existing instance to copy.
-   * @return A new JmeterEntry RecordBuilder
+   * @return A new CsvJtlRow RecordBuilder
    */
-  public static com.redsaz.meterrier.model.JmeterEntry.Builder newBuilder(com.redsaz.meterrier.model.JmeterEntry other) {
-    return new com.redsaz.meterrier.model.JmeterEntry.Builder(other);
+  public static com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder newBuilder(com.redsaz.meterrier.model.jmeter.CsvJtlRow other) {
+    return new com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder(other);
   }
 
   /**
-   * RecordBuilder for JmeterEntry instances.
+   * RecordBuilder for CsvJtlRow instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<JmeterEntry>
-    implements org.apache.avro.data.RecordBuilder<JmeterEntry> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<CsvJtlRow>
+    implements org.apache.avro.data.RecordBuilder<CsvJtlRow> {
 
     private java.lang.Long timeStamp;
-    private java.lang.Integer elapsed;
+    private java.lang.Long elapsed;
     private java.lang.CharSequence label;
     private java.lang.Integer responseCode;
     private java.lang.CharSequence responseMessage;
@@ -591,7 +591,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(com.redsaz.meterrier.model.JmeterEntry.Builder other) {
+    private Builder(com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.timeStamp)) {
         this.timeStamp = data().deepCopy(fields()[0].schema(), other.timeStamp);
@@ -688,10 +688,10 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
     }
 
     /**
-     * Creates a Builder by copying an existing JmeterEntry instance
+     * Creates a Builder by copying an existing CsvJtlRow instance
      * @param other The existing instance to copy.
      */
-    private Builder(com.redsaz.meterrier.model.JmeterEntry other) {
+    private Builder(com.redsaz.meterrier.model.jmeter.CsvJtlRow other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.timeStamp)) {
         this.timeStamp = data().deepCopy(fields()[0].schema(), other.timeStamp);
@@ -800,7 +800,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'timeStamp'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setTimeStamp(java.lang.Long value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setTimeStamp(java.lang.Long value) {
       validate(fields()[0], value);
       this.timeStamp = value;
       fieldSetFlags()[0] = true;
@@ -820,7 +820,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'timeStamp' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearTimeStamp() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearTimeStamp() {
       timeStamp = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -830,7 +830,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Gets the value of the 'elapsed' field.
       * @return The value.
       */
-    public java.lang.Integer getElapsed() {
+    public java.lang.Long getElapsed() {
       return elapsed;
     }
 
@@ -839,7 +839,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'elapsed'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setElapsed(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setElapsed(java.lang.Long value) {
       validate(fields()[1], value);
       this.elapsed = value;
       fieldSetFlags()[1] = true;
@@ -859,7 +859,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'elapsed' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearElapsed() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearElapsed() {
       elapsed = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -878,7 +878,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'label'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setLabel(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setLabel(java.lang.CharSequence value) {
       validate(fields()[2], value);
       this.label = value;
       fieldSetFlags()[2] = true;
@@ -898,7 +898,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'label' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearLabel() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearLabel() {
       label = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -917,7 +917,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'responseCode'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setResponseCode(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setResponseCode(java.lang.Integer value) {
       validate(fields()[3], value);
       this.responseCode = value;
       fieldSetFlags()[3] = true;
@@ -937,7 +937,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'responseCode' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearResponseCode() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearResponseCode() {
       responseCode = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -956,7 +956,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'responseMessage'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setResponseMessage(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setResponseMessage(java.lang.CharSequence value) {
       validate(fields()[4], value);
       this.responseMessage = value;
       fieldSetFlags()[4] = true;
@@ -976,7 +976,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'responseMessage' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearResponseMessage() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearResponseMessage() {
       responseMessage = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -995,7 +995,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'threadName'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setThreadName(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setThreadName(java.lang.CharSequence value) {
       validate(fields()[5], value);
       this.threadName = value;
       fieldSetFlags()[5] = true;
@@ -1015,7 +1015,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'threadName' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearThreadName() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearThreadName() {
       threadName = null;
       fieldSetFlags()[5] = false;
       return this;
@@ -1034,7 +1034,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'dataType'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setDataType(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setDataType(java.lang.CharSequence value) {
       validate(fields()[6], value);
       this.dataType = value;
       fieldSetFlags()[6] = true;
@@ -1054,7 +1054,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'dataType' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearDataType() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearDataType() {
       dataType = null;
       fieldSetFlags()[6] = false;
       return this;
@@ -1073,7 +1073,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'success'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setSuccess(java.lang.Boolean value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setSuccess(java.lang.Boolean value) {
       validate(fields()[7], value);
       this.success = value;
       fieldSetFlags()[7] = true;
@@ -1093,7 +1093,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'success' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearSuccess() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearSuccess() {
       success = null;
       fieldSetFlags()[7] = false;
       return this;
@@ -1112,7 +1112,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'failureMessage'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setFailureMessage(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setFailureMessage(java.lang.CharSequence value) {
       validate(fields()[8], value);
       this.failureMessage = value;
       fieldSetFlags()[8] = true;
@@ -1132,7 +1132,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'failureMessage' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearFailureMessage() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearFailureMessage() {
       failureMessage = null;
       fieldSetFlags()[8] = false;
       return this;
@@ -1151,7 +1151,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'bytes'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setBytes(java.lang.Long value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setBytes(java.lang.Long value) {
       validate(fields()[9], value);
       this.bytes = value;
       fieldSetFlags()[9] = true;
@@ -1171,7 +1171,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'bytes' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearBytes() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearBytes() {
       bytes = null;
       fieldSetFlags()[9] = false;
       return this;
@@ -1190,7 +1190,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'sentBytes'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setSentBytes(java.lang.Long value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setSentBytes(java.lang.Long value) {
       validate(fields()[10], value);
       this.sentBytes = value;
       fieldSetFlags()[10] = true;
@@ -1210,7 +1210,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'sentBytes' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearSentBytes() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearSentBytes() {
       sentBytes = null;
       fieldSetFlags()[10] = false;
       return this;
@@ -1229,7 +1229,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'grpThreads'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setGrpThreads(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setGrpThreads(java.lang.Integer value) {
       validate(fields()[11], value);
       this.grpThreads = value;
       fieldSetFlags()[11] = true;
@@ -1249,7 +1249,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'grpThreads' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearGrpThreads() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearGrpThreads() {
       grpThreads = null;
       fieldSetFlags()[11] = false;
       return this;
@@ -1268,7 +1268,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'allThreads'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setAllThreads(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setAllThreads(java.lang.Integer value) {
       validate(fields()[12], value);
       this.allThreads = value;
       fieldSetFlags()[12] = true;
@@ -1288,7 +1288,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'allThreads' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearAllThreads() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearAllThreads() {
       allThreads = null;
       fieldSetFlags()[12] = false;
       return this;
@@ -1307,7 +1307,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'URL'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setURL(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setURL(java.lang.CharSequence value) {
       validate(fields()[13], value);
       this.URL = value;
       fieldSetFlags()[13] = true;
@@ -1327,7 +1327,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'URL' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearURL() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearURL() {
       URL = null;
       fieldSetFlags()[13] = false;
       return this;
@@ -1346,7 +1346,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'Filename'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setFilename(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setFilename(java.lang.CharSequence value) {
       validate(fields()[14], value);
       this.Filename = value;
       fieldSetFlags()[14] = true;
@@ -1366,7 +1366,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'Filename' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearFilename() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearFilename() {
       Filename = null;
       fieldSetFlags()[14] = false;
       return this;
@@ -1385,7 +1385,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'Latency'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setLatency(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setLatency(java.lang.Integer value) {
       validate(fields()[15], value);
       this.Latency = value;
       fieldSetFlags()[15] = true;
@@ -1405,7 +1405,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'Latency' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearLatency() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearLatency() {
       Latency = null;
       fieldSetFlags()[15] = false;
       return this;
@@ -1424,7 +1424,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'connect'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setConnect(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setConnect(java.lang.Integer value) {
       validate(fields()[16], value);
       this.connect = value;
       fieldSetFlags()[16] = true;
@@ -1444,7 +1444,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'connect' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearConnect() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearConnect() {
       connect = null;
       fieldSetFlags()[16] = false;
       return this;
@@ -1463,7 +1463,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'encoding'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setEncoding(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setEncoding(java.lang.CharSequence value) {
       validate(fields()[17], value);
       this.encoding = value;
       fieldSetFlags()[17] = true;
@@ -1483,7 +1483,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'encoding' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearEncoding() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearEncoding() {
       encoding = null;
       fieldSetFlags()[17] = false;
       return this;
@@ -1502,7 +1502,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'SampleCount'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setSampleCount(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setSampleCount(java.lang.Integer value) {
       validate(fields()[18], value);
       this.SampleCount = value;
       fieldSetFlags()[18] = true;
@@ -1522,7 +1522,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'SampleCount' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearSampleCount() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearSampleCount() {
       SampleCount = null;
       fieldSetFlags()[18] = false;
       return this;
@@ -1541,7 +1541,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'ErrorCount'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setErrorCount(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setErrorCount(java.lang.Integer value) {
       validate(fields()[19], value);
       this.ErrorCount = value;
       fieldSetFlags()[19] = true;
@@ -1561,7 +1561,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'ErrorCount' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearErrorCount() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearErrorCount() {
       ErrorCount = null;
       fieldSetFlags()[19] = false;
       return this;
@@ -1580,7 +1580,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'Hostname'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setHostname(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setHostname(java.lang.CharSequence value) {
       validate(fields()[20], value);
       this.Hostname = value;
       fieldSetFlags()[20] = true;
@@ -1600,7 +1600,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'Hostname' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearHostname() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearHostname() {
       Hostname = null;
       fieldSetFlags()[20] = false;
       return this;
@@ -1619,7 +1619,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'IdleTime'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setIdleTime(java.lang.Integer value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setIdleTime(java.lang.Integer value) {
       validate(fields()[21], value);
       this.IdleTime = value;
       fieldSetFlags()[21] = true;
@@ -1639,7 +1639,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'IdleTime' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearIdleTime() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearIdleTime() {
       IdleTime = null;
       fieldSetFlags()[21] = false;
       return this;
@@ -1658,7 +1658,7 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'Variables'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder setVariables(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder setVariables(java.lang.CharSequence value) {
       validate(fields()[22], value);
       this.Variables = value;
       fieldSetFlags()[22] = true;
@@ -1678,18 +1678,18 @@ public class JmeterEntry extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'Variables' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.model.JmeterEntry.Builder clearVariables() {
+    public com.redsaz.meterrier.model.jmeter.CsvJtlRow.Builder clearVariables() {
       Variables = null;
       fieldSetFlags()[22] = false;
       return this;
     }
 
     @Override
-    public JmeterEntry build() {
+    public CsvJtlRow build() {
       try {
-        JmeterEntry record = new JmeterEntry();
+        CsvJtlRow record = new CsvJtlRow();
         record.timeStamp = fieldSetFlags()[0] ? this.timeStamp : (java.lang.Long) defaultValue(fields()[0]);
-        record.elapsed = fieldSetFlags()[1] ? this.elapsed : (java.lang.Integer) defaultValue(fields()[1]);
+        record.elapsed = fieldSetFlags()[1] ? this.elapsed : (java.lang.Long) defaultValue(fields()[1]);
         record.label = fieldSetFlags()[2] ? this.label : (java.lang.CharSequence) defaultValue(fields()[2]);
         record.responseCode = fieldSetFlags()[3] ? this.responseCode : (java.lang.Integer) defaultValue(fields()[3]);
         record.responseMessage = fieldSetFlags()[4] ? this.responseMessage : (java.lang.CharSequence) defaultValue(fields()[4]);
