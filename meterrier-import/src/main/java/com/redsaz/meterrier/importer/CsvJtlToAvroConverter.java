@@ -30,7 +30,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -58,11 +57,11 @@ public class CsvJtlToAvroConverter implements Converter {
 
     @Override
     public void convert(File source, File dest) {
+        oldConvert(source, new File("jtls/real-columntrimmed.csv"));
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
         LOGGER.debug("Converting {} to {}...", source, dest);
         try {
-            oldConvert(source, new File("jtls/real-columntrimmed.csv"));
             File intermediateData = new File("jtls/real-intermediate.avro");
             IntermediateInfo info = csvToIntermediate(source, intermediateData);
             info.writeAvro(intermediateData, dest);
@@ -81,11 +80,9 @@ public class CsvJtlToAvroConverter implements Converter {
             BufferedReader br = new BufferedReader(new FileReader(source));
             CSVReader reader = new CSVReader(br);
             Iterator<String[]> csvIter = reader.iterator();
-//            JtlRowToHttpSample j2h = null;
             JtlRowToJtlRow j2j = null;
             if (csvIter.hasNext()) {
                 String[] headers = csvIter.next();
-//                j2h = new JtlRowToHttpSample(headers);
                 j2j = new JtlRowToJtlRow(headers,
                         JtlType.TIMESTAMP,
                         JtlType.ELAPSED,
@@ -102,29 +99,16 @@ public class CsvJtlToAvroConverter implements Converter {
                 throw new RuntimeException("No headers defined.");
             }
 
-            DatumWriter<Entry> userDatumWriter = new SpecificDatumWriter<>(Entry.class);
             try (
-                    //                    DataFileWriter<Entry> dataFileWriter = new DataFileWriter<>(userDatumWriter);
                     BufferedWriter bw = new BufferedWriter(new FileWriter("jtls/real-columntrimmed.jtl"));
                     CSVWriter writer = new CSVWriter(bw)) {
-//                dataFileWriter.create(Entry.getClassSchema(), dest);
                 writer.writeNext(j2j.getHeaders(), false);
                 while (csvIter.hasNext()) {
                     String[] row = csvIter.next();
                     ++totalRows;
-//                    HttpSample hs = j2h.convert(row);
-//                    Entry entry = new Entry(hs);
-//                    dataFileWriter.append(entry);
                     writer.writeNext(j2j.convert(row), false);
                 }
-//                if (j2h.hasLabels()) {
-//                    dataFileWriter.append(j2h.getLabelsEntry());
-//                }
-//                if (j2h.hasUrls()) {
-//                    dataFileWriter.append(j2h.getUrlsEntry());
-//                }
             }
-            //            exportAvroToJtl(dest, new File("jtls/real-from-avro.jtl"));
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to process import.", ex);
         }
@@ -304,145 +288,6 @@ public class CsvJtlToAvroConverter implements Converter {
                     latest = timeMillis;
                 }
             }
-        }
-
-    }
-
-    private void exportAvroToJtl(File source, File dest) throws IOException {
-        LOGGER.info("Processing export {}...", source);
-        DatumReader<Entry> userDatumReader = new SpecificDatumReader<>(Entry.class);
-        DataFileReader<Entry> dataFileReader = new DataFileReader<>(source, userDatumReader);
-        long entries = 0;
-        for (Entry entry : dataFileReader) {
-            Object item = entry.getItem();
-            ++entries;
-        }
-        LOGGER.info(entries + " entries exported.");
-    }
-
-    /**
-     * Convert a JTL row into an HttpSample.
-     *
-     * @author Redsaz <redsaz@gmail.com>
-     */
-    private static class JtlRowToHttpSample {
-
-        private static final Logger LOGGER = LoggerFactory.getLogger(JtlRowToHttpSample.class);
-
-        private Long lastTimestamp = 0L;
-        private Map<CharSequence, Integer> labelLookup = new HashMap<>();
-        private List<CharSequence> labels = new ArrayList<>();
-        private Map<CharSequence, Integer> urlLookup = new HashMap<>();
-        private List<CharSequence> urls = new ArrayList<>();
-        private StatusCodeLookup statusCodeLookup = new StatusCodeLookup();
-        private List<Integer> cols = new ArrayList<>();
-        private List<JtlType> jtlTypes = new ArrayList<>();
-
-        public JtlRowToHttpSample(String[] headers) {
-            for (int i = 0; i < headers.length; ++i) {
-                String header = headers[i];
-                JtlType jtlType = JtlType.fromHeader(header);
-                if (jtlType == null) {
-                    continue;
-                }
-                switch (jtlType) {
-                    case TIMESTAMP:
-                    case ELAPSED:
-                    case LABEL:
-                    case RESPONSE_CODE:
-                    case SUCCESS:
-                    case BYTES:
-                    case SENT_BYTES:
-                    case URL:
-                    case ALL_THREADS:
-                        cols.add(i);
-                        jtlTypes.add(jtlType);
-                        break;
-                    default:
-                        LOGGER.debug(jtlType + " not used.");
-                }
-            }
-        }
-
-        public HttpSample convert(String[] row) {
-            HttpSample sample = createNewEmptyHttpSample();
-            for (int i = 0; i < cols.size(); ++i) {
-                int col = cols.get(i);
-                String value = row[col];
-                JtlType jtlType = jtlTypes.get(i);
-                switch (jtlType) {
-                    case TIMESTAMP:
-                        Long ts = (Long) jtlType.convert(value);
-                        Long offset = ts - lastTimestamp;
-                        sample.setMillisOffset(offset);
-                        lastTimestamp = ts;
-                        break;
-                    case ELAPSED:
-                        Long elapsed = (Long) jtlType.convert(value);
-                        sample.setMillisElapsed(elapsed);
-                        break;
-                    case LABEL:
-                        String label = (String) jtlType.convert(value);
-                        Integer labelRef = labelLookup.get(label);
-                        if (labelRef == null) {
-                            labelRef = (int) (labelLookup.size() + 1);
-                            labelLookup.put(label, labelRef);
-                            labels.add(label);
-                        }
-                        sample.setLabelRef(labelRef);
-                        break;
-                    case RESPONSE_CODE:
-                        Integer code = (Integer) jtlType.convert(value);
-                        Integer ref = statusCodeLookup.getRef(code);
-                        sample.setResponseCodeRef(ref);
-                        break;
-                    case SUCCESS:
-                        Boolean success = (Boolean) jtlType.convert(value);
-                        sample.setSuccess(success);
-                        break;
-                    case BYTES:
-                        Long bytes = (Long) jtlType.convert(value);
-                        sample.setBytesReceived(bytes);
-                        break;
-                    case SENT_BYTES:
-                        Long sentBytes = (Long) jtlType.convert(value);
-                        sample.setBytesSent(sentBytes);
-                        break;
-                    case URL:
-                        String url = (String) jtlType.convert(value);
-                        Integer urlRef = urlLookup.get(url);
-                        if (urlRef == null) {
-                            urlRef = (int) (urlLookup.size() + 1);
-                            urlLookup.put(url, urlRef);
-                            urls.add(url);
-                        }
-                        sample.setLabelRef(urlRef);
-                        break;
-                    case ALL_THREADS:
-                        Integer allThreads = (Integer) jtlType.convert(value);
-                        sample.setCurrentThreads(allThreads);
-                        break;
-                    default:
-                        LOGGER.debug(jtlType + " not used.");
-                }
-            }
-            return sample;
-        }
-
-        boolean hasLabels() {
-            return !labels.isEmpty();
-        }
-
-        Entry getLabelsEntry() {
-            return new Entry(new StringArray("labels", Collections.unmodifiableList(labels)));
-        }
-
-        boolean hasUrls() {
-            return !urls.isEmpty();
-        }
-
-        Entry getUrlsEntry() {
-            return new Entry(new StringArray("urls", Collections.unmodifiableList(urls)));
         }
 
     }
