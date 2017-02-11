@@ -16,7 +16,6 @@
 package com.redsaz.meterrier.importer;
 
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.importer.model.Entry;
 import com.redsaz.meterrier.importer.model.HttpSample;
@@ -24,10 +23,8 @@ import com.redsaz.meterrier.importer.model.Metadata;
 import com.redsaz.meterrier.importer.model.StringArray;
 import com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +54,6 @@ public class CsvJtlToAvroConverter implements Converter {
 
     @Override
     public void convert(File source, File dest) {
-        oldConvert(source, new File("jtls/real-columntrimmed.csv"));
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
         LOGGER.debug("Converting {} to {}...", source, dest);
@@ -66,49 +62,6 @@ public class CsvJtlToAvroConverter implements Converter {
             IntermediateInfo info = csvToIntermediate(source, intermediateData);
             info.writeAvro(intermediateData, dest);
             totalRows = info.numRows;
-        } catch (RuntimeException | IOException ex) {
-            throw new AppServerException("Unable to process import.", ex);
-        }
-        LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
-    }
-
-    public void oldConvert(File source, File dest) {
-        long startMillis = System.currentTimeMillis();
-        long totalRows = 0;
-        LOGGER.debug("Converting {} to {}...", source, dest);
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(source));
-            CSVReader reader = new CSVReader(br);
-            Iterator<String[]> csvIter = reader.iterator();
-            JtlRowToJtlRow j2j = null;
-            if (csvIter.hasNext()) {
-                String[] headers = csvIter.next();
-                j2j = new JtlRowToJtlRow(headers,
-                        JtlType.TIMESTAMP,
-                        JtlType.ELAPSED,
-                        JtlType.LABEL,
-                        JtlType.RESPONSE_CODE,
-                        JtlType.THREAD_NAME,
-                        JtlType.SUCCESS,
-                        JtlType.BYTES,
-                        JtlType.SENT_BYTES,
-                        JtlType.ALL_THREADS,
-                        JtlType.URL
-                );
-            } else {
-                throw new RuntimeException("No headers defined.");
-            }
-
-            try (
-                    BufferedWriter bw = new BufferedWriter(new FileWriter("jtls/real-columntrimmed.jtl"));
-                    CSVWriter writer = new CSVWriter(bw)) {
-                writer.writeNext(j2j.getHeaders(), false);
-                while (csvIter.hasNext()) {
-                    String[] row = csvIter.next();
-                    ++totalRows;
-                    writer.writeNext(j2j.convert(row), false);
-                }
-            }
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to process import.", ex);
         }

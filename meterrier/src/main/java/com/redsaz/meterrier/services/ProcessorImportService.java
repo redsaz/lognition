@@ -23,6 +23,7 @@ import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.importer.AvroToCsvJtlConverter;
 import com.redsaz.meterrier.importer.Converter;
 import com.redsaz.meterrier.importer.CsvJtlToAvroConverter;
+import com.redsaz.meterrier.importer.CsvJtlToCsvJtlConverter;
 import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -103,8 +104,16 @@ public class ProcessorImportService implements ImportService {
 
         @Override
         public ImportInfo call() throws Exception {
+            LOGGER.info("Make a 1:1 baseline jtl which has all the information kept in our avro form.");
+            File baselineDest = new File("jtls/real-columntrimmed.csv");
+            Converter c2c = new CsvJtlToCsvJtlConverter();
+            c2c.convert(new File(source.getImportedFilename()), baselineDest);
+
+            LOGGER.info("Now do the actual conversion.");
             File dest = new File("jtls/real.avro");
             conv.convert(new File(source.getImportedFilename()), dest);
+
+            LOGGER.info("Now export it back to a jtl for comparison against the baseline.");
             Converter a2j = new AvroToCsvJtlConverter();
             a2j.convert(dest, new File("jtls/should-equal-real-columntrimmed.jtl"));
             return source;
