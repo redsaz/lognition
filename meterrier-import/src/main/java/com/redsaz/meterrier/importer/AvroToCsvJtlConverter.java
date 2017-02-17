@@ -73,7 +73,7 @@ public class AvroToCsvJtlConverter implements Converter {
 
         private long earliestMillis = 0;
         private long latestMillis = 0;
-        private StatusCodeLookup codes = new StatusCodeLookup();
+        private StatusCodeLookup codes;
         private List<CharSequence> labels;
         private List<CharSequence> threadNames;
         private List<CharSequence> urls;
@@ -85,12 +85,15 @@ public class AvroToCsvJtlConverter implements Converter {
             LOGGER.debug("Initializing converter for {}", source);
             DatumReader<Entry> userDatumReader = new SpecificDatumReader<>(Entry.class);
             try (DataFileReader<Entry> dataFileReader = new DataFileReader<>(source, userDatumReader)) {
+                List<CharSequence> customCodes = null;
+                List<CharSequence> customMessages = null;
                 while (dataFileReader.hasNext()) {
                     Entry entry = dataFileReader.next();
                     if (entry.getItem() instanceof HttpSample) {
                         HttpSample hs = (HttpSample) entry.getItem();
                         if (hs.getResponseCodeRef() != 0) {
                             usedFields.add(JtlType.RESPONSE_CODE);
+                            usedFields.add(JtlType.RESPONSE_MESSAGE);
                         }
                         if (hs.getBytesReceived() != -1) {
                             usedFields.add(JtlType.BYTES);
@@ -111,6 +114,10 @@ public class AvroToCsvJtlConverter implements Converter {
                         } else if ("urls".equals(name)) {
                             urls = sa.getValues();
                             usedFields.add(JtlType.URL);
+                        } else if ("codes".equals(name)) {
+                            customCodes = sa.getValues();
+                        } else if ("messages".equals(name)) {
+                            customMessages = sa.getValues();
                         }
                     } else if (entry.getItem() instanceof Metadata) {
                         Metadata md = (Metadata) entry.getItem();
@@ -118,6 +125,7 @@ public class AvroToCsvJtlConverter implements Converter {
                         latestMillis = md.getLatestMillisUtc();
                     }
                 }
+                codes = new StatusCodeLookup(customCodes, customMessages);
             } catch (RuntimeException | IOException ex) {
                 throw new AppServerException("Unable to process import.", ex);
             }
@@ -135,15 +143,43 @@ public class AvroToCsvJtlConverter implements Converter {
         }
 
         public String[] convert(HttpSample hs) {
-            String[] result = new String[]{
-                Long.toString(earliestMillis + hs.getMillisOffset()),
-                hs.getMillisElapsed().toString(),
-                labels.get(hs.getLabelRef() - 1).toString(),
-                codes.getCode(hs.getResponseCodeRef()).toString(),
-                threadNames.get(hs.getThreadNameRef() - 1).toString(),
-                hs.getSuccess().toString(),
-                hs.getBytesReceived().toString(),
-                hs.getCurrentThreads().toString()};
+            String[] result = new String[usedFields.size()];
+            int index = 0;
+            for (JtlType field : usedFields) {
+                switch (field) {
+                    case TIMESTAMP:
+                        result[index] = Long.toString(earliestMillis + hs.getMillisOffset());
+                        break;
+                    case ELAPSED:
+                        result[index] = hs.getMillisElapsed().toString();
+                        break;
+                    case LABEL:
+                        result[index] = labels.get(hs.getLabelRef() - 1).toString();
+                        break;
+                    case RESPONSE_CODE:
+                        result[index] = codes.getCode(hs.getResponseCodeRef()).toString();
+                        break;
+                    case RESPONSE_MESSAGE:
+                        result[index] = codes.getMessage(hs.getResponseCodeRef()).toString();
+                        break;
+                    case THREAD_NAME:
+                        result[index] = threadNames.get(hs.getThreadNameRef() - 1).toString();
+                        break;
+                    case SUCCESS:
+                        result[index] = hs.getSuccess().toString();
+                        break;
+                    case BYTES:
+                        result[index] = hs.getBytesReceived().toString();
+                        break;
+                    case ALL_THREADS:
+                        result[index] = hs.getCurrentThreads().toString();
+                        break;
+                    default:
+                        LOGGER.warn("Ignoring " + field.csvName() + " because don't know how to convert to CSV form.");
+                }
+                ++index;
+            }
+
             return result;
         }
     }

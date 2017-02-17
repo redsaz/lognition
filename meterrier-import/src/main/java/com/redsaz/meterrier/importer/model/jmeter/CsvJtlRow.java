@@ -10,13 +10,13 @@ import org.apache.avro.specific.SpecificData;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -4755723180581133983L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CsvJtlRow\",\"namespace\":\"com.redsaz.meterrier.importer.model.jmeter\",\"fields\":[{\"name\":\"timeStamp\",\"type\":[\"null\",\"long\"]},{\"name\":\"elapsed\",\"type\":[\"null\",\"long\"]},{\"name\":\"label\",\"type\":[\"null\",\"string\"]},{\"name\":\"responseCode\",\"type\":[\"null\",\"int\"]},{\"name\":\"responseMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"threadName\",\"type\":[\"null\",\"string\"]},{\"name\":\"dataType\",\"type\":[\"null\",\"string\"]},{\"name\":\"success\",\"type\":[\"null\",\"boolean\"]},{\"name\":\"failureMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"bytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"sentBytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"grpThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"allThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"URL\",\"type\":[\"null\",\"string\"]},{\"name\":\"Filename\",\"type\":[\"null\",\"string\"]},{\"name\":\"Latency\",\"type\":[\"null\",\"int\"]},{\"name\":\"connect\",\"type\":[\"null\",\"int\"]},{\"name\":\"encoding\",\"type\":[\"null\",\"string\"]},{\"name\":\"SampleCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"ErrorCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"Hostname\",\"type\":[\"null\",\"string\"]},{\"name\":\"IdleTime\",\"type\":[\"null\",\"int\"]},{\"name\":\"Variables\",\"type\":[\"null\",\"string\"]}]}");
+  private static final long serialVersionUID = -4559987656238475299L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CsvJtlRow\",\"namespace\":\"com.redsaz.meterrier.importer.model.jmeter\",\"fields\":[{\"name\":\"timeStamp\",\"type\":[\"null\",\"long\"]},{\"name\":\"elapsed\",\"type\":[\"null\",\"long\"]},{\"name\":\"label\",\"type\":[\"null\",\"string\"]},{\"name\":\"responseCode\",\"type\":[\"null\",\"string\"]},{\"name\":\"responseMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"threadName\",\"type\":[\"null\",\"string\"]},{\"name\":\"dataType\",\"type\":[\"null\",\"string\"]},{\"name\":\"success\",\"type\":[\"null\",\"boolean\"]},{\"name\":\"failureMessage\",\"type\":[\"null\",\"string\"]},{\"name\":\"bytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"sentBytes\",\"type\":[\"null\",\"long\"]},{\"name\":\"grpThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"allThreads\",\"type\":[\"null\",\"int\"]},{\"name\":\"URL\",\"type\":[\"null\",\"string\"]},{\"name\":\"Filename\",\"type\":[\"null\",\"string\"]},{\"name\":\"Latency\",\"type\":[\"null\",\"int\"]},{\"name\":\"connect\",\"type\":[\"null\",\"int\"]},{\"name\":\"encoding\",\"type\":[\"null\",\"string\"]},{\"name\":\"SampleCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"ErrorCount\",\"type\":[\"null\",\"int\"]},{\"name\":\"Hostname\",\"type\":[\"null\",\"string\"]},{\"name\":\"IdleTime\",\"type\":[\"null\",\"int\"]},{\"name\":\"Variables\",\"type\":[\"null\",\"string\"]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public java.lang.Long timeStamp;
   @Deprecated public java.lang.Long elapsed;
   @Deprecated public java.lang.CharSequence label;
-  @Deprecated public java.lang.Integer responseCode;
+  @Deprecated public java.lang.CharSequence responseCode;
   @Deprecated public java.lang.CharSequence responseMessage;
   @Deprecated public java.lang.CharSequence threadName;
   @Deprecated public java.lang.CharSequence dataType;
@@ -70,7 +70,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
    * @param IdleTime The new value for IdleTime
    * @param Variables The new value for Variables
    */
-  public CsvJtlRow(java.lang.Long timeStamp, java.lang.Long elapsed, java.lang.CharSequence label, java.lang.Integer responseCode, java.lang.CharSequence responseMessage, java.lang.CharSequence threadName, java.lang.CharSequence dataType, java.lang.Boolean success, java.lang.CharSequence failureMessage, java.lang.Long bytes, java.lang.Long sentBytes, java.lang.Integer grpThreads, java.lang.Integer allThreads, java.lang.CharSequence URL, java.lang.CharSequence Filename, java.lang.Integer Latency, java.lang.Integer connect, java.lang.CharSequence encoding, java.lang.Integer SampleCount, java.lang.Integer ErrorCount, java.lang.CharSequence Hostname, java.lang.Integer IdleTime, java.lang.CharSequence Variables) {
+  public CsvJtlRow(java.lang.Long timeStamp, java.lang.Long elapsed, java.lang.CharSequence label, java.lang.CharSequence responseCode, java.lang.CharSequence responseMessage, java.lang.CharSequence threadName, java.lang.CharSequence dataType, java.lang.Boolean success, java.lang.CharSequence failureMessage, java.lang.Long bytes, java.lang.Long sentBytes, java.lang.Integer grpThreads, java.lang.Integer allThreads, java.lang.CharSequence URL, java.lang.CharSequence Filename, java.lang.Integer Latency, java.lang.Integer connect, java.lang.CharSequence encoding, java.lang.Integer SampleCount, java.lang.Integer ErrorCount, java.lang.CharSequence Hostname, java.lang.Integer IdleTime, java.lang.CharSequence Variables) {
     this.timeStamp = timeStamp;
     this.elapsed = elapsed;
     this.label = label;
@@ -134,7 +134,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
     case 0: timeStamp = (java.lang.Long)value$; break;
     case 1: elapsed = (java.lang.Long)value$; break;
     case 2: label = (java.lang.CharSequence)value$; break;
-    case 3: responseCode = (java.lang.Integer)value$; break;
+    case 3: responseCode = (java.lang.CharSequence)value$; break;
     case 4: responseMessage = (java.lang.CharSequence)value$; break;
     case 5: threadName = (java.lang.CharSequence)value$; break;
     case 6: dataType = (java.lang.CharSequence)value$; break;
@@ -210,7 +210,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
    * Gets the value of the 'responseCode' field.
    * @return The value of the 'responseCode' field.
    */
-  public java.lang.Integer getResponseCode() {
+  public java.lang.CharSequence getResponseCode() {
     return responseCode;
   }
 
@@ -218,7 +218,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
    * Sets the value of the 'responseCode' field.
    * @param value the value to set.
    */
-  public void setResponseCode(java.lang.Integer value) {
+  public void setResponseCode(java.lang.CharSequence value) {
     this.responseCode = value;
   }
 
@@ -561,7 +561,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
     private java.lang.Long timeStamp;
     private java.lang.Long elapsed;
     private java.lang.CharSequence label;
-    private java.lang.Integer responseCode;
+    private java.lang.CharSequence responseCode;
     private java.lang.CharSequence responseMessage;
     private java.lang.CharSequence threadName;
     private java.lang.CharSequence dataType;
@@ -908,7 +908,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
       * Gets the value of the 'responseCode' field.
       * @return The value.
       */
-    public java.lang.Integer getResponseCode() {
+    public java.lang.CharSequence getResponseCode() {
       return responseCode;
     }
 
@@ -917,7 +917,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
       * @param value The value of 'responseCode'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow.Builder setResponseCode(java.lang.Integer value) {
+    public com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow.Builder setResponseCode(java.lang.CharSequence value) {
       validate(fields()[3], value);
       this.responseCode = value;
       fieldSetFlags()[3] = true;
@@ -1691,7 +1691,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase imple
         record.timeStamp = fieldSetFlags()[0] ? this.timeStamp : (java.lang.Long) defaultValue(fields()[0]);
         record.elapsed = fieldSetFlags()[1] ? this.elapsed : (java.lang.Long) defaultValue(fields()[1]);
         record.label = fieldSetFlags()[2] ? this.label : (java.lang.CharSequence) defaultValue(fields()[2]);
-        record.responseCode = fieldSetFlags()[3] ? this.responseCode : (java.lang.Integer) defaultValue(fields()[3]);
+        record.responseCode = fieldSetFlags()[3] ? this.responseCode : (java.lang.CharSequence) defaultValue(fields()[3]);
         record.responseMessage = fieldSetFlags()[4] ? this.responseMessage : (java.lang.CharSequence) defaultValue(fields()[4]);
         record.threadName = fieldSetFlags()[5] ? this.threadName : (java.lang.CharSequence) defaultValue(fields()[5]);
         record.dataType = fieldSetFlags()[6] ? this.dataType : (java.lang.CharSequence) defaultValue(fields()[6]);

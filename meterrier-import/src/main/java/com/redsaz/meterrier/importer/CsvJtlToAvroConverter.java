@@ -127,6 +127,9 @@ public class CsvJtlToAvroConverter implements Converter {
             if (row.getThreadName() != null) {
                 threadNames.add(row.getThreadName());
             }
+            if (row.getResponseCode() != null) {
+                statusCodeLookup.getRef(row.getResponseCode(), row.getResponseMessage());
+            }
         }
 
         /**
@@ -159,6 +162,14 @@ public class CsvJtlToAvroConverter implements Converter {
                 if (!urls.isEmpty()) {
                     Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<CharSequence>(urls)));
                     dataFileWriter.append(urlsEntry);
+                }
+                List<CharSequence> codes = statusCodeLookup.getCustomCodes();
+                List<CharSequence> messages = statusCodeLookup.getCustomMessages();
+                if (codes != null && !codes.isEmpty()) {
+                    Entry codesEntry = new Entry(new StringArray("codes", codes));
+                    dataFileWriter.append(codesEntry);
+                    Entry messagesEntry = new Entry(new StringArray("messages", messages));
+                    dataFileWriter.append(messagesEntry);
                 }
                 while (reader.hasNext()) {
                     CsvJtlRow row = reader.next();
@@ -195,7 +206,7 @@ public class CsvJtlToAvroConverter implements Converter {
             hs.setLabelRef(labelRef);
             hs.setMillisElapsed(longOrDefault(row.getElapsed(), 0));
             hs.setMillisOffset(row.getTimeStamp() - earliest);
-            hs.setResponseCodeRef(statusCodeLookup.getRef(row.getResponseCode()));
+            hs.setResponseCodeRef(statusCodeLookup.getRef(row.getResponseCode(), row.getResponseMessage()));
             hs.setSuccess(booleanOrDefault(row.getSuccess(), true));
             hs.setThreadNameRef(threadNameLookup.getOrDefault(row.getThreadName(), 0));
 

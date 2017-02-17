@@ -50,10 +50,10 @@ enum JtlType {
         }
     },
     // e.g. 200, 404
-    RESPONSE_CODE("responseCode", FromStrings.INTEGER_FS_OR_ZERO) {
+    RESPONSE_CODE("responseCode", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setResponseCode((Integer) convert(value));
+            dest.setResponseCode((String) convert(value));
             return dest;
         }
     },

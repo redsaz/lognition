@@ -5,7 +5,7 @@
         {"name": "timeStamp", "type": ["null", "long"]},
         {"name": "elapsed", "type": ["null", "long"]},
         {"name": "label", "type": ["null", "string"]},
-        {"name": "responseCode", "type": ["null", "int"]},
+        {"name": "responseCode", "type": ["null", "string"]},
         {"name": "responseMessage", "type": ["null", "string"]},
         {"name": "threadName", "type": ["null", "string"]},
         {"name": "dataType", "type": ["null", "string"]},

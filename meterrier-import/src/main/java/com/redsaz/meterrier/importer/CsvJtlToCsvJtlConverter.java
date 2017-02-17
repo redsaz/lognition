@@ -54,6 +54,7 @@ public class CsvJtlToCsvJtlConverter implements Converter {
                         JtlType.ELAPSED,
                         JtlType.LABEL,
                         JtlType.RESPONSE_CODE,
+                        JtlType.RESPONSE_MESSAGE,
                         JtlType.THREAD_NAME,
                         JtlType.SUCCESS,
                         JtlType.BYTES,
