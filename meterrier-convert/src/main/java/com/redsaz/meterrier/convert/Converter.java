@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.importer;
+package com.redsaz.meterrier.convert;
+
+import java.io.File;
 
 /**
- * Convert from a string into a type.
+ * Convert a source file into a dest file.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-interface FromString<T> {
+public interface Converter {
 
-    T fromString(String str);
+    void convert(File source, File dest);
 
 }

@@ -3,15 +3,15 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package com.redsaz.meterrier.importer.model;
+package com.redsaz.meterrier.convert.model;
 
 import org.apache.avro.specific.SpecificData;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class Entry extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -420641785219995174L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Entry\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"item\",\"type\":[{\"type\":\"record\",\"name\":\"HttpSample\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]},{\"type\":\"record\",\"name\":\"StringArray\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"values\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]},{\"type\":\"record\",\"name\":\"Metadata\",\"fields\":[{\"name\":\"earliestMillisUtc\",\"type\":\"long\"},{\"name\":\"LatestMillisUtc\",\"type\":\"long\"},{\"name\":\"totalEntries\",\"type\":\"long\"}]}]}]}");
+  private static final long serialVersionUID = -2621906862807531064L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Entry\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"item\",\"type\":[{\"type\":\"record\",\"name\":\"HttpSample\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]},{\"type\":\"record\",\"name\":\"StringArray\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"values\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]},{\"type\":\"record\",\"name\":\"Metadata\",\"fields\":[{\"name\":\"earliestMillisUtc\",\"type\":\"long\"},{\"name\":\"LatestMillisUtc\",\"type\":\"long\"},{\"name\":\"totalEntries\",\"type\":\"long\"}]}]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public java.lang.Object item;
 
@@ -68,8 +68,8 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
    * Creates a new Entry RecordBuilder.
    * @return A new Entry RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Entry.Builder newBuilder() {
-    return new com.redsaz.meterrier.importer.model.Entry.Builder();
+  public static com.redsaz.meterrier.convert.model.Entry.Builder newBuilder() {
+    return new com.redsaz.meterrier.convert.model.Entry.Builder();
   }
 
   /**
@@ -77,8 +77,8 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
    * @param other The existing builder to copy.
    * @return A new Entry RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Entry.Builder newBuilder(com.redsaz.meterrier.importer.model.Entry.Builder other) {
-    return new com.redsaz.meterrier.importer.model.Entry.Builder(other);
+  public static com.redsaz.meterrier.convert.model.Entry.Builder newBuilder(com.redsaz.meterrier.convert.model.Entry.Builder other) {
+    return new com.redsaz.meterrier.convert.model.Entry.Builder(other);
   }
 
   /**
@@ -86,8 +86,8 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
    * @param other The existing instance to copy.
    * @return A new Entry RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Entry.Builder newBuilder(com.redsaz.meterrier.importer.model.Entry other) {
-    return new com.redsaz.meterrier.importer.model.Entry.Builder(other);
+  public static com.redsaz.meterrier.convert.model.Entry.Builder newBuilder(com.redsaz.meterrier.convert.model.Entry other) {
+    return new com.redsaz.meterrier.convert.model.Entry.Builder(other);
   }
 
   /**
@@ -107,7 +107,7 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.Entry.Builder other) {
+    private Builder(com.redsaz.meterrier.convert.model.Entry.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.item)) {
         this.item = data().deepCopy(fields()[0].schema(), other.item);
@@ -119,7 +119,7 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
      * Creates a Builder by copying an existing Entry instance
      * @param other The existing instance to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.Entry other) {
+    private Builder(com.redsaz.meterrier.convert.model.Entry other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.item)) {
         this.item = data().deepCopy(fields()[0].schema(), other.item);
@@ -140,7 +140,7 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
       * @param value The value of 'item'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Entry.Builder setItem(java.lang.Object value) {
+    public com.redsaz.meterrier.convert.model.Entry.Builder setItem(java.lang.Object value) {
       validate(fields()[0], value);
       this.item = value;
       fieldSetFlags()[0] = true;
@@ -160,7 +160,7 @@ public class Entry extends org.apache.avro.specific.SpecificRecordBase implement
       * Clears the value of the 'item' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Entry.Builder clearItem() {
+    public com.redsaz.meterrier.convert.model.Entry.Builder clearItem() {
       item = null;
       fieldSetFlags()[0] = false;
       return this;

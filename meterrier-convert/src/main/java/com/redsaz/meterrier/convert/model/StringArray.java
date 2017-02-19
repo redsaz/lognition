@@ -3,15 +3,15 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package com.redsaz.meterrier.importer.model;
+package com.redsaz.meterrier.convert.model;
 
 import org.apache.avro.specific.SpecificData;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class StringArray extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -4499591480627730177L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"StringArray\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"values\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}");
+  private static final long serialVersionUID = -6682847232871548443L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"StringArray\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"values\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public java.lang.CharSequence name;
   @Deprecated public java.util.List<java.lang.CharSequence> values;
@@ -89,8 +89,8 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
    * Creates a new StringArray RecordBuilder.
    * @return A new StringArray RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.StringArray.Builder newBuilder() {
-    return new com.redsaz.meterrier.importer.model.StringArray.Builder();
+  public static com.redsaz.meterrier.convert.model.StringArray.Builder newBuilder() {
+    return new com.redsaz.meterrier.convert.model.StringArray.Builder();
   }
 
   /**
@@ -98,8 +98,8 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
    * @param other The existing builder to copy.
    * @return A new StringArray RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.StringArray.Builder newBuilder(com.redsaz.meterrier.importer.model.StringArray.Builder other) {
-    return new com.redsaz.meterrier.importer.model.StringArray.Builder(other);
+  public static com.redsaz.meterrier.convert.model.StringArray.Builder newBuilder(com.redsaz.meterrier.convert.model.StringArray.Builder other) {
+    return new com.redsaz.meterrier.convert.model.StringArray.Builder(other);
   }
 
   /**
@@ -107,8 +107,8 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
    * @param other The existing instance to copy.
    * @return A new StringArray RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.StringArray.Builder newBuilder(com.redsaz.meterrier.importer.model.StringArray other) {
-    return new com.redsaz.meterrier.importer.model.StringArray.Builder(other);
+  public static com.redsaz.meterrier.convert.model.StringArray.Builder newBuilder(com.redsaz.meterrier.convert.model.StringArray other) {
+    return new com.redsaz.meterrier.convert.model.StringArray.Builder(other);
   }
 
   /**
@@ -129,7 +129,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.StringArray.Builder other) {
+    private Builder(com.redsaz.meterrier.convert.model.StringArray.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.name)) {
         this.name = data().deepCopy(fields()[0].schema(), other.name);
@@ -145,7 +145,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
      * Creates a Builder by copying an existing StringArray instance
      * @param other The existing instance to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.StringArray other) {
+    private Builder(com.redsaz.meterrier.convert.model.StringArray other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.name)) {
         this.name = data().deepCopy(fields()[0].schema(), other.name);
@@ -170,7 +170,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'name'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.StringArray.Builder setName(java.lang.CharSequence value) {
+    public com.redsaz.meterrier.convert.model.StringArray.Builder setName(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.name = value;
       fieldSetFlags()[0] = true;
@@ -190,7 +190,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'name' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.StringArray.Builder clearName() {
+    public com.redsaz.meterrier.convert.model.StringArray.Builder clearName() {
       name = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -209,7 +209,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
       * @param value The value of 'values'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.StringArray.Builder setValues(java.util.List<java.lang.CharSequence> value) {
+    public com.redsaz.meterrier.convert.model.StringArray.Builder setValues(java.util.List<java.lang.CharSequence> value) {
       validate(fields()[1], value);
       this.values = value;
       fieldSetFlags()[1] = true;
@@ -229,7 +229,7 @@ public class StringArray extends org.apache.avro.specific.SpecificRecordBase imp
       * Clears the value of the 'values' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.StringArray.Builder clearValues() {
+    public com.redsaz.meterrier.convert.model.StringArray.Builder clearValues() {
       values = null;
       fieldSetFlags()[1] = false;
       return this;

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.importer;
+package com.redsaz.meterrier.convert;
 
 import com.opencsv.CSVReader;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.importer.model.Entry;
-import com.redsaz.meterrier.importer.model.HttpSample;
-import com.redsaz.meterrier.importer.model.Metadata;
-import com.redsaz.meterrier.importer.model.StringArray;
-import com.redsaz.meterrier.importer.model.jmeter.CsvJtlRow;
+import com.redsaz.meterrier.convert.model.Entry;
+import com.redsaz.meterrier.convert.model.HttpSample;
+import com.redsaz.meterrier.convert.model.Metadata;
+import com.redsaz.meterrier.convert.model.StringArray;
+import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

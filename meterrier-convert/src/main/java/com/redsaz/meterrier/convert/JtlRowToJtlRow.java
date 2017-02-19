@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.importer;
+package com.redsaz.meterrier.convert;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.meterrier.importer;
+package com.redsaz.meterrier.convert;
 
-import com.redsaz.meterrier.importer.model.HttpSample;
+import com.redsaz.meterrier.convert.model.HttpSample;
 
 /**
  * Defines columns that can be stored in a generic http sample log, and the

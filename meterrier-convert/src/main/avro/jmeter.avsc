@@ -1,4 +1,4 @@
-[{"namespace": "com.redsaz.meterrier.importer.model.jmeter",
+[{"namespace": "com.redsaz.meterrier.convert.model.jmeter",
   "type": "record",
   "name": "CsvJtlRow",
     "fields": [

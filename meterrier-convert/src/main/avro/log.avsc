@@ -1,4 +1,4 @@
-[{"namespace": "com.redsaz.meterrier.importer.model",
+[{"namespace": "com.redsaz.meterrier.convert.model",
   "type": "record",
   "name": "HttpSample",
     "fields": [
@@ -12,7 +12,7 @@
         {"name": "currentThreads", "type": "int", "default": 0}
     ]
 },
-{"namespace": "com.redsaz.meterrier.importer.model",
+{"namespace": "com.redsaz.meterrier.convert.model",
   "type": "record",
   "name": "StringArray",
     "fields": [
@@ -20,7 +20,7 @@
         {"name": "values", "type": {"type": "array", "items": "string"}}
     ]
 },
-{"namespace": "com.redsaz.meterrier.importer.model",
+{"namespace": "com.redsaz.meterrier.convert.model",
   "type": "record",
   "name": "Metadata",
     "fields": [
@@ -29,7 +29,7 @@
         {"name": "totalEntries", "type": "long"}
     ]
 },
-{"namespace": "com.redsaz.meterrier.importer.model",
+{"namespace": "com.redsaz.meterrier.convert.model",
   "type": "record",
   "name": "Entry",
     "fields": [

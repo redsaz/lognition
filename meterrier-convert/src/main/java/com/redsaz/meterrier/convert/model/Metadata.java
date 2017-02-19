@@ -3,15 +3,15 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package com.redsaz.meterrier.importer.model;
+package com.redsaz.meterrier.convert.model;
 
 import org.apache.avro.specific.SpecificData;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class Metadata extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -8798755654355775569L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Metadata\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"earliestMillisUtc\",\"type\":\"long\"},{\"name\":\"LatestMillisUtc\",\"type\":\"long\"},{\"name\":\"totalEntries\",\"type\":\"long\"}]}");
+  private static final long serialVersionUID = 1359482586717090792L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Metadata\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"earliestMillisUtc\",\"type\":\"long\"},{\"name\":\"LatestMillisUtc\",\"type\":\"long\"},{\"name\":\"totalEntries\",\"type\":\"long\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public long earliestMillisUtc;
   @Deprecated public long LatestMillisUtc;
@@ -110,8 +110,8 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
    * Creates a new Metadata RecordBuilder.
    * @return A new Metadata RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Metadata.Builder newBuilder() {
-    return new com.redsaz.meterrier.importer.model.Metadata.Builder();
+  public static com.redsaz.meterrier.convert.model.Metadata.Builder newBuilder() {
+    return new com.redsaz.meterrier.convert.model.Metadata.Builder();
   }
 
   /**
@@ -119,8 +119,8 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
    * @param other The existing builder to copy.
    * @return A new Metadata RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Metadata.Builder newBuilder(com.redsaz.meterrier.importer.model.Metadata.Builder other) {
-    return new com.redsaz.meterrier.importer.model.Metadata.Builder(other);
+  public static com.redsaz.meterrier.convert.model.Metadata.Builder newBuilder(com.redsaz.meterrier.convert.model.Metadata.Builder other) {
+    return new com.redsaz.meterrier.convert.model.Metadata.Builder(other);
   }
 
   /**
@@ -128,8 +128,8 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
    * @param other The existing instance to copy.
    * @return A new Metadata RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.Metadata.Builder newBuilder(com.redsaz.meterrier.importer.model.Metadata other) {
-    return new com.redsaz.meterrier.importer.model.Metadata.Builder(other);
+  public static com.redsaz.meterrier.convert.model.Metadata.Builder newBuilder(com.redsaz.meterrier.convert.model.Metadata other) {
+    return new com.redsaz.meterrier.convert.model.Metadata.Builder(other);
   }
 
   /**
@@ -151,7 +151,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.Metadata.Builder other) {
+    private Builder(com.redsaz.meterrier.convert.model.Metadata.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.earliestMillisUtc)) {
         this.earliestMillisUtc = data().deepCopy(fields()[0].schema(), other.earliestMillisUtc);
@@ -171,7 +171,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
      * Creates a Builder by copying an existing Metadata instance
      * @param other The existing instance to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.Metadata other) {
+    private Builder(com.redsaz.meterrier.convert.model.Metadata other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.earliestMillisUtc)) {
         this.earliestMillisUtc = data().deepCopy(fields()[0].schema(), other.earliestMillisUtc);
@@ -200,7 +200,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'earliestMillisUtc'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder setEarliestMillisUtc(long value) {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder setEarliestMillisUtc(long value) {
       validate(fields()[0], value);
       this.earliestMillisUtc = value;
       fieldSetFlags()[0] = true;
@@ -220,7 +220,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'earliestMillisUtc' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder clearEarliestMillisUtc() {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder clearEarliestMillisUtc() {
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -238,7 +238,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'LatestMillisUtc'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder setLatestMillisUtc(long value) {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder setLatestMillisUtc(long value) {
       validate(fields()[1], value);
       this.LatestMillisUtc = value;
       fieldSetFlags()[1] = true;
@@ -258,7 +258,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'LatestMillisUtc' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder clearLatestMillisUtc() {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder clearLatestMillisUtc() {
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -276,7 +276,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'totalEntries'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder setTotalEntries(long value) {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder setTotalEntries(long value) {
       validate(fields()[2], value);
       this.totalEntries = value;
       fieldSetFlags()[2] = true;
@@ -296,7 +296,7 @@ public class Metadata extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'totalEntries' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.Metadata.Builder clearTotalEntries() {
+    public com.redsaz.meterrier.convert.model.Metadata.Builder clearTotalEntries() {
       fieldSetFlags()[2] = false;
       return this;
     }

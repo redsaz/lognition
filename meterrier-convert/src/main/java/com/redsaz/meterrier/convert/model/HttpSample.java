@@ -3,15 +3,15 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package com.redsaz.meterrier.importer.model;
+package com.redsaz.meterrier.convert.model;
 
 import org.apache.avro.specific.SpecificData;
 
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class HttpSample extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -230666768562542855L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.importer.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]}");
+  private static final long serialVersionUID = 6594127423200042219L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public long millisOffset;
   @Deprecated public long millisElapsed;
@@ -215,8 +215,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
    * Creates a new HttpSample RecordBuilder.
    * @return A new HttpSample RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.HttpSample.Builder newBuilder() {
-    return new com.redsaz.meterrier.importer.model.HttpSample.Builder();
+  public static com.redsaz.meterrier.convert.model.HttpSample.Builder newBuilder() {
+    return new com.redsaz.meterrier.convert.model.HttpSample.Builder();
   }
 
   /**
@@ -224,8 +224,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
    * @param other The existing builder to copy.
    * @return A new HttpSample RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.HttpSample.Builder newBuilder(com.redsaz.meterrier.importer.model.HttpSample.Builder other) {
-    return new com.redsaz.meterrier.importer.model.HttpSample.Builder(other);
+  public static com.redsaz.meterrier.convert.model.HttpSample.Builder newBuilder(com.redsaz.meterrier.convert.model.HttpSample.Builder other) {
+    return new com.redsaz.meterrier.convert.model.HttpSample.Builder(other);
   }
 
   /**
@@ -233,8 +233,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
    * @param other The existing instance to copy.
    * @return A new HttpSample RecordBuilder
    */
-  public static com.redsaz.meterrier.importer.model.HttpSample.Builder newBuilder(com.redsaz.meterrier.importer.model.HttpSample other) {
-    return new com.redsaz.meterrier.importer.model.HttpSample.Builder(other);
+  public static com.redsaz.meterrier.convert.model.HttpSample.Builder newBuilder(com.redsaz.meterrier.convert.model.HttpSample other) {
+    return new com.redsaz.meterrier.convert.model.HttpSample.Builder(other);
   }
 
   /**
@@ -261,7 +261,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.HttpSample.Builder other) {
+    private Builder(com.redsaz.meterrier.convert.model.HttpSample.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.millisOffset)) {
         this.millisOffset = data().deepCopy(fields()[0].schema(), other.millisOffset);
@@ -301,7 +301,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
      * Creates a Builder by copying an existing HttpSample instance
      * @param other The existing instance to copy.
      */
-    private Builder(com.redsaz.meterrier.importer.model.HttpSample other) {
+    private Builder(com.redsaz.meterrier.convert.model.HttpSample other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.millisOffset)) {
         this.millisOffset = data().deepCopy(fields()[0].schema(), other.millisOffset);
@@ -350,7 +350,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'millisOffset'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setMillisOffset(long value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setMillisOffset(long value) {
       validate(fields()[0], value);
       this.millisOffset = value;
       fieldSetFlags()[0] = true;
@@ -370,7 +370,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'millisOffset' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearMillisOffset() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearMillisOffset() {
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -388,7 +388,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'millisElapsed'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setMillisElapsed(long value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setMillisElapsed(long value) {
       validate(fields()[1], value);
       this.millisElapsed = value;
       fieldSetFlags()[1] = true;
@@ -408,7 +408,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'millisElapsed' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearMillisElapsed() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearMillisElapsed() {
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -426,7 +426,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'labelRef'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setLabelRef(int value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setLabelRef(int value) {
       validate(fields()[2], value);
       this.labelRef = value;
       fieldSetFlags()[2] = true;
@@ -446,7 +446,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'labelRef' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearLabelRef() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearLabelRef() {
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -464,7 +464,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'threadNameRef'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setThreadNameRef(int value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setThreadNameRef(int value) {
       validate(fields()[3], value);
       this.threadNameRef = value;
       fieldSetFlags()[3] = true;
@@ -484,7 +484,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'threadNameRef' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearThreadNameRef() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearThreadNameRef() {
       fieldSetFlags()[3] = false;
       return this;
     }
@@ -502,7 +502,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'responseCodeRef'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setResponseCodeRef(int value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setResponseCodeRef(int value) {
       validate(fields()[4], value);
       this.responseCodeRef = value;
       fieldSetFlags()[4] = true;
@@ -522,7 +522,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'responseCodeRef' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearResponseCodeRef() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearResponseCodeRef() {
       fieldSetFlags()[4] = false;
       return this;
     }
@@ -540,7 +540,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'success'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setSuccess(boolean value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setSuccess(boolean value) {
       validate(fields()[5], value);
       this.success = value;
       fieldSetFlags()[5] = true;
@@ -560,7 +560,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'success' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearSuccess() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearSuccess() {
       fieldSetFlags()[5] = false;
       return this;
     }
@@ -578,7 +578,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'bytesReceived'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setBytesReceived(long value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setBytesReceived(long value) {
       validate(fields()[6], value);
       this.bytesReceived = value;
       fieldSetFlags()[6] = true;
@@ -598,7 +598,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'bytesReceived' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearBytesReceived() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearBytesReceived() {
       fieldSetFlags()[6] = false;
       return this;
     }
@@ -616,7 +616,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * @param value The value of 'currentThreads'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder setCurrentThreads(int value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setCurrentThreads(int value) {
       validate(fields()[7], value);
       this.currentThreads = value;
       fieldSetFlags()[7] = true;
@@ -636,7 +636,7 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
       * Clears the value of the 'currentThreads' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.importer.model.HttpSample.Builder clearCurrentThreads() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearCurrentThreads() {
       fieldSetFlags()[7] = false;
       return this;
     }
