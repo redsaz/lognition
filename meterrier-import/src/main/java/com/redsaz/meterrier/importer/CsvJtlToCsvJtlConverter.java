@@ -67,7 +67,7 @@ public class CsvJtlToCsvJtlConverter implements Converter {
             }
 
             try (
-                    BufferedWriter bw = new BufferedWriter(new FileWriter("jtls/real-columntrimmed.jtl"));
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(dest));
                     CSVWriter writer = new CSVWriter(bw)) {
                 writer.writeNext(j2j.getHeaders(), false);
                 while (csvIter.hasNext()) {
