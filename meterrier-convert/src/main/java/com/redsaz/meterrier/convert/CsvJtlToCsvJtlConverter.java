@@ -29,7 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Convert a CSV-based JTL file into an Avro file.
+ * Convert a CSV-based JTL file into another CSV-based JTL file, but with
+ * different columns.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -77,7 +78,7 @@ public class CsvJtlToCsvJtlConverter implements Converter {
                 }
             }
         } catch (RuntimeException | IOException ex) {
-            throw new AppServerException("Unable to process import.", ex);
+            throw new AppServerException("Unable to convert file.", ex);
         }
         LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
     }

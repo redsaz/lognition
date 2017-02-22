@@ -18,7 +18,7 @@ package com.redsaz.meterrier.convert;
 import java.io.File;
 
 /**
- * Convert a source file into a dest file.
+ * Read in the source file, convert it, and write the conversion into dest.
  *
  * @author Redsaz <redsaz@gmail.com>
  */

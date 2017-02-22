@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Convert a CSV-based JTL file into an Avro file.
+ * Convert an Avro file into a CSV-based JTL file.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -63,7 +63,7 @@ public class AvroToCsvJtlConverter implements Converter {
                 }
             }
         } catch (RuntimeException | IOException ex) {
-            throw new AppServerException("Unable to process import.", ex);
+            throw new AppServerException("Unable to convert file.", ex);
         }
 
         LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
@@ -104,20 +104,30 @@ public class AvroToCsvJtlConverter implements Converter {
                     } else if (entry.getItem() instanceof StringArray) {
                         StringArray sa = (StringArray) entry.getItem();
                         String name = sa.getName().toString();
-                        LOGGER.info("Woo! Found {}!", name);
-                        if ("labels".equals(name)) {
-                            labels = sa.getValues();
-                            usedFields.add(JtlType.LABEL);
-                        } else if ("threadNames".equals(name)) {
-                            threadNames = sa.getValues();
-                            usedFields.add(JtlType.THREAD_NAME);
-                        } else if ("urls".equals(name)) {
-                            urls = sa.getValues();
-                            usedFields.add(JtlType.URL);
-                        } else if ("codes".equals(name)) {
-                            customCodes = sa.getValues();
-                        } else if ("messages".equals(name)) {
-                            customMessages = sa.getValues();
+                        if (null != name) {
+                            switch (name) {
+                                case "labels":
+                                    labels = sa.getValues();
+                                    usedFields.add(JtlType.LABEL);
+                                    break;
+                                case "threadNames":
+                                    threadNames = sa.getValues();
+                                    usedFields.add(JtlType.THREAD_NAME);
+                                    break;
+                                case "urls":
+                                    urls = sa.getValues();
+                                    usedFields.add(JtlType.URL);
+                                    break;
+                                case "codes":
+                                    customCodes = sa.getValues();
+                                    break;
+                                case "messages":
+                                    customMessages = sa.getValues();
+                                    break;
+                                default:
+                                    LOGGER.warn("Unknown StringArray in file {}: {}", source, name);
+                                    break;
+                            }
                         }
                     } else if (entry.getItem() instanceof Metadata) {
                         Metadata md = (Metadata) entry.getItem();
@@ -127,7 +137,7 @@ public class AvroToCsvJtlConverter implements Converter {
                 }
                 codes = new StatusCodeLookup(customCodes, customMessages);
             } catch (RuntimeException | IOException ex) {
-                throw new AppServerException("Unable to process import.", ex);
+                throw new AppServerException("Unable to convert file.", ex);
             }
             LOGGER.debug("Finished initializing converter in {}ms.", (System.currentTimeMillis() - startMillis));
         }
@@ -175,7 +185,8 @@ public class AvroToCsvJtlConverter implements Converter {
                         result[index] = hs.getCurrentThreads().toString();
                         break;
                     default:
-                        LOGGER.warn("Ignoring " + field.csvName() + " because don't know how to convert to CSV form.");
+                        LOGGER.warn("Ignoring {} because convertsion to CSV form is not known.", field.csvName());
+                        result[index] = null;
                 }
                 ++index;
             }

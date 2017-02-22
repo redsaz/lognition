@@ -54,18 +54,26 @@ public class CsvJtlToAvroConverter implements Converter {
 
     @Override
     public void convert(File source, File dest) {
+        File intermediateFile = new File(dest.getParent(), dest.getName() + ".intermediate");
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
-        LOGGER.debug("Converting {} to {}...", source, dest);
         try {
-            File intermediateData = new File("jtls/real-intermediate.avro");
-            IntermediateInfo info = csvToIntermediate(source, intermediateData);
-            info.writeAvro(intermediateData, dest);
+            LOGGER.debug("Converting {} to {}...", source, dest);
+            IntermediateInfo info = csvToIntermediate(source, intermediateFile);
+            info.writeAvro(intermediateFile, dest);
             totalRows = info.numRows;
         } catch (RuntimeException | IOException ex) {
-            throw new AppServerException("Unable to process import.", ex);
+            throw new AppServerException("Unable to convert file.", ex);
+        } finally {
+            if (intermediateFile.exists()) {
+                boolean success = intermediateFile.delete();
+                if (!success) {
+                    LOGGER.error("Could not delete intermediate file {}! It is no longer needed and must be deleted manually.", intermediateFile);
+                }
+            }
         }
-        LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
+        LOGGER.debug("{}ms to convert {} rows to {}.",
+                (System.currentTimeMillis() - startMillis), totalRows, dest);
     }
 
     private IntermediateInfo csvToIntermediate(File source, File dest) throws IOException {
@@ -150,17 +158,17 @@ public class CsvJtlToAvroConverter implements Converter {
                 dataFileWriter.append(new Entry(new Metadata(earliest, latest, numRows)));
                 Map<CharSequence, Integer> labelLookup = createLookup(labels);
                 if (!labels.isEmpty()) {
-                    Entry labelEntry = new Entry(new StringArray("labels", new ArrayList<CharSequence>(labels)));
+                    Entry labelEntry = new Entry(new StringArray("labels", new ArrayList<>(labels)));
                     dataFileWriter.append(labelEntry);
                 }
                 Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
                 if (!threadNames.isEmpty()) {
-                    Entry threadNamesEntry = new Entry(new StringArray("threadNames", new ArrayList<CharSequence>(threadNames)));
+                    Entry threadNamesEntry = new Entry(new StringArray("threadNames", new ArrayList<>(threadNames)));
                     dataFileWriter.append(threadNamesEntry);
                 }
                 Map<CharSequence, Integer> urlLookup = createLookup(urls);
                 if (!urls.isEmpty()) {
-                    Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<CharSequence>(urls)));
+                    Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<>(urls)));
                     dataFileWriter.append(urlsEntry);
                 }
                 List<CharSequence> codes = statusCodeLookup.getCustomCodes();
