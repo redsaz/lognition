@@ -20,7 +20,7 @@ package com.redsaz.meterrier.convert;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-interface FromString<T> {
+/*package protected*/ interface FromString<T> {
 
     T fromString(String str);
 

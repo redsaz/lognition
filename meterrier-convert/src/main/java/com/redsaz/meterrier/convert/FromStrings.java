@@ -20,58 +20,29 @@ package com.redsaz.meterrier.convert;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-class FromStrings {
+/*package protected*/ class FromStrings {
 
     // Don't instanciate Utility Classes.
     private FromStrings() {
     }
 
-    private static class IntegerFromString implements FromString<Integer> {
+    public static final FromString<Integer> INTEGER_FS = (String str) -> Integer.valueOf(str);
 
-        public Integer fromString(String str) {
+    public static final FromString<Integer> INTEGER_FS_OR_ZERO = (String str) -> {
+        if (str == null) {
+            return 0;
+        }
+        try {
             return Integer.valueOf(str);
+        } catch (NumberFormatException ex) {
+            return 0;
         }
-    }
+    };
 
-    private static class IntegerFromStringOrZero implements FromString<Integer> {
+    public static final FromString<Long> LONG_FS = (String str) -> Long.valueOf(str);
 
-        public Integer fromString(String str) {
-            if (str == null) {
-                return 0;
-            }
-            try {
-                return Integer.valueOf(str);
-            } catch (NumberFormatException ex) {
-                return 0;
-            }
-        }
-    }
+    public static final FromString<Boolean> BOOLEAN_FS = (String str) -> Boolean.valueOf(str);
 
-    private static class LongFromString implements FromString<Long> {
-
-        public Long fromString(String str) {
-            return Long.valueOf(str);
-        }
-    }
-
-    private static class BooleanFromString implements FromString<Boolean> {
-
-        public Boolean fromString(String str) {
-            return Boolean.valueOf(str);
-        }
-    }
-
-    private static class StringFromString implements FromString<String> {
-
-        public String fromString(String str) {
-            return str;
-        }
-    }
-
-    public static final FromString<?> INTEGER_FS = new IntegerFromString();
-    public static final FromString<?> INTEGER_FS_OR_ZERO = new IntegerFromStringOrZero();
-    public static final FromString<?> LONG_FS = new LongFromString();
-    public static final FromString<?> BOOLEAN_FS = new BooleanFromString();
-    public static final FromString<?> STRING_FS = new StringFromString();
+    public static final FromString<String> STRING_FS = (String str) -> str;
 
 }

@@ -209,7 +209,7 @@ public class CsvJtlToAvroConverter implements Converter {
             hs.setCurrentThreads(intOrDefault(row.getAllThreads(), 0));
             int labelRef = labelLookup.getOrDefault(row.getLabel(), 0);
             if (labelRef < 1) {
-                System.out.println("Huh? labelRef=" + labelRef);
+                LOGGER.warn("Bad labelRef={}", labelRef);
             }
             hs.setLabelRef(labelRef);
             hs.setMillisElapsed(longOrDefault(row.getElapsed(), 0));

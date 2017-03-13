@@ -24,7 +24,7 @@ import java.util.Map;
  * Defines columns that can be stored in a JTL CSV. See
  * https://jmeter.apache.org/usermanual/listeners.html
  */
-enum JtlType {
+/*package protected*/ enum JtlType {
     // in milliseconds since 1/1/1970
     TIMESTAMP("timeStamp", FromStrings.LONG_FS) {
         @Override

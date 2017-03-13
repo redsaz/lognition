@@ -99,7 +99,7 @@ class StatusCodeLookup {
         // we won't have to build this map, which basically go unused when
         // getting back codes and messages from refs.
         for (int i = 0; i < customCodes.size(); ++i) {
-            int ref = CUSTOM_START_REF + (customCodes.size() * CUSTOM_SPAN);
+            int ref = CUSTOM_START_REF + (i * CUSTOM_SPAN);
             String key = calcCodeAndMessage(customCodes.get(i), customMessages.get(i));
             customLookup.put(key, ref);
         }
