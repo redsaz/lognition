@@ -51,7 +51,7 @@ public class ProcessorImportService implements ImportService {
     private final Converter converter;
 
     public static void main(String[] args) throws Exception {
-        ImportInfo ii = new ImportInfo(0, "jtls/real-with-header.jtl", "title", "csv", 1234567890000L, "Good");
+        ImportInfo ii = new ImportInfo(0, "jtls/real-without-header.jtl", "title", "csv", 1234567890000L, "Good");
         Converter imp = new CsvJtlToAvroConverter();
         ImporterCallable ic = new ImporterCallable(imp, ii);
         ic.call();

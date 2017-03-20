@@ -157,11 +157,13 @@ public class MockPerfData {
         }
     }
 
-    public void createImportCsvFile(File dest) {
+    public void createImportCsvFile(File dest, boolean includeHeader) {
         StatusCodeLookup scl = new StatusCodeLookup(getCodes(), getMessages());
         try (BufferedWriter bw = Files.newBufferedWriter(dest.toPath());
                 PrintWriter pw = new PrintWriter(bw)) {
-            pw.println("timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+            if (includeHeader) {
+                pw.println("timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+            }
 
             for (int i = 0; i < getNumRows(); ++i) {
                 HttpSample hs = getRow(i);

@@ -54,7 +54,7 @@ public class CsvJtlToCsvJtlConverterTest extends ConverterBaseTest {
                         "Normally we don't see these"
                 ));
         File source = createTempFile("source", ".csv");
-        mpd.createImportCsvFile(source);
+        mpd.createImportCsvFile(source, true);
 
         File expectedDest = createTempFile("expected", ".csv");
         mpd.createExportedCsvFile(expectedDest);

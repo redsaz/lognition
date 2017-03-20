@@ -22,12 +22,9 @@ import com.redsaz.meterrier.convert.model.Metadata;
 import com.redsaz.meterrier.convert.model.StringArray;
 import difflib.DiffUtils;
 import difflib.Patch;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.avro.file.DataFileReader;
@@ -43,68 +40,38 @@ import org.testng.annotations.BeforeMethod;
  */
 public class ConverterBaseTest {
 
-    private File tempTestMethodDir;
-
-    public static void main(String[] args) throws IOException {
-        Path original = Files.createTempFile("original", ".txt");
-        try (BufferedWriter origWriter = Files.newBufferedWriter(original, StandardOpenOption.WRITE)) {
-            origWriter.append("Line 1");
-            origWriter.newLine();
-            origWriter.append("Line 2");
-            origWriter.newLine();
-            origWriter.append("Line 3");
-            origWriter.newLine();
-            origWriter.append("Line 4");
-            origWriter.newLine();
-            origWriter.append("Line 5");
-            origWriter.newLine();
-            origWriter.append("Line 6");
-            origWriter.newLine();
-            origWriter.append("Line 7");
-            origWriter.newLine();
+    private static ThreadLocal<File> tempTestMethodDir = new ThreadLocal<File>() {
+        @Override
+        protected File initialValue() {
+            try {
+                File temp = new File(
+                        File.createTempFile("test", ".md").getParentFile(),
+                        "test-dir-" + Math.random() * 0x7FFFFFFF);
+                boolean success = temp.mkdirs();
+                if (!success) {
+                    throw new IOException("Could not create temp dir " + tempTestMethodDir);
+                }
+                return temp;
+            } catch (IOException ex) {
+                throw new RuntimeException("Could not create temp directory.");
+            }
         }
-
-        Path modified = Files.createTempFile("modified", ".txt");
-        try (BufferedWriter modWriter = Files.newBufferedWriter(modified, StandardOpenOption.WRITE)) {
-            modWriter.append("Line 1");
-            modWriter.newLine();
-            modWriter.append("Line 2");
-            modWriter.newLine();
-            modWriter.append("Line 3");
-            modWriter.newLine();
-//            modWriter.append("Line 4");
-//            modWriter.newLine();
-            modWriter.append("Line 5");
-            modWriter.newLine();
-            modWriter.append("Line 6");
-            modWriter.newLine();
-            modWriter.append("Line 7");
-            modWriter.newLine();
-        }
-
-        assertContentEquals(modified.toFile(), original.toFile(), "huh.");
-    }
+    };
 
     @BeforeMethod
-    public void createTempFolder() throws IOException {
-        tempTestMethodDir = new File(
-                File.createTempFile("test", ".md").getParentFile(),
-                "test-dir-" + Math.random() * 0x7FFFFFFF);
-        boolean success = tempTestMethodDir.mkdirs();
-        if (!success) {
-            throw new IOException("Could not create temp dir " + tempTestMethodDir);
-        }
+    public void createTempFolder() {
+        tempTestMethodDir.get();
     }
 
     @AfterMethod
     public void deleteTempFolder() {
-        if (tempTestMethodDir.exists()) {
-            recurseDelete(tempTestMethodDir);
+        if (tempTestMethodDir.get().exists()) {
+            recurseDelete(tempTestMethodDir.get());
         }
     }
 
     public File getTempFolder() {
-        return tempTestMethodDir;
+        return tempTestMethodDir.get();
     }
 
     public File createTempFile(String prefix, String suffix) {

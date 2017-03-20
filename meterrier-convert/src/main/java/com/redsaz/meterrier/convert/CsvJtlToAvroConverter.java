@@ -27,10 +27,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import org.apache.avro.file.DataFileReader;
@@ -51,6 +54,21 @@ import org.slf4j.LoggerFactory;
 public class CsvJtlToAvroConverter implements Converter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToAvroConverter.class);
+    // Sometimes (in JMeter versions 2.12 and possibly earlier), when running
+    // JMeter in remote mode, the CSV JTL file will not have a header row! The
+    // CSV JTL generated in this fashion usually has the following defaults:
+    // timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+    // So, we will attempt to detect for this case and compensate appropriately.
+    private static final List<JtlType> DEFAULT_HEADERS = Arrays.asList(
+            JtlType.TIMESTAMP, JtlType.ELAPSED, JtlType.LABEL,
+            JtlType.RESPONSE_CODE, JtlType.RESPONSE_MESSAGE, JtlType.THREAD_NAME,
+            JtlType.DATA_TYPE, JtlType.SUCCESS, JtlType.BYTES, JtlType.GRP_THREADS,
+            JtlType.ALL_THREADS, JtlType.LATENCY);
+
+    private static final Set<JtlType> REQUIRED_COLUMNS = EnumSet.of(
+            JtlType.TIMESTAMP, JtlType.ELAPSED, JtlType.LABEL,
+            JtlType.RESPONSE_CODE, JtlType.THREAD_NAME, JtlType.SUCCESS,
+            JtlType.BYTES, JtlType.ALL_THREADS);
 
     @Override
     public void convert(File source, File dest) {
@@ -77,37 +95,139 @@ public class CsvJtlToAvroConverter implements Converter {
     }
 
     private IntermediateInfo csvToIntermediate(File source, File dest) throws IOException {
-        IntermediateInfo info = new IntermediateInfo();
-        BufferedReader br = new BufferedReader(new FileReader(source));
-        CSVReader reader = new CSVReader(br);
-        Iterator<String[]> csvIter = reader.iterator();
-        List<JtlType> cols;
-        if (csvIter.hasNext()) {
-            String[] headers = csvIter.next();
-            cols = new ArrayList<>(headers.length);
-            for (String header : headers) {
-                cols.add(JtlType.fromHeader(header));
-            }
-        } else {
-            throw new RuntimeException("No headers defined.");
-        }
-
         DatumWriter<CsvJtlRow> userDatumWriter = new SpecificDatumWriter<>(CsvJtlRow.class);
-        try (DataFileWriter<CsvJtlRow> dataFileWriter = new DataFileWriter<>(userDatumWriter)) {
+        IntermediateInfo info = new IntermediateInfo();
+        try (BufferedReader br = new BufferedReader(new FileReader(source));
+                CSVReader reader = new CSVReader(br);
+                DataFileWriter<CsvJtlRow> dataFileWriter = new DataFileWriter<>(userDatumWriter)) {
+            Iterator<String[]> csvIter = reader.iterator();
+            if (!csvIter.hasNext()) {
+                throw new RuntimeException("JTL (CSV) contained no data.");
+            }
             dataFileWriter.create(CsvJtlRow.getClassSchema(), dest);
-            while (csvIter.hasNext()) {
-                String[] row = csvIter.next();
-                CsvJtlRow out = new CsvJtlRow();
-                for (int i = 0; i < row.length; ++i) {
-                    String colVal = row[i];
-                    JtlType colType = cols.get(i);
-                    colType.putIn(out, colVal);
+            String[] row = csvIter.next();
+            JtlTypeColumns jtc = new JtlTypeColumns(row);
+            if (jtc.headerAbsent()) {
+                CsvJtlRow cjRow = jtc.convert(row);
+                if (cjRow != null) {
+                    info.update(cjRow);
+                    dataFileWriter.append(cjRow);
                 }
-                info.update(out);
-                dataFileWriter.append(out);
+            }
+            while (csvIter.hasNext()) {
+                row = csvIter.next();
+                CsvJtlRow cjRow = jtc.convert(row);
+                if (cjRow != null) {
+                    info.update(cjRow);
+                    dataFileWriter.append(cjRow);
+                }
             }
         }
         return info;
+    }
+
+    private static class JtlTypeColumns {
+
+        private List<JtlType> colTypes;
+        private final boolean headerAbsent;
+
+        public JtlTypeColumns(String[] header) {
+            colTypes = new ArrayList<>(header.length);
+            int numUnknownCols = 0;
+            for (String headerCol : header) {
+                JtlType type = JtlType.fromHeader(headerCol);
+                if (type == null) {
+                    LOGGER.warn("Ignoring unknown header column \"{}\".", headerCol);
+                    ++numUnknownCols;
+                }
+                colTypes.add(type);
+            }
+            // If we don't have enough known header columns, and the number of
+            // columns is exactly 12, then we may have hit a bug with Jmeter 2.12
+            // in which the JTL CSV headers are not output by default in remote
+            // mode. Thankfully it can be fixable.
+            headerAbsent = header.length > 3 && header.length - numUnknownCols < 3;
+            if (headerAbsent) {
+                if (header.length == 12
+                        && isNumber(header[0]) && isNumber(header[1])
+                        && isBoolean(header[7])
+                        && isNumber(header[8]) && isNumber(header[9])
+                        && isNumber(header[10]) && isNumber(header[11])) {
+                    LOGGER.warn("The JTL (CSV) file seems to be missing the header row. Using the expected defaults.");
+                    colTypes = DEFAULT_HEADERS;
+                } else {
+                    LOGGER.error("No header row defined for JTL (CSV), and columns do not appear to be the defaults. Cannot convert.");
+                    throw new IllegalArgumentException("Cannot convert from a JTL (CSV) with no header row and non-default column.");
+                }
+            }
+
+            if (!colTypes.containsAll(REQUIRED_COLUMNS)) {
+                throw new IllegalArgumentException("Cannot convert from a JTL (CSV) when not all of the following columns are included: " + REQUIRED_COLUMNS);
+            }
+        }
+
+        public boolean headerAbsent() {
+            return headerAbsent;
+        }
+
+        public boolean canConvert() {
+            return true;
+        }
+
+        /**
+         * Converts the row into a typed row. If the number of columns don't
+         * match the expected columns, null is returned.
+         *
+         * @param row what to convert
+         * @return a typed row, or null if it couldn't be converted.
+         */
+        public CsvJtlRow convert(String[] row) {
+            if (row.length != colTypes.size()) {
+                LOGGER.warn("Skipping bad row. Expected {} columns but got {}. Contents:\n{}",
+                        colTypes.size(), row.length, Arrays.toString(row));
+                return null;
+            }
+            try {
+                CsvJtlRow out = new CsvJtlRow();
+                for (int i = 0; i < row.length; ++i) {
+                    String colVal = row[i];
+                    JtlType colType = colTypes.get(i);
+                    if (colType != null) {
+                        colType.putIn(out, colVal);
+                    }
+                }
+                return out;
+            } catch (NumberFormatException ex) {
+                LOGGER.warn("Skipping bad row. Encountered {} when converting row. Contents:\n{}",
+                        ex.getMessage(), Arrays.toString(row));
+                return null;
+            }
+        }
+
+        private static boolean isNumber(String text) {
+            if (text == null || text.isEmpty()) {
+                return false;
+            }
+            char first = text.charAt(0);
+            if (first != '-' && first != '+' && (first < '0' || first > '9')) {
+                return false;
+            }
+            for (int i = 1; i < text.length(); ++i) {
+                char c = text.charAt(i);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static boolean isBoolean(String text) {
+            if (text == null || text.isEmpty()) {
+                return false;
+            }
+            return "true".equalsIgnoreCase("true") || "false".equalsIgnoreCase("false");
+        }
+
     }
 
     private static class IntermediateInfo {
