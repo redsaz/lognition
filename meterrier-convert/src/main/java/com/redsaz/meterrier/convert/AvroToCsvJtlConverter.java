@@ -95,10 +95,10 @@ public class AvroToCsvJtlConverter implements Converter {
                             usedFields.add(JtlType.RESPONSE_CODE);
                             usedFields.add(JtlType.RESPONSE_MESSAGE);
                         }
-                        if (hs.getBytesReceived() != -1) {
+                        if (hs.getResponseBytes() != -1) {
                             usedFields.add(JtlType.BYTES);
                         }
-                        if (hs.getCurrentThreads() > 0) {
+                        if (hs.getTotalThreads() > 0) {
                             usedFields.add(JtlType.ALL_THREADS);
                         }
                     } else if (entry.getItem() instanceof StringArray) {
@@ -179,10 +179,10 @@ public class AvroToCsvJtlConverter implements Converter {
                         result[index] = hs.getSuccess().toString();
                         break;
                     case BYTES:
-                        result[index] = hs.getBytesReceived().toString();
+                        result[index] = hs.getResponseBytes().toString();
                         break;
                     case ALL_THREADS:
-                        result[index] = hs.getCurrentThreads().toString();
+                        result[index] = hs.getTotalThreads().toString();
                         break;
                     default:
                         LOGGER.warn("Ignoring {} because convertsion to CSV form is not known.", field.csvName());

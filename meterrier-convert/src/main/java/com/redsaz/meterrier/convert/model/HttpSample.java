@@ -10,8 +10,8 @@ import org.apache.avro.specific.SpecificData;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class HttpSample extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 6594127423200042219L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"bytesReceived\",\"type\":\"long\",\"default\":-1},{\"name\":\"currentThreads\",\"type\":\"int\",\"default\":0}]}");
+  private static final long serialVersionUID = 7561328620427167856L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"HttpSample\",\"namespace\":\"com.redsaz.meterrier.convert.model\",\"fields\":[{\"name\":\"millisOffset\",\"type\":\"long\",\"default\":0},{\"name\":\"millisElapsed\",\"type\":\"long\",\"default\":-1},{\"name\":\"labelRef\",\"type\":\"int\",\"default\":0},{\"name\":\"threadNameRef\",\"type\":\"int\",\"default\":0},{\"name\":\"responseCodeRef\",\"type\":\"int\",\"default\":0},{\"name\":\"success\",\"type\":\"boolean\",\"default\":true},{\"name\":\"responseBytes\",\"type\":\"long\",\"default\":-1},{\"name\":\"totalThreads\",\"type\":\"int\",\"default\":0}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   @Deprecated public long millisOffset;
   @Deprecated public long millisElapsed;
@@ -19,8 +19,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
   @Deprecated public int threadNameRef;
   @Deprecated public int responseCodeRef;
   @Deprecated public boolean success;
-  @Deprecated public long bytesReceived;
-  @Deprecated public int currentThreads;
+  @Deprecated public long responseBytes;
+  @Deprecated public int totalThreads;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -37,18 +37,18 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
    * @param threadNameRef The new value for threadNameRef
    * @param responseCodeRef The new value for responseCodeRef
    * @param success The new value for success
-   * @param bytesReceived The new value for bytesReceived
-   * @param currentThreads The new value for currentThreads
+   * @param responseBytes The new value for responseBytes
+   * @param totalThreads The new value for totalThreads
    */
-  public HttpSample(java.lang.Long millisOffset, java.lang.Long millisElapsed, java.lang.Integer labelRef, java.lang.Integer threadNameRef, java.lang.Integer responseCodeRef, java.lang.Boolean success, java.lang.Long bytesReceived, java.lang.Integer currentThreads) {
+  public HttpSample(java.lang.Long millisOffset, java.lang.Long millisElapsed, java.lang.Integer labelRef, java.lang.Integer threadNameRef, java.lang.Integer responseCodeRef, java.lang.Boolean success, java.lang.Long responseBytes, java.lang.Integer totalThreads) {
     this.millisOffset = millisOffset;
     this.millisElapsed = millisElapsed;
     this.labelRef = labelRef;
     this.threadNameRef = threadNameRef;
     this.responseCodeRef = responseCodeRef;
     this.success = success;
-    this.bytesReceived = bytesReceived;
-    this.currentThreads = currentThreads;
+    this.responseBytes = responseBytes;
+    this.totalThreads = totalThreads;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -61,8 +61,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     case 3: return threadNameRef;
     case 4: return responseCodeRef;
     case 5: return success;
-    case 6: return bytesReceived;
-    case 7: return currentThreads;
+    case 6: return responseBytes;
+    case 7: return totalThreads;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -77,8 +77,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     case 3: threadNameRef = (java.lang.Integer)value$; break;
     case 4: responseCodeRef = (java.lang.Integer)value$; break;
     case 5: success = (java.lang.Boolean)value$; break;
-    case 6: bytesReceived = (java.lang.Long)value$; break;
-    case 7: currentThreads = (java.lang.Integer)value$; break;
+    case 6: responseBytes = (java.lang.Long)value$; break;
+    case 7: totalThreads = (java.lang.Integer)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -180,35 +180,35 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
   }
 
   /**
-   * Gets the value of the 'bytesReceived' field.
-   * @return The value of the 'bytesReceived' field.
+   * Gets the value of the 'responseBytes' field.
+   * @return The value of the 'responseBytes' field.
    */
-  public java.lang.Long getBytesReceived() {
-    return bytesReceived;
+  public java.lang.Long getResponseBytes() {
+    return responseBytes;
   }
 
   /**
-   * Sets the value of the 'bytesReceived' field.
+   * Sets the value of the 'responseBytes' field.
    * @param value the value to set.
    */
-  public void setBytesReceived(java.lang.Long value) {
-    this.bytesReceived = value;
+  public void setResponseBytes(java.lang.Long value) {
+    this.responseBytes = value;
   }
 
   /**
-   * Gets the value of the 'currentThreads' field.
-   * @return The value of the 'currentThreads' field.
+   * Gets the value of the 'totalThreads' field.
+   * @return The value of the 'totalThreads' field.
    */
-  public java.lang.Integer getCurrentThreads() {
-    return currentThreads;
+  public java.lang.Integer getTotalThreads() {
+    return totalThreads;
   }
 
   /**
-   * Sets the value of the 'currentThreads' field.
+   * Sets the value of the 'totalThreads' field.
    * @param value the value to set.
    */
-  public void setCurrentThreads(java.lang.Integer value) {
-    this.currentThreads = value;
+  public void setTotalThreads(java.lang.Integer value) {
+    this.totalThreads = value;
   }
 
   /**
@@ -249,8 +249,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     private int threadNameRef;
     private int responseCodeRef;
     private boolean success;
-    private long bytesReceived;
-    private int currentThreads;
+    private long responseBytes;
+    private int totalThreads;
 
     /** Creates a new Builder */
     private Builder() {
@@ -287,12 +287,12 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         this.success = data().deepCopy(fields()[5].schema(), other.success);
         fieldSetFlags()[5] = true;
       }
-      if (isValidValue(fields()[6], other.bytesReceived)) {
-        this.bytesReceived = data().deepCopy(fields()[6].schema(), other.bytesReceived);
+      if (isValidValue(fields()[6], other.responseBytes)) {
+        this.responseBytes = data().deepCopy(fields()[6].schema(), other.responseBytes);
         fieldSetFlags()[6] = true;
       }
-      if (isValidValue(fields()[7], other.currentThreads)) {
-        this.currentThreads = data().deepCopy(fields()[7].schema(), other.currentThreads);
+      if (isValidValue(fields()[7], other.totalThreads)) {
+        this.totalThreads = data().deepCopy(fields()[7].schema(), other.totalThreads);
         fieldSetFlags()[7] = true;
       }
     }
@@ -327,12 +327,12 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         this.success = data().deepCopy(fields()[5].schema(), other.success);
         fieldSetFlags()[5] = true;
       }
-      if (isValidValue(fields()[6], other.bytesReceived)) {
-        this.bytesReceived = data().deepCopy(fields()[6].schema(), other.bytesReceived);
+      if (isValidValue(fields()[6], other.responseBytes)) {
+        this.responseBytes = data().deepCopy(fields()[6].schema(), other.responseBytes);
         fieldSetFlags()[6] = true;
       }
-      if (isValidValue(fields()[7], other.currentThreads)) {
-        this.currentThreads = data().deepCopy(fields()[7].schema(), other.currentThreads);
+      if (isValidValue(fields()[7], other.totalThreads)) {
+        this.totalThreads = data().deepCopy(fields()[7].schema(), other.totalThreads);
         fieldSetFlags()[7] = true;
       }
     }
@@ -566,77 +566,77 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
     }
 
     /**
-      * Gets the value of the 'bytesReceived' field.
+      * Gets the value of the 'responseBytes' field.
       * @return The value.
       */
-    public java.lang.Long getBytesReceived() {
-      return bytesReceived;
+    public java.lang.Long getResponseBytes() {
+      return responseBytes;
     }
 
     /**
-      * Sets the value of the 'bytesReceived' field.
-      * @param value The value of 'bytesReceived'.
+      * Sets the value of the 'responseBytes' field.
+      * @param value The value of 'responseBytes'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.convert.model.HttpSample.Builder setBytesReceived(long value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setResponseBytes(long value) {
       validate(fields()[6], value);
-      this.bytesReceived = value;
+      this.responseBytes = value;
       fieldSetFlags()[6] = true;
       return this;
     }
 
     /**
-      * Checks whether the 'bytesReceived' field has been set.
-      * @return True if the 'bytesReceived' field has been set, false otherwise.
+      * Checks whether the 'responseBytes' field has been set.
+      * @return True if the 'responseBytes' field has been set, false otherwise.
       */
-    public boolean hasBytesReceived() {
+    public boolean hasResponseBytes() {
       return fieldSetFlags()[6];
     }
 
 
     /**
-      * Clears the value of the 'bytesReceived' field.
+      * Clears the value of the 'responseBytes' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearBytesReceived() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearResponseBytes() {
       fieldSetFlags()[6] = false;
       return this;
     }
 
     /**
-      * Gets the value of the 'currentThreads' field.
+      * Gets the value of the 'totalThreads' field.
       * @return The value.
       */
-    public java.lang.Integer getCurrentThreads() {
-      return currentThreads;
+    public java.lang.Integer getTotalThreads() {
+      return totalThreads;
     }
 
     /**
-      * Sets the value of the 'currentThreads' field.
-      * @param value The value of 'currentThreads'.
+      * Sets the value of the 'totalThreads' field.
+      * @param value The value of 'totalThreads'.
       * @return This builder.
       */
-    public com.redsaz.meterrier.convert.model.HttpSample.Builder setCurrentThreads(int value) {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder setTotalThreads(int value) {
       validate(fields()[7], value);
-      this.currentThreads = value;
+      this.totalThreads = value;
       fieldSetFlags()[7] = true;
       return this;
     }
 
     /**
-      * Checks whether the 'currentThreads' field has been set.
-      * @return True if the 'currentThreads' field has been set, false otherwise.
+      * Checks whether the 'totalThreads' field has been set.
+      * @return True if the 'totalThreads' field has been set, false otherwise.
       */
-    public boolean hasCurrentThreads() {
+    public boolean hasTotalThreads() {
       return fieldSetFlags()[7];
     }
 
 
     /**
-      * Clears the value of the 'currentThreads' field.
+      * Clears the value of the 'totalThreads' field.
       * @return This builder.
       */
-    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearCurrentThreads() {
+    public com.redsaz.meterrier.convert.model.HttpSample.Builder clearTotalThreads() {
       fieldSetFlags()[7] = false;
       return this;
     }
@@ -651,8 +651,8 @@ public class HttpSample extends org.apache.avro.specific.SpecificRecordBase impl
         record.threadNameRef = fieldSetFlags()[3] ? this.threadNameRef : (java.lang.Integer) defaultValue(fields()[3]);
         record.responseCodeRef = fieldSetFlags()[4] ? this.responseCodeRef : (java.lang.Integer) defaultValue(fields()[4]);
         record.success = fieldSetFlags()[5] ? this.success : (java.lang.Boolean) defaultValue(fields()[5]);
-        record.bytesReceived = fieldSetFlags()[6] ? this.bytesReceived : (java.lang.Long) defaultValue(fields()[6]);
-        record.currentThreads = fieldSetFlags()[7] ? this.currentThreads : (java.lang.Integer) defaultValue(fields()[7]);
+        record.responseBytes = fieldSetFlags()[6] ? this.responseBytes : (java.lang.Long) defaultValue(fields()[6]);
+        record.totalThreads = fieldSetFlags()[7] ? this.totalThreads : (java.lang.Integer) defaultValue(fields()[7]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

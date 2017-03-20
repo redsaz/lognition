@@ -325,8 +325,8 @@ public class CsvJtlToAvroConverter implements Converter {
                 Map<CharSequence, Integer> threadNameLookup,
                 Map<CharSequence, Integer> urlLookup) {
             HttpSample hs = createNewEmptyHttpSample();
-            hs.setBytesReceived(longOrDefault(row.getBytes(), -1));
-            hs.setCurrentThreads(intOrDefault(row.getAllThreads(), 0));
+            hs.setResponseBytes(longOrDefault(row.getBytes(), -1));
+            hs.setTotalThreads(intOrDefault(row.getAllThreads(), 0));
             int labelRef = labelLookup.getOrDefault(row.getLabel(), 0);
             if (labelRef < 1) {
                 LOGGER.warn("Bad labelRef={}", labelRef);
@@ -385,7 +385,7 @@ public class CsvJtlToAvroConverter implements Converter {
     private static HttpSample createNewEmptyHttpSample() {
         HttpSample hs = new HttpSample();
         hs.setMillisElapsed(-1L);
-        hs.setBytesReceived(-1L);
+        hs.setResponseBytes(-1L);
         return hs;
     }
 }

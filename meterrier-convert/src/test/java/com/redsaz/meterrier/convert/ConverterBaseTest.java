@@ -134,8 +134,8 @@ public class ConverterBaseTest {
         if (eItem instanceof HttpSample) {
             HttpSample eHs = (HttpSample) eItem;
             HttpSample aHs = (HttpSample) aItem;
-            assertEquals(aHs.getBytesReceived(), eHs.getBytesReceived(), message + " Bytes Received not equal.");
-            assertEquals(aHs.getCurrentThreads(), eHs.getCurrentThreads(), message + " Current Threads not equal.");
+            assertEquals(aHs.getResponseBytes(), eHs.getResponseBytes(), message + " Bytes Received not equal.");
+            assertEquals(aHs.getTotalThreads(), eHs.getTotalThreads(), message + " Current Threads not equal.");
             assertEquals(aHs.getLabelRef(), eHs.getLabelRef(), message + " Label Ref not equal.");
             assertEquals(aHs.getMillisElapsed(), eHs.getMillisElapsed(), message + " Millis elapsed not equal.");
             assertEquals(aHs.getMillisOffset(), eHs.getMillisOffset(), message + " Millis offset not equal.");

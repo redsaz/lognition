@@ -90,8 +90,8 @@ public class MockPerfData {
     public HttpSample getRow(long index) {
         long row = index + 1;
         HttpSample hs = new HttpSample();
-        hs.setBytesReceived(row * 101L);
-        hs.setCurrentThreads(threadNames.size());
+        hs.setResponseBytes(row * 101L);
+        hs.setTotalThreads(threadNames.size());
         hs.setLabelRef(((int) index % labels.size()) + 1);
         hs.setMillisElapsed(row * 307L);
         hs.setMillisOffset(60_000L / numRows * index);
@@ -147,8 +147,8 @@ public class MockPerfData {
                         scl.getMessage(hs.getResponseCodeRef()),
                         getThreadNames().get(hs.getThreadNameRef() - 1),
                         hs.getSuccess(),
-                        hs.getBytesReceived(),
-                        hs.getCurrentThreads()
+                        hs.getResponseBytes(),
+                        hs.getTotalThreads()
                 );
 
             }
@@ -176,9 +176,9 @@ public class MockPerfData {
                         getThreadNames().get(hs.getThreadNameRef() - 1),
                         "text",
                         hs.getSuccess(),
-                        hs.getBytesReceived(),
-                        hs.getCurrentThreads(),
-                        hs.getCurrentThreads(),
+                        hs.getResponseBytes(),
+                        hs.getTotalThreads(),
+                        hs.getTotalThreads(),
                         0
                 );
             }

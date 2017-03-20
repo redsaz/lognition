@@ -8,8 +8,8 @@
         {"name": "threadNameRef", "type": "int", "default": 0},
         {"name": "responseCodeRef", "type": "int", "default": 0},
         {"name": "success", "type": "boolean", "default": true},
-        {"name": "bytesReceived", "type": "long", "default": -1},
-        {"name": "currentThreads", "type": "int", "default": 0}
+        {"name": "responseBytes", "type": "long", "default": -1},
+        {"name": "totalThreads", "type": "int", "default": 0}
     ]
 },
 {"namespace": "com.redsaz.meterrier.convert.model",
