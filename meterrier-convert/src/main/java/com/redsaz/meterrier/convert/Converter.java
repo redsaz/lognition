@@ -24,6 +24,15 @@ import java.io.File;
  */
 public interface Converter {
 
-    void convert(File source, File dest);
+    /**
+     * Convert the source file into the dest file, and returns the SHA-256 hash
+     * (lowercase hex) as a string.
+     *
+     * @param source File location of what needs converted
+     * @param dest Where the result will be put
+     * @return SHA-256 hash of the destination content as a string (lowercase
+     * hex)
+     */
+    String convert(File source, File dest);
 
 }

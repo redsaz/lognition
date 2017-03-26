@@ -15,15 +15,20 @@
  */
 package com.redsaz.meterrier.convert;
 
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.convert.model.Entry;
 import com.redsaz.meterrier.convert.model.HttpSample;
 import com.redsaz.meterrier.convert.model.Metadata;
 import com.redsaz.meterrier.convert.model.StringArray;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.List;
 import org.apache.avro.file.DataFileReader;
@@ -42,31 +47,36 @@ public class AvroToCsvJtlConverter implements Converter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AvroToCsvJtlConverter.class);
 
     @Override
-    public void convert(File source, File dest) {
+    public String convert(File source, File dest) {
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
         LOGGER.debug("Converting {} to {}...", source, dest);
         HttpSampleToCsvJtl h2j = new HttpSampleToCsvJtl(source);
+        String sha256Hash = null;
 
         DatumReader<Entry> userDatumReader = new SpecificDatumReader<>(Entry.class);
-        try (DataFileReader<Entry> dataFileReader = new DataFileReader<>(source, userDatumReader);
-                FileWriter fw = new FileWriter(dest);
-                CSVWriter csvWriter = new CSVWriter(fw)) {
-            csvWriter.writeNext(h2j.getUsedHeaders(), false);
-            while (dataFileReader.hasNext()) {
-                Entry entry = dataFileReader.next();
-                if (entry.getItem() instanceof HttpSample) {
-                    HttpSample hs = (HttpSample) entry.getItem();
-                    String[] row = h2j.convert(hs);
-                    csvWriter.writeNext(row, false);
-                    ++totalRows;
+        try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+            try (DataFileReader<Entry> dataFileReader = new DataFileReader<>(source, userDatumReader);
+                    OutputStreamWriter osw = new OutputStreamWriter(hos, Charset.forName("UTF8"));
+                    CSVWriter csvWriter = new CSVWriter(osw)) {
+                csvWriter.writeNext(h2j.getUsedHeaders(), false);
+                while (dataFileReader.hasNext()) {
+                    Entry entry = dataFileReader.next();
+                    if (entry.getItem() instanceof HttpSample) {
+                        HttpSample hs = (HttpSample) entry.getItem();
+                        String[] row = h2j.convert(hs);
+                        csvWriter.writeNext(row, false);
+                        ++totalRows;
+                    }
                 }
             }
+            sha256Hash = hos.hash().toString();
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to convert file.", ex);
         }
 
         LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
+        return sha256Hash;
     }
 
     private static class HttpSampleToCsvJtl {

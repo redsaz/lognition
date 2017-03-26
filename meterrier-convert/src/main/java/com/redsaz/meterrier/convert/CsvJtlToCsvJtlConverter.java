@@ -15,12 +15,16 @@
  */
 package com.redsaz.meterrier.convert;
 
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -39,13 +43,13 @@ public class CsvJtlToCsvJtlConverter implements Converter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToCsvJtlConverter.class);
 
     @Override
-    public void convert(File source, File dest) {
+    public String convert(File source, File dest) {
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
         LOGGER.debug("Converting {} to {}...", source, dest);
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(source));
-            CSVReader reader = new CSVReader(br);
+        String sha256Hash = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(source));
+                CSVReader reader = new CSVReader(br)) {
             Iterator<String[]> csvIter = reader.iterator();
             JtlRowToJtlRow j2j = null;
             if (csvIter.hasNext()) {
@@ -67,20 +71,24 @@ public class CsvJtlToCsvJtlConverter implements Converter {
                 throw new RuntimeException("No headers defined.");
             }
 
-            try (
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(dest));
-                    CSVWriter writer = new CSVWriter(bw)) {
-                writer.writeNext(j2j.getHeaders(), false);
-                while (csvIter.hasNext()) {
-                    String[] row = csvIter.next();
-                    ++totalRows;
-                    writer.writeNext(j2j.convert(row), false);
+            try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+                try (
+                        BufferedWriter bw = new BufferedWriter(new FileWriter(dest));
+                        CSVWriter writer = new CSVWriter(bw)) {
+                    writer.writeNext(j2j.getHeaders(), false);
+                    while (csvIter.hasNext()) {
+                        String[] row = csvIter.next();
+                        ++totalRows;
+                        writer.writeNext(j2j.convert(row), false);
+                    }
                 }
+                sha256Hash = hos.hash().toString();
             }
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to convert file.", ex);
         }
         LOGGER.debug("{}ms to convert {} rows.", (System.currentTimeMillis() - startMillis), totalRows);
+        return sha256Hash;
     }
 
 }

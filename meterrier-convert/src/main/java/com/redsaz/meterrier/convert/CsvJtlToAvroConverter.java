@@ -15,6 +15,8 @@
  */
 package com.redsaz.meterrier.convert;
 
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.opencsv.CSVReader;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.convert.model.Entry;
@@ -22,8 +24,10 @@ import com.redsaz.meterrier.convert.model.HttpSample;
 import com.redsaz.meterrier.convert.model.Metadata;
 import com.redsaz.meterrier.convert.model.StringArray;
 import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,14 +75,15 @@ public class CsvJtlToAvroConverter implements Converter {
             JtlType.BYTES, JtlType.ALL_THREADS);
 
     @Override
-    public void convert(File source, File dest) {
+    public String convert(File source, File dest) {
         File intermediateFile = new File(dest.getParent(), dest.getName() + ".intermediate");
         long startMillis = System.currentTimeMillis();
         long totalRows = 0;
+        String sha256Hash = null;
         try {
             LOGGER.debug("Converting {} to {}...", source, dest);
             IntermediateInfo info = csvToIntermediate(source, intermediateFile);
-            info.writeAvro(intermediateFile, dest);
+            sha256Hash = info.writeAvro(intermediateFile, dest);
             totalRows = info.numRows;
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to convert file.", ex);
@@ -92,6 +97,7 @@ public class CsvJtlToAvroConverter implements Converter {
         }
         LOGGER.debug("{}ms to convert {} rows to {}.",
                 (System.currentTimeMillis() - startMillis), totalRows, dest);
+        return sha256Hash;
     }
 
     private IntermediateInfo csvToIntermediate(File source, File dest) throws IOException {
@@ -268,43 +274,48 @@ public class CsvJtlToAvroConverter implements Converter {
          * @throws IOException If the input could not be read or the output
          * could not be written.
          */
-        public void writeAvro(File intermediateSource, File dest) throws IOException {
+        public String writeAvro(File intermediateSource, File dest) throws IOException {
+            String sha256Hash = null;
             DatumWriter<Entry> userDatumWriter = new SpecificDatumWriter<>(Entry.class);
             DatumReader<CsvJtlRow> userDatumReader = new SpecificDatumReader<>(CsvJtlRow.class);
-            try (DataFileWriter<Entry> dataFileWriter = new DataFileWriter<>(userDatumWriter);
-                    DataFileReader<CsvJtlRow> reader = new DataFileReader<>(intermediateSource, userDatumReader)) {
-                dataFileWriter.create(Entry.getClassSchema(), dest);
+            try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+                try (DataFileWriter<Entry> dataFileWriter = new DataFileWriter<>(userDatumWriter);
+                        DataFileReader<CsvJtlRow> reader = new DataFileReader<>(intermediateSource, userDatumReader)) {
+                    dataFileWriter.create(Entry.getClassSchema(), hos);
 
-                dataFileWriter.append(new Entry(new Metadata(earliest, latest, numRows)));
-                Map<CharSequence, Integer> labelLookup = createLookup(labels);
-                if (!labels.isEmpty()) {
-                    Entry labelEntry = new Entry(new StringArray("labels", new ArrayList<>(labels)));
-                    dataFileWriter.append(labelEntry);
+                    dataFileWriter.append(new Entry(new Metadata(earliest, latest, numRows)));
+                    Map<CharSequence, Integer> labelLookup = createLookup(labels);
+                    if (!labels.isEmpty()) {
+                        Entry labelEntry = new Entry(new StringArray("labels", new ArrayList<>(labels)));
+                        dataFileWriter.append(labelEntry);
+                    }
+                    Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
+                    if (!threadNames.isEmpty()) {
+                        Entry threadNamesEntry = new Entry(new StringArray("threadNames", new ArrayList<>(threadNames)));
+                        dataFileWriter.append(threadNamesEntry);
+                    }
+                    Map<CharSequence, Integer> urlLookup = createLookup(urls);
+                    if (!urls.isEmpty()) {
+                        Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<>(urls)));
+                        dataFileWriter.append(urlsEntry);
+                    }
+                    List<CharSequence> codes = statusCodeLookup.getCustomCodes();
+                    List<CharSequence> messages = statusCodeLookup.getCustomMessages();
+                    if (codes != null && !codes.isEmpty()) {
+                        Entry codesEntry = new Entry(new StringArray("codes", codes));
+                        dataFileWriter.append(codesEntry);
+                        Entry messagesEntry = new Entry(new StringArray("messages", messages));
+                        dataFileWriter.append(messagesEntry);
+                    }
+                    while (reader.hasNext()) {
+                        CsvJtlRow row = reader.next();
+                        Entry entry = convert(row, labelLookup, threadNameLookup, urlLookup);
+                        dataFileWriter.append(entry);
+                    }
                 }
-                Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
-                if (!threadNames.isEmpty()) {
-                    Entry threadNamesEntry = new Entry(new StringArray("threadNames", new ArrayList<>(threadNames)));
-                    dataFileWriter.append(threadNamesEntry);
-                }
-                Map<CharSequence, Integer> urlLookup = createLookup(urls);
-                if (!urls.isEmpty()) {
-                    Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<>(urls)));
-                    dataFileWriter.append(urlsEntry);
-                }
-                List<CharSequence> codes = statusCodeLookup.getCustomCodes();
-                List<CharSequence> messages = statusCodeLookup.getCustomMessages();
-                if (codes != null && !codes.isEmpty()) {
-                    Entry codesEntry = new Entry(new StringArray("codes", codes));
-                    dataFileWriter.append(codesEntry);
-                    Entry messagesEntry = new Entry(new StringArray("messages", messages));
-                    dataFileWriter.append(messagesEntry);
-                }
-                while (reader.hasNext()) {
-                    CsvJtlRow row = reader.next();
-                    Entry entry = convert(row, labelLookup, threadNameLookup, urlLookup);
-                    dataFileWriter.append(entry);
-                }
+                sha256Hash = hos.hash().toString();
             }
+            return sha256Hash;
         }
 
         // This iterable better not change between when this is called and when
