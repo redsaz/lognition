@@ -17,6 +17,7 @@ package com.redsaz.meterrier.convert;
 
 import java.io.File;
 import java.util.Arrays;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
 
 /**
@@ -54,13 +55,15 @@ public class AvroToCsvJtlConverterTest extends ConverterBaseTest {
         mpd.createAvroFile(source);
 
         File expectedDest = createTempFile("expected", ".csv");
-        mpd.createExportedCsvFile(expectedDest);
+        String expectedHash = mpd.createExportedCsvFile(expectedDest);
 
         Converter conv = new AvroToCsvJtlConverter();
         File actualDest = createTempFile("actual", ".csv");
-        conv.convert(source, actualDest);
+        String actualHash = conv.convert(source, actualDest);
 
         assertContentEquals(actualDest, expectedDest, "The converter did not convert in the way expected.");
+        assertBytesEquals(actualDest, expectedDest, "The conversions are not byte-for-byte equal.");
+        assertEquals(actualHash, expectedHash, "Hashes differed.");
     }
 
 }

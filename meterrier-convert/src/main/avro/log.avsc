@@ -1,4 +1,4 @@
-[{"namespace": "com.redsaz.meterrier.convert.model",
+{"namespace": "com.redsaz.meterrier.convert.model",
   "type": "record",
   "name": "HttpSample",
     "fields": [
@@ -11,29 +11,4 @@
         {"name": "responseBytes", "type": "long", "default": -1},
         {"name": "totalThreads", "type": "int", "default": 0}
     ]
-},
-{"namespace": "com.redsaz.meterrier.convert.model",
-  "type": "record",
-  "name": "StringArray",
-    "fields": [
-        {"name": "name", "type": "string"},
-        {"name": "values", "type": {"type": "array", "items": "string"}}
-    ]
-},
-{"namespace": "com.redsaz.meterrier.convert.model",
-  "type": "record",
-  "name": "Metadata",
-    "fields": [
-        {"name": "earliestMillisUtc", "type": "long"},
-        {"name": "LatestMillisUtc", "type": "long"},
-        {"name": "totalEntries", "type": "long"}
-    ]
-},
-{"namespace": "com.redsaz.meterrier.convert.model",
-  "type": "record",
-  "name": "Entry",
-    "fields": [
-        {"name": "item", "type": ["HttpSample", "StringArray", "Metadata"]}
-    ]
 }
-]

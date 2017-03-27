@@ -15,18 +15,25 @@
  */
 package com.redsaz.meterrier.convert;
 
-import com.redsaz.meterrier.convert.model.Entry;
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.redsaz.meterrier.convert.model.HttpSample;
-import com.redsaz.meterrier.convert.model.Metadata;
-import com.redsaz.meterrier.convert.model.StringArray;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.List;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 /**
@@ -42,6 +49,11 @@ public class MockPerfData {
     private final List<CharSequence> threadNames;
     private final List<CharSequence> codes;
     private final List<CharSequence> messages;
+    // Because we don't care about syncing, but DO care about repeatably
+    // creating the same output data given the same input data, we'll use
+    // our own sync marker rather than the randomly generated one that avro
+    // gives us.
+    private static final byte[] SYNC = new byte[16];
 
     public MockPerfData(
             long inEarliest,
@@ -101,60 +113,63 @@ public class MockPerfData {
         return hs;
     }
 
-    public void createAvroFile(File dest) {
-        DatumWriter<Entry> userDatumWriter = new SpecificDatumWriter<>(Entry.class);
-        try (DataFileWriter<Entry> dataFileWriter = new DataFileWriter<>(userDatumWriter)) {
-            dataFileWriter.create(Entry.getClassSchema(), dest);
+    public String createAvroFile(File dest) {
+        String sha256Hash = null;
+        DatumWriter<HttpSample> httpSampleDatumWriter = new SpecificDatumWriter<>(HttpSample.class);
+        try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+            try (DataFileWriter<HttpSample> dataFileWriter = new DataFileWriter<>(httpSampleDatumWriter)) {
+                dataFileWriter.setMeta("earliest", getEarliest());
+                dataFileWriter.setMeta("latest", getLatest());
+                dataFileWriter.setMeta("numRows", getNumRows());
 
-            dataFileWriter.append(new Entry(new Metadata(getEarliest(), getLatest(), getNumRows())));
+                writeMetaStringArray(dataFileWriter, "labels", getLabels());
+                writeMetaStringArray(dataFileWriter, "threadNames", getThreadNames());
+                writeMetaStringArray(dataFileWriter, "codes", getCodes());
+                writeMetaStringArray(dataFileWriter, "messages", getMessages());
 
-            Entry labelEntry = new Entry(new StringArray("labels", getLabels()));
-            dataFileWriter.append(labelEntry);
+                dataFileWriter.create(HttpSample.getClassSchema(), hos, SYNC);
 
-            Entry threadNamesEntry = new Entry(new StringArray("threadNames", getThreadNames()));
-            dataFileWriter.append(threadNamesEntry);
-
-            Entry codesEntry = new Entry(new StringArray("codes", getCodes()));
-            dataFileWriter.append(codesEntry);
-
-            Entry messagesEntry = new Entry(new StringArray("messages", getMessages()));
-            dataFileWriter.append(messagesEntry);
-
-            for (int i = 0; i < getNumRows(); ++i) {
-                HttpSample hs = getRow(i);
-                Entry entry = new Entry(hs);
-                dataFileWriter.append(entry);
+                for (int i = 0; i < getNumRows(); ++i) {
+                    HttpSample hs = getRow(i);
+                    dataFileWriter.append(hs);
+                }
             }
-
+            sha256Hash = hos.hash().toString();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+        return sha256Hash;
     }
 
-    public void createExportedCsvFile(File dest) {
+    public String createExportedCsvFile(File dest) {
+        String sha256Hash = null;
         StatusCodeLookup scl = new StatusCodeLookup(getCodes(), getMessages());
-        try (BufferedWriter bw = Files.newBufferedWriter(dest.toPath());
-                PrintWriter pw = new PrintWriter(bw)) {
-            pw.println("timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads");
+        try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+            try (Writer w = new OutputStreamWriter(hos);
+                    PrintWriter pw = new PrintWriter(w)) {
+                pw.println("timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads");
 
-            for (int i = 0; i < getNumRows(); ++i) {
-                HttpSample hs = getRow(i);
-                pw.printf("%d,%d,%s,%s,%s,%s,%s,%d,%d\n",
-                        hs.getMillisOffset() + getEarliest(),
-                        hs.getMillisElapsed(),
-                        getLabels().get(hs.getLabelRef() - 1),
-                        scl.getCode(hs.getResponseCodeRef()),
-                        scl.getMessage(hs.getResponseCodeRef()),
-                        getThreadNames().get(hs.getThreadNameRef() - 1),
-                        hs.getSuccess(),
-                        hs.getResponseBytes(),
-                        hs.getTotalThreads()
-                );
+                for (int i = 0; i < getNumRows(); ++i) {
+                    HttpSample hs = getRow(i);
+                    pw.printf("%d,%d,%s,%s,%s,%s,%s,%d,%d\n",
+                            hs.getMillisOffset() + getEarliest(),
+                            hs.getMillisElapsed(),
+                            getLabels().get(hs.getLabelRef() - 1),
+                            scl.getCode(hs.getResponseCodeRef()),
+                            scl.getMessage(hs.getResponseCodeRef()),
+                            getThreadNames().get(hs.getThreadNameRef() - 1),
+                            hs.getSuccess(),
+                            hs.getResponseBytes(),
+                            hs.getTotalThreads()
+                    );
 
+                }
             }
+            sha256Hash = hos.hash().toString();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+        return sha256Hash;
     }
 
     public void createImportCsvFile(File dest, boolean includeHeader) {
@@ -184,6 +199,19 @@ public class MockPerfData {
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    private static void writeMetaStringArray(DataFileWriter<?> dataFileWriter, String name, Collection<CharSequence> items) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Encoder enc = EncoderFactory.get().directBinaryEncoder(baos, null);
+            enc.writeArrayStart();
+            enc.setItemCount(items.size());
+            for (CharSequence item : items) {
+                enc.writeString(item);
+            }
+            enc.writeArrayEnd();
+            dataFileWriter.setMeta(name, baos.toByteArray());
         }
     }
 

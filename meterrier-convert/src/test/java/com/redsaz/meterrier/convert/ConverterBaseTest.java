@@ -16,10 +16,7 @@
 package com.redsaz.meterrier.convert;
 
 import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.convert.model.Entry;
 import com.redsaz.meterrier.convert.model.HttpSample;
-import com.redsaz.meterrier.convert.model.Metadata;
-import com.redsaz.meterrier.convert.model.StringArray;
 import difflib.DiffUtils;
 import difflib.Patch;
 import java.io.File;
@@ -31,6 +28,7 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.specific.SpecificDatumReader;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.fail;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -82,6 +80,19 @@ public class ConverterBaseTest {
         }
     }
 
+    public static void assertBytesEquals(File actual, File expected, String message) {
+        try {
+            byte[] expectedBytes = Files.readAllBytes(expected.toPath());
+            byte[] actualBytes = Files.readAllBytes(actual.toPath());
+            assertEquals(actualBytes.length, expectedBytes.length, "File length is incorrect.");
+            for (int i = 0; i < expectedBytes.length; ++i) {
+                assertEquals(actualBytes[i], expectedBytes[i], message + " Byte at pos=" + i + " is incorrect.");
+            }
+        } catch (IOException ex) {
+            fail(ex.getMessage(), ex);
+        }
+    }
+
     public static void assertContentEquals(File actual, File expected, String message) {
         try {
             List<String> expectedLines = Files.readAllLines(expected.toPath());
@@ -102,14 +113,26 @@ public class ConverterBaseTest {
     }
 
     public static void assertAvroContentEquals(File actual, File expected, String message) {
-        DatumReader<Entry> userDatumReader = new SpecificDatumReader<>(Entry.class);
-        try (DataFileReader<Entry> expectedReader = new DataFileReader<>(expected, userDatumReader);
-                DataFileReader<Entry> actualReader = new DataFileReader<>(actual, userDatumReader)) {
-            Iterator<Entry> eIter = expectedReader.iterator();
-            Iterator<Entry> aIter = actualReader.iterator();
-            while (eIter.hasNext() && aIter.hasNext()) {
-                assertEntryEquals(aIter.next(), eIter.next(), message);
+        DatumReader<HttpSample> HttpSampleDatumReader = new SpecificDatumReader<>(HttpSample.class);
+        try (DataFileReader<HttpSample> expectedReader = new DataFileReader<>(expected, HttpSampleDatumReader);
+                DataFileReader<HttpSample> actualReader = new DataFileReader<>(actual, HttpSampleDatumReader)) {
+            List<String> expectedMetaKeys = expectedReader.getMetaKeys();
+            List<String> actualMetaKeys = actualReader.getMetaKeys();
+            assertEquals(actualMetaKeys, expectedMetaKeys, "Metadata is incorrect.");
+            for (String metaKey : expectedMetaKeys) {
+                byte[] expectedValue = expectedReader.getMeta(metaKey);
+                byte[] actualValue = actualReader.getMeta(metaKey);
+                assertEquals(actualValue, expectedValue, "Value for key \""
+                        + metaKey + "\" is incorrect.");
             }
+
+            Iterator<HttpSample> eIter = expectedReader.iterator();
+            Iterator<HttpSample> aIter = actualReader.iterator();
+            while (eIter.hasNext() && aIter.hasNext()) {
+                assertHttpSampleEquals(aIter.next(), eIter.next(), message);
+            }
+            assertFalse(eIter.hasNext(), "Actual content is missing entries.");
+            assertFalse(aIter.hasNext(), "Actual content has too many entries.");
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to convert file.", ex);
         }
@@ -125,15 +148,12 @@ public class ConverterBaseTest {
         }
     }
 
-    private static void assertEntryEquals(Entry actual, Entry expect, String message) {
-        Object eItem = expect.getItem();
-        Object aItem = actual.getItem();
+    private static void assertHttpSampleEquals(HttpSample actual, HttpSample expect, String message) {
+        assertEquals(actual.getClass(), expect.getClass(), message + " Entry item classes are not the same.");
 
-        assertEquals(aItem.getClass(), eItem.getClass(), message + " Entry item classes are not the same.");
-
-        if (eItem instanceof HttpSample) {
-            HttpSample eHs = (HttpSample) eItem;
-            HttpSample aHs = (HttpSample) aItem;
+        if (expect instanceof HttpSample) {
+            HttpSample eHs = (HttpSample) expect;
+            HttpSample aHs = (HttpSample) actual;
             assertEquals(aHs.getResponseBytes(), eHs.getResponseBytes(), message + " Bytes Received not equal.");
             assertEquals(aHs.getTotalThreads(), eHs.getTotalThreads(), message + " Current Threads not equal.");
             assertEquals(aHs.getLabelRef(), eHs.getLabelRef(), message + " Label Ref not equal.");
@@ -142,19 +162,9 @@ public class ConverterBaseTest {
             assertEquals(aHs.getResponseCodeRef(), eHs.getResponseCodeRef(), message + " Response Code Ref not equal.");
             assertEquals(aHs.getSuccess(), eHs.getSuccess(), message + " Success not equal.");
             assertEquals(aHs.getThreadNameRef(), eHs.getThreadNameRef(), message + " Thread Name Ref not equal.");
-        } else if (eItem instanceof StringArray) {
-            StringArray eSa = (StringArray) eItem;
-            StringArray aSa = (StringArray) aItem;
-            assertEquals(aSa.getName(), eSa.getName(), message + " Name not equal.");
-            assertEquals(aSa.getValues(), eSa.getValues(), message + " Values not equal.");
-        } else if (eItem instanceof Metadata) {
-            Metadata em = (Metadata) eItem;
-            Metadata am = (Metadata) aItem;
-            assertEquals(am.getEarliestMillisUtc(), em.getEarliestMillisUtc(), message + " Earliest millis UTC not equal.");
-            assertEquals(am.getLatestMillisUtc(), em.getLatestMillisUtc(), message + " Latest millis UTC not equal.");
-            assertEquals(am.getTotalEntries(), em.getTotalEntries(), message + " Total entries not equal.");
         } else {
-            fail("Unknown class: " + eItem.getClass());
+            fail("Unknown class: " + expect.getClass());
         }
     }
+
 }

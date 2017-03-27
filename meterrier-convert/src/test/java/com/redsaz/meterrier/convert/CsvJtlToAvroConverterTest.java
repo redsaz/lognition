@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -32,71 +35,56 @@ import org.testng.annotations.Test;
  */
 public class CsvJtlToAvroConverterTest extends ConverterBaseTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToAvroConverterTest.class);
+
     @Test
     public void testConvert() throws IOException {
-        // The orginal CSV to import from will have more columns than we'll
-        // actually use.
-        MockPerfData mpd = new MockPerfData(System.currentTimeMillis(),
-                240L,
-                Arrays.asList(
-                        "Another-call-2",
-                        "Howdy there this is a call as well",
-                        "example-call-1"
-                ),
-                Arrays.asList(
-                        "thread-1",
-                        "thread-2",
-                        "thread-3",
-                        "thread-4",
-                        "thread-5"
-                ),
-                Arrays.asList(
-                        "1001",
-                        "200"
-                ),
-                Arrays.asList(
-                        "Non Standard code",
-                        "Normally we don't see these"
-                ));
+        MockPerfData mpd = defaultMockData();
         File source = createTempFile("source", ".jtl");
         mpd.createImportCsvFile(source, true);
 
         File expectedDest = createTempFile("expected", ".avro");
-        mpd.createAvroFile(expectedDest);
+        String expectedHash = mpd.createAvroFile(expectedDest);
+        LOGGER.info("Hash from generating the expected output is {}.", expectedHash);
 
         Converter conv = new CsvJtlToAvroConverter();
         File actualDest = createTempFile("actual", ".avro");
-        conv.convert(source, actualDest);
+        String actualHash = conv.convert(source, actualDest);
+        LOGGER.info("Hash from generating the actual output is {}.", actualHash);
 
+        // The actual result should at least logically match the expected
+        // result, (that is, the samples exist and are in order, and the
+        // metadata exists but isn't necessarily in the same order).
         assertAvroContentEquals(actualDest, expectedDest, "The converter did not convert in the way expected.");
+        assertBytesEquals(actualDest, expectedDest, "The conversions are not byte-for-byte equal.");
+        assertEquals(actualHash, expectedHash, "Hashes differed.");
+    }
+
+    @Test
+    public void testConvertConsistent() throws IOException {
+        // Tests that two invocations of the converter on the same input data
+        // results in the same output.
+
+        MockPerfData mpd = defaultMockData();
+        File source = createTempFile("source", ".jtl");
+        mpd.createImportCsvFile(source, true);
+
+        Converter conv1 = new CsvJtlToAvroConverter();
+        File actualDest1 = createTempFile("actual1", ".avro");
+        String actualHash1 = conv1.convert(source, actualDest1);
+
+        Converter conv2 = new CsvJtlToAvroConverter();
+        File actualDest2 = createTempFile("actual2", ".avro");
+        String actualHash2 = conv2.convert(source, actualDest2);
+
+        assertAvroContentEquals(actualDest1, actualDest2, "The converter did not convert in the way expected.");
+        assertBytesEquals(actualDest1, actualDest2, "The files are logically the same with Avro, but are not byte-for-byte equal.");
+        assertEquals(actualHash1, actualHash2, "Hashes differed.");
     }
 
     @Test
     public void testConvertNoHeaderButDefaultColumns() throws IOException {
-        // The orginal CSV to import from will have more columns than we'll
-        // actually use.
-        MockPerfData mpd = new MockPerfData(System.currentTimeMillis(),
-                240L,
-                Arrays.asList(
-                        "Another-call-2",
-                        "Howdy there this is a call as well",
-                        "example-call-1"
-                ),
-                Arrays.asList(
-                        "thread-1",
-                        "thread-2",
-                        "thread-3",
-                        "thread-4",
-                        "thread-5"
-                ),
-                Arrays.asList(
-                        "1001",
-                        "200"
-                ),
-                Arrays.asList(
-                        "Non Standard code",
-                        "Normally we don't see these"
-                ));
+        MockPerfData mpd = defaultMockData();
         File source = createTempFile("source", ".jtl");
         mpd.createImportCsvFile(source, false);
 
@@ -370,4 +358,31 @@ public class CsvJtlToAvroConverterTest extends ConverterBaseTest {
         conv.convert(source, actualDest);
     }
 
+    private static MockPerfData defaultMockData() {
+        // The orginal CSV to import from will have more columns than we'll
+        // actually use.
+        MockPerfData mpd = new MockPerfData(System.currentTimeMillis(),
+                240L,
+                Arrays.asList(
+                        "Another-call-2",
+                        "Howdy there this is a call as well",
+                        "example-call-1"
+                ),
+                Arrays.asList(
+                        "thread-1",
+                        "thread-2",
+                        "thread-3",
+                        "thread-4",
+                        "thread-5"
+                ),
+                Arrays.asList(
+                        "1001",
+                        "200"
+                ),
+                Arrays.asList(
+                        "Non Standard code",
+                        "Normally we don't see these"
+                ));
+        return mpd;
+    }
 }

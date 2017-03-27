@@ -19,19 +19,18 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.opencsv.CSVReader;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.convert.model.Entry;
 import com.redsaz.meterrier.convert.model.HttpSample;
-import com.redsaz.meterrier.convert.model.Metadata;
-import com.redsaz.meterrier.convert.model.StringArray;
 import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +43,8 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.util.Utf8;
@@ -238,6 +239,12 @@ public class CsvJtlToAvroConverter implements Converter {
 
     private static class IntermediateInfo {
 
+        // Because we don't care about syncing, but DO care about repeatably
+        // creating the same output data given the same input data, we'll use
+        // our own sync marker rather than the randomly generated one that avro
+        // gives us.
+        private static final byte[] SYNC = new byte[16];
+
         long earliest = Long.MAX_VALUE;
         long latest = Long.MIN_VALUE;
         long numRows;
@@ -276,41 +283,42 @@ public class CsvJtlToAvroConverter implements Converter {
          */
         public String writeAvro(File intermediateSource, File dest) throws IOException {
             String sha256Hash = null;
-            DatumWriter<Entry> userDatumWriter = new SpecificDatumWriter<>(Entry.class);
-            DatumReader<CsvJtlRow> userDatumReader = new SpecificDatumReader<>(CsvJtlRow.class);
+            DatumWriter<HttpSample> httpSampleDatumWriter = new SpecificDatumWriter<>(HttpSample.class);
+            DatumReader<CsvJtlRow> httpSampleDatumReader = new SpecificDatumReader<>(CsvJtlRow.class);
             try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
-                try (DataFileWriter<Entry> dataFileWriter = new DataFileWriter<>(userDatumWriter);
-                        DataFileReader<CsvJtlRow> reader = new DataFileReader<>(intermediateSource, userDatumReader)) {
-                    dataFileWriter.create(Entry.getClassSchema(), hos);
+                try (DataFileWriter<HttpSample> dataFileWriter = new DataFileWriter<>(httpSampleDatumWriter);
+                        DataFileReader<CsvJtlRow> reader = new DataFileReader<>(intermediateSource, httpSampleDatumReader)) {
+                    dataFileWriter.setMeta("earliest", earliest);
+                    dataFileWriter.setMeta("latest", latest);
+                    dataFileWriter.setMeta("numRows", numRows);
 
-                    dataFileWriter.append(new Entry(new Metadata(earliest, latest, numRows)));
-                    Map<CharSequence, Integer> labelLookup = createLookup(labels);
                     if (!labels.isEmpty()) {
-                        Entry labelEntry = new Entry(new StringArray("labels", new ArrayList<>(labels)));
-                        dataFileWriter.append(labelEntry);
+                        writeMetaStringArray(dataFileWriter, "labels", labels);
                     }
-                    Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
+
                     if (!threadNames.isEmpty()) {
-                        Entry threadNamesEntry = new Entry(new StringArray("threadNames", new ArrayList<>(threadNames)));
-                        dataFileWriter.append(threadNamesEntry);
+                        writeMetaStringArray(dataFileWriter, "threadNames", threadNames);
                     }
-                    Map<CharSequence, Integer> urlLookup = createLookup(urls);
+
                     if (!urls.isEmpty()) {
-                        Entry urlsEntry = new Entry(new StringArray("urls", new ArrayList<>(urls)));
-                        dataFileWriter.append(urlsEntry);
+                        writeMetaStringArray(dataFileWriter, "urls", urls);
                     }
+
                     List<CharSequence> codes = statusCodeLookup.getCustomCodes();
                     List<CharSequence> messages = statusCodeLookup.getCustomMessages();
                     if (codes != null && !codes.isEmpty()) {
-                        Entry codesEntry = new Entry(new StringArray("codes", codes));
-                        dataFileWriter.append(codesEntry);
-                        Entry messagesEntry = new Entry(new StringArray("messages", messages));
-                        dataFileWriter.append(messagesEntry);
+                        writeMetaStringArray(dataFileWriter, "codes", codes);
+                        writeMetaStringArray(dataFileWriter, "messages", messages);
                     }
+                    dataFileWriter.create(HttpSample.getClassSchema(), hos, SYNC);
+
+                    Map<CharSequence, Integer> labelLookup = createLookup(labels);
+                    Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
+                    Map<CharSequence, Integer> urlLookup = createLookup(urls);
                     while (reader.hasNext()) {
                         CsvJtlRow row = reader.next();
-                        Entry entry = convert(row, labelLookup, threadNameLookup, urlLookup);
-                        dataFileWriter.append(entry);
+                        HttpSample httpSample = convert(row, labelLookup, threadNameLookup, urlLookup);
+                        dataFileWriter.append(httpSample);
                     }
                 }
                 sha256Hash = hos.hash().toString();
@@ -321,7 +329,7 @@ public class CsvJtlToAvroConverter implements Converter {
         // This iterable better not change between when this is called and when
         // the array is made, otherwise it'll be all sorts of messed up and you
         // won't be able to know.
-        private Map<CharSequence, Integer> createLookup(Iterable<CharSequence> items) {
+        private static Map<CharSequence, Integer> createLookup(Iterable<CharSequence> items) {
             Map<CharSequence, Integer> lookup = new HashMap<>();
             Integer ref = 1;
             for (CharSequence item : items) {
@@ -331,7 +339,20 @@ public class CsvJtlToAvroConverter implements Converter {
             return lookup;
         }
 
-        private Entry convert(CsvJtlRow row,
+        private static void writeMetaStringArray(DataFileWriter<?> dataFileWriter, String name, Collection<CharSequence> items) throws IOException {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                Encoder enc = EncoderFactory.get().directBinaryEncoder(baos, null);
+                enc.writeArrayStart();
+                enc.setItemCount(items.size());
+                for (CharSequence item : items) {
+                    enc.writeString(item);
+                }
+                enc.writeArrayEnd();
+                dataFileWriter.setMeta(name, baos.toByteArray());
+            }
+        }
+
+        private HttpSample convert(CsvJtlRow row,
                 Map<CharSequence, Integer> labelLookup,
                 Map<CharSequence, Integer> threadNameLookup,
                 Map<CharSequence, Integer> urlLookup) {
@@ -349,7 +370,7 @@ public class CsvJtlToAvroConverter implements Converter {
             hs.setSuccess(booleanOrDefault(row.getSuccess(), true));
             hs.setThreadNameRef(threadNameLookup.getOrDefault(row.getThreadName(), 0));
 
-            return new Entry(hs);
+            return hs;
         }
 
         private long longOrDefault(Long value, long defaultVal) {
