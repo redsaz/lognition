@@ -83,7 +83,12 @@ public class CsvJtlToAvroConverter implements Converter {
         String sha256Hash = null;
         try {
             LOGGER.debug("Converting {} to {}...", source, dest);
+            LOGGER.debug("Creating intermediate file...");
             IntermediateInfo info = csvToIntermediate(source, intermediateFile);
+            LOGGER.debug("...intermediate file created in {}ms after reading {} rows. Creating dest={}...",
+                    System.currentTimeMillis() - startMillis,
+                    info.numRows,
+                    dest);
             sha256Hash = info.writeAvro(intermediateFile, dest);
             totalRows = info.numRows;
         } catch (RuntimeException | IOException ex) {
@@ -104,6 +109,9 @@ public class CsvJtlToAvroConverter implements Converter {
     private IntermediateInfo csvToIntermediate(File source, File dest) throws IOException {
         DatumWriter<CsvJtlRow> userDatumWriter = new SpecificDatumWriter<>(CsvJtlRow.class);
         IntermediateInfo info = new IntermediateInfo();
+        if (dest.exists()) {
+            LOGGER.debug("File \"{}\" already exists. It will be replaced.", dest);
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(source));
                 CSVReader reader = new CSVReader(br);
                 DataFileWriter<CsvJtlRow> dataFileWriter = new DataFileWriter<>(userDatumWriter)) {
@@ -253,9 +261,6 @@ public class CsvJtlToAvroConverter implements Converter {
         private final SortedSet<CharSequence> threadNames = new TreeSet<>();
         private final StatusCodeLookup statusCodeLookup = new StatusCodeLookup();
 
-        public IntermediateInfo() {
-        }
-
         public void update(CsvJtlRow row) {
             ++numRows;
             calcTimes(row.getTimeStamp(), row.getElapsed());
@@ -271,6 +276,9 @@ public class CsvJtlToAvroConverter implements Converter {
             if (row.getResponseCode() != null) {
                 statusCodeLookup.getRef(row.getResponseCode(), row.getResponseMessage());
             }
+            if (numRows % 1000000L == 0) {
+                LOGGER.debug("Read {} rows for intermediate file so far.", numRows);
+            }
         }
 
         /**
@@ -283,6 +291,9 @@ public class CsvJtlToAvroConverter implements Converter {
          */
         public String writeAvro(File intermediateSource, File dest) throws IOException {
             String sha256Hash = null;
+            if (dest.exists()) {
+                LOGGER.debug("File \"{}\" already exists. It will be replaced.", dest);
+            }
             DatumWriter<HttpSample> httpSampleDatumWriter = new SpecificDatumWriter<>(HttpSample.class);
             DatumReader<CsvJtlRow> httpSampleDatumReader = new SpecificDatumReader<>(CsvJtlRow.class);
             try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
@@ -315,10 +326,18 @@ public class CsvJtlToAvroConverter implements Converter {
                     Map<CharSequence, Integer> labelLookup = createLookup(labels);
                     Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
                     Map<CharSequence, Integer> urlLookup = createLookup(urls);
+                    long numRowsWritten = 0;
+                    long writeStartMs = System.currentTimeMillis();
                     while (reader.hasNext()) {
-                        CsvJtlRow row = reader.next();
-                        HttpSample httpSample = convert(row, labelLookup, threadNameLookup, urlLookup);
-                        dataFileWriter.append(httpSample);
+                        for (long i = 0; i < 1000000L && reader.hasNext(); ++i) {
+                            CsvJtlRow row = reader.next();
+                            HttpSample httpSample = convert(row, labelLookup, threadNameLookup, urlLookup);
+                            dataFileWriter.append(httpSample);
+                            ++numRowsWritten;
+                        }
+                        LOGGER.debug("{}ms to write {} of {} rows.",
+                                System.currentTimeMillis() - writeStartMs,
+                                numRowsWritten, numRows);
                     }
                 }
                 sha256Hash = hos.hash().toString();
