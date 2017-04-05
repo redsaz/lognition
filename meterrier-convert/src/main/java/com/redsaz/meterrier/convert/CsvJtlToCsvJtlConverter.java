@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +53,13 @@ public class CsvJtlToCsvJtlConverter implements Converter {
                 CSVReader reader = new CSVReader(br)) {
             Iterator<String[]> csvIter = reader.iterator();
             JtlRowToJtlRow j2j = null;
-            if (csvIter.hasNext()) {
-                String[] headers = csvIter.next();
-                j2j = new JtlRowToJtlRow(headers,
+            if (!csvIter.hasNext()) {
+                throw new RuntimeException("No data in file.");
+            }
+            String[] firstLine = csvIter.next();
+            boolean firstLineIsHeader;
+            if (HeaderCheckUtil.isJtlHeaderRow(firstLine)) {
+                j2j = new JtlRowToJtlRow(firstLine,
                         JtlType.TIMESTAMP,
                         JtlType.ELAPSED,
                         JtlType.LABEL,
@@ -67,15 +72,36 @@ public class CsvJtlToCsvJtlConverter implements Converter {
                         JtlType.ALL_THREADS,
                         JtlType.URL
                 );
+                firstLineIsHeader = true;
+            } else if (HeaderCheckUtil.canUseDefaultHeaderRow(firstLine)) {
+                LOGGER.warn("The JTL (CSV) file seems to be missing the header row. Using the expected defaults.");
+                j2j = new JtlRowToJtlRow(HeaderCheckUtil.DEFAULT_HEADERS_TEXT,
+                        JtlType.TIMESTAMP,
+                        JtlType.ELAPSED,
+                        JtlType.LABEL,
+                        JtlType.RESPONSE_CODE,
+                        JtlType.RESPONSE_MESSAGE,
+                        JtlType.THREAD_NAME,
+                        JtlType.SUCCESS,
+                        JtlType.BYTES,
+                        JtlType.SENT_BYTES,
+                        JtlType.ALL_THREADS,
+                        JtlType.URL
+                );
+                firstLineIsHeader = false;
             } else {
-                throw new RuntimeException("No headers defined.");
+                throw new IllegalArgumentException("Cannot convert from a JTL (CSV) with no header row and non-default column.");
             }
 
             try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
                 try (
-                        BufferedWriter bw = new BufferedWriter(new FileWriter(dest));
+                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(hos, "UTF-8"));
                         CSVWriter writer = new CSVWriter(bw)) {
                     writer.writeNext(j2j.getHeaders(), false);
+                    if (!firstLineIsHeader) {
+                        ++totalRows;
+                        writer.writeNext(j2j.convert(firstLine), false);
+                    }
                     while (csvIter.hasNext()) {
                         String[] row = csvIter.next();
                         ++totalRows;

@@ -59,16 +59,6 @@ import org.slf4j.LoggerFactory;
 public class CsvJtlToAvroConverter implements Converter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToAvroConverter.class);
-    // Sometimes (in JMeter versions 2.12 and possibly earlier), when running
-    // JMeter in remote mode, the CSV JTL file will not have a header row! The
-    // CSV JTL generated in this fashion usually has the following defaults:
-    // timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
-    // So, we will attempt to detect for this case and compensate appropriately.
-    private static final List<JtlType> DEFAULT_HEADERS = Arrays.asList(
-            JtlType.TIMESTAMP, JtlType.ELAPSED, JtlType.LABEL,
-            JtlType.RESPONSE_CODE, JtlType.RESPONSE_MESSAGE, JtlType.THREAD_NAME,
-            JtlType.DATA_TYPE, JtlType.SUCCESS, JtlType.BYTES, JtlType.GRP_THREADS,
-            JtlType.ALL_THREADS, JtlType.LATENCY);
 
     private static final Set<JtlType> REQUIRED_COLUMNS = EnumSet.of(
             JtlType.TIMESTAMP, JtlType.ELAPSED, JtlType.LABEL,
@@ -147,29 +137,21 @@ public class CsvJtlToAvroConverter implements Converter {
         private final boolean headerAbsent;
 
         public JtlTypeColumns(String[] header) {
-            colTypes = new ArrayList<>(header.length);
-            int numUnknownCols = 0;
-            for (String headerCol : header) {
-                JtlType type = JtlType.fromHeader(headerCol);
-                if (type == null) {
-                    LOGGER.warn("Ignoring unknown header column \"{}\".", headerCol);
-                    ++numUnknownCols;
+            if (HeaderCheckUtil.isJtlHeaderRow(header)) {
+                headerAbsent = false;
+                colTypes = new ArrayList<>(header.length);
+                for (String headerCol : header) {
+                    JtlType type = JtlType.fromHeader(headerCol);
+                    if (type == null) {
+                        LOGGER.warn("Ignoring unknown header column \"{}\".", headerCol);
+                    }
+                    colTypes.add(type);
                 }
-                colTypes.add(type);
-            }
-            // If we don't have enough known header columns, and the number of
-            // columns is exactly 12, then we may have hit a bug with Jmeter 2.12
-            // in which the JTL CSV headers are not output by default in remote
-            // mode. Thankfully it can be fixable.
-            headerAbsent = header.length > 3 && header.length - numUnknownCols < 3;
-            if (headerAbsent) {
-                if (header.length == 12
-                        && isNumber(header[0]) && isNumber(header[1])
-                        && isBoolean(header[7])
-                        && isNumber(header[8]) && isNumber(header[9])
-                        && isNumber(header[10]) && isNumber(header[11])) {
+            } else {
+                headerAbsent = true;
+                if (HeaderCheckUtil.canUseDefaultHeaderRow(header)) {
                     LOGGER.warn("The JTL (CSV) file seems to be missing the header row. Using the expected defaults.");
-                    colTypes = DEFAULT_HEADERS;
+                    colTypes = HeaderCheckUtil.DEFAULT_HEADERS;
                 } else {
                     LOGGER.error("No header row defined for JTL (CSV), and columns do not appear to be the defaults. Cannot convert.");
                     throw new IllegalArgumentException("Cannot convert from a JTL (CSV) with no header row and non-default column.");
@@ -217,30 +199,6 @@ public class CsvJtlToAvroConverter implements Converter {
                         ex.getMessage(), Arrays.toString(row));
                 return null;
             }
-        }
-
-        private static boolean isNumber(String text) {
-            if (text == null || text.isEmpty()) {
-                return false;
-            }
-            char first = text.charAt(0);
-            if (first != '-' && first != '+' && (first < '0' || first > '9')) {
-                return false;
-            }
-            for (int i = 1; i < text.length(); ++i) {
-                char c = text.charAt(i);
-                if (c < '0' || c > '9') {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static boolean isBoolean(String text) {
-            if (text == null || text.isEmpty()) {
-                return false;
-            }
-            return "true".equalsIgnoreCase("true") || "false".equalsIgnoreCase("false");
         }
 
     }
