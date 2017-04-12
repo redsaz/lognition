@@ -20,21 +20,23 @@ import com.redsaz.meterrier.api.LogsService;
 import java.io.InputStream;
 import java.util.List;
 import com.redsaz.meterrier.api.model.ImportInfo;
-import com.redsaz.meterrier.convert.AvroToCsvJtlConverter;
+import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.convert.Converter;
 import com.redsaz.meterrier.convert.CsvJtlToAvroConverter;
-import com.redsaz.meterrier.convert.CsvJtlToCsvJtlConverter;
+import com.redsaz.meterrier.store.HsqlJdbc;
+import com.redsaz.meterrier.store.HsqlLogsService;
 import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.hsqldb.jdbc.JDBCPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Does not directly store logs, but is responsible for ensuring that the logs
- * and metadata sent to and retrieved from the store are correctly formatted,
- * sized, and without malicious/errorific content.
+ * Does not directly store logs, but is responsible for ensuring that the logs and metadata sent to
+ * and retrieved from the store are correctly formatted, sized, and without malicious/errorific
+ * content.
  *
  * Default values for jtl files:
  * timestamp,elapsed,label,responseCode,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
@@ -49,18 +51,25 @@ public class ProcessorImportService implements ImportService {
     private final ImportService srv;
     private final LogsService logsSrv;
     private final Converter converter;
+    private final String convertedDir;
 
     public static void main(String[] args) throws Exception {
-        ImportInfo ii = new ImportInfo(0, "jtls/real-without-header.jtl", "title", "csv", 1234567890000L, "Good");
+        JDBCPool pool = HsqlJdbc.initPool();
+        LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
+        String convertedDir = "jtls/target/converted";
+        long now = System.currentTimeMillis();
+        ImportInfo ii = new ImportInfo(now, "jtls/target/real-without-header.jtl", "real-" + now, "csv", now, "Good");
         Converter imp = new CsvJtlToAvroConverter();
-        ImporterCallable ic = new ImporterCallable(imp, ii);
+        ImporterCallable ic = new ImporterCallable(saniLogSrv, imp, convertedDir, ii);
         ic.call();
     }
 
-    public ProcessorImportService(ImportService importService, LogsService logsService) {
+    public ProcessorImportService(ImportService importService, LogsService logsService,
+            Converter dataConverter, String convertedDirectory) {
         srv = importService;
         logsSrv = logsService;
-        converter = new CsvJtlToAvroConverter();
+        converter = dataConverter;
+        convertedDir = convertedDirectory;
     }
 
     @Override
@@ -81,42 +90,48 @@ public class ProcessorImportService implements ImportService {
     @Override
     public ImportInfo upload(InputStream raw, ImportInfo source) {
         ImportInfo result = srv.upload(raw, source);
-        EXEC.submit(new ImporterCallable(converter, result));
+        EXEC.submit(new ImporterCallable(logsSrv, converter, convertedDir, result));
         return result;
     }
 
     @Override
     public ImportInfo update(ImportInfo source) {
         ImportInfo result = srv.update(source);
-        EXEC.submit(new ImporterCallable(converter, result));
+        EXEC.submit(new ImporterCallable(logsSrv, converter, convertedDir, result));
         return result;
     }
 
-    private static class ImporterCallable implements Callable<ImportInfo> {
+    private static class ImporterCallable implements Callable<File> {
 
+        private final LogsService logsSrv;
         private final Converter conv;
+        private final String convertedDir;
         private final ImportInfo source;
 
-        public ImporterCallable(Converter converter, ImportInfo info) {
+        public ImporterCallable(LogsService logsService, Converter converter, String convertedDirectory, ImportInfo info) {
+            logsSrv = logsService;
             conv = converter;
+            convertedDir = convertedDirectory;
             source = info;
         }
 
         @Override
-        public ImportInfo call() throws Exception {
-            LOGGER.info("Make a 1:1 baseline jtl which has all the information kept in our avro form.");
-            File baselineDest = new File("jtls/real-columntrimmed.csv");
-            Converter c2c = new CsvJtlToCsvJtlConverter();
-            c2c.convert(new File(source.getImportedFilename()), baselineDest);
+        public File call() throws Exception {
+            File converted = convert();
 
-            LOGGER.info("Now do the actual conversion.");
-            File dest = new File("jtls/real.avro");
-            conv.convert(new File(source.getImportedFilename()), dest);
+            Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(), source.getUploadedUtcMillis(), "");
+            Log resultLog = logsSrv.create(sourceLog);
+            LOGGER.info("Created log {}", resultLog);
 
-            LOGGER.info("Now export it back to a jtl for comparison against the baseline.");
-            Converter a2j = new AvroToCsvJtlConverter();
-            a2j.convert(dest, new File("jtls/should-equal-real-columntrimmed.jtl"));
-            return source;
+            return converted;
+        }
+
+        private File convert() {
+            File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
+            String hash = conv.convert(new File(source.getImportedFilename()), avro);
+            LOGGER.info("SHA-256: {}", hash);
+
+            return avro;
         }
 
     }
