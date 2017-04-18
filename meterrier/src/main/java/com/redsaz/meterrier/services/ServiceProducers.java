@@ -46,7 +46,7 @@ public class ServiceProducers {
     private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new HsqlLogsService(POOL));
     private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new HsqlImportService(POOL));
     private static final Converter CONVERTER = new AvroToCsvJtlConverter();
-    private static final ImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
+    private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
             SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, CONVERTER, "jtls/target/converted");
     private static final NotesService SANITIZER_NOTES_SERVICE = new SanitizedNotesService(new HsqlNotesService(POOL));
 
@@ -78,6 +78,7 @@ public class ServiceProducers {
 
     public void destroy(@Observes @Destroyed(ApplicationScoped.class) Object init) {
         LOGGER.info("Shutting down Meterrier.");
+        PROCESSOR_IMPORT_SERVICE.shutdown();
     }
 
 }

@@ -26,9 +26,9 @@ import com.redsaz.meterrier.convert.CsvJtlToAvroConverter;
 import com.redsaz.meterrier.store.HsqlJdbc;
 import com.redsaz.meterrier.store.HsqlLogsService;
 import java.io.File;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.hsqldb.jdbc.JDBCPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,22 +46,29 @@ import org.slf4j.LoggerFactory;
 public class ProcessorImportService implements ImportService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorImportService.class);
-    private static final ExecutorService EXEC = Executors.newSingleThreadExecutor();
 
     private final ImportService srv;
     private final LogsService logsSrv;
     private final Converter converter;
     private final String convertedDir;
+    private final Importer importer;
+    private final Thread importerThread;
 
     public static void main(String[] args) throws Exception {
-        JDBCPool pool = HsqlJdbc.initPool();
-        LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
-        String convertedDir = "jtls/target/converted";
-        long now = System.currentTimeMillis();
+        final JDBCPool pool = HsqlJdbc.initPool();
+        final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
+        final String convertedDir = "jtls/target/converted";
+        final long now = System.currentTimeMillis();
+        final Converter conv = new CsvJtlToAvroConverter();
+
+        Importer imp = new Importer(saniLogSrv, conv, convertedDir);
+        Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
+        impThread.start();
+
         ImportInfo ii = new ImportInfo(now, "jtls/target/real-without-header.jtl", "real-" + now, "csv", now, "Good");
-        Converter imp = new CsvJtlToAvroConverter();
-        ImporterCallable ic = new ImporterCallable(saniLogSrv, imp, convertedDir, ii);
-        ic.call();
+        imp.addJob(ii);
+
+        imp.shutdown();
     }
 
     public ProcessorImportService(ImportService importService, LogsService logsService,
@@ -70,6 +77,9 @@ public class ProcessorImportService implements ImportService {
         logsSrv = logsService;
         converter = dataConverter;
         convertedDir = convertedDirectory;
+        importer = new Importer(logsSrv, converter, convertedDir);
+        importerThread = new Thread(importer, "LogImporter-" + System.identityHashCode(importer));
+        init();
     }
 
     @Override
@@ -90,49 +100,70 @@ public class ProcessorImportService implements ImportService {
     @Override
     public ImportInfo upload(InputStream raw, ImportInfo source) {
         ImportInfo result = srv.upload(raw, source);
-        EXEC.submit(new ImporterCallable(logsSrv, converter, convertedDir, result));
+        importer.addJob(result);
         return result;
     }
 
     @Override
     public ImportInfo update(ImportInfo source) {
         ImportInfo result = srv.update(source);
-        EXEC.submit(new ImporterCallable(logsSrv, converter, convertedDir, result));
+        importer.addJob(result);
         return result;
     }
 
-    private static class ImporterCallable implements Callable<File> {
+    public void shutdown() {
+        importer.shutdown();
+    }
+
+    private void init() {
+        importerThread.start();
+    }
+
+    private static class Importer implements Runnable {
 
         private final LogsService logsSrv;
         private final Converter conv;
         private final String convertedDir;
-        private final ImportInfo source;
+        private final BlockingQueue<ImportInfo> awaitingImport = new LinkedBlockingQueue<>();
+        private final AtomicBoolean shutdown = new AtomicBoolean();
 
-        public ImporterCallable(LogsService logsService, Converter converter, String convertedDirectory, ImportInfo info) {
+        public Importer(LogsService logsService, Converter converter, String convertedDirectory) {
             logsSrv = logsService;
             conv = converter;
             convertedDir = convertedDirectory;
-            source = info;
+        }
+
+        public void addJob(ImportInfo info) {
+            awaitingImport.add(info);
         }
 
         @Override
-        public File call() throws Exception {
-            File converted = convert();
+        public void run() {
+            while (!Thread.interrupted() && !shutdown.get()) {
+                try {
+                    LOGGER.info("Waiting for import...");
+                    ImportInfo source = awaitingImport.take();
+                    LOGGER.info("...importing...");
+                    File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
+                    String hash = conv.convert(new File(source.getImportedFilename()), avro);
+                    LOGGER.info("...SHA-256: {}...", hash);
 
-            Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(), source.getUploadedUtcMillis(), "");
-            Log resultLog = logsSrv.create(sourceLog);
-            LOGGER.info("Created log {}", resultLog);
-
-            return converted;
+                    Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(), source.getUploadedUtcMillis(), "");
+                    Log resultLog = logsSrv.create(sourceLog);
+                    LOGGER.info("...created log {}.", resultLog);
+                } catch (InterruptedException ex) {
+                    LOGGER.info("This is fine. We want this to happen.");
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
 
-        private File convert() {
-            File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
-            String hash = conv.convert(new File(source.getImportedFilename()), avro);
-            LOGGER.info("SHA-256: {}", hash);
-
-            return avro;
+        /**
+         * Signals the instance that once it has finished work on the current item, it is to stop.
+         * If there are any additionl items waiting in the queue, they will not be processed.
+         */
+        public void shutdown() {
+            shutdown.set(true);
         }
-
     }
 }
