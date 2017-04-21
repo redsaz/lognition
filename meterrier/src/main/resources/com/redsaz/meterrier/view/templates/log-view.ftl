@@ -17,7 +17,7 @@
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.id}</h2>
-          <p>${brief.storedFilename}</p>
+          <p>${brief}</p>
         </div>
       </div>
 </#escape>

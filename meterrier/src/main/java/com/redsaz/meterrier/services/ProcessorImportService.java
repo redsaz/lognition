@@ -23,12 +23,16 @@ import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.convert.Converter;
 import com.redsaz.meterrier.convert.CsvJtlToAvroConverter;
+import com.redsaz.meterrier.store.HsqlImportService;
 import com.redsaz.meterrier.store.HsqlJdbc;
 import com.redsaz.meterrier.store.HsqlLogsService;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import org.hsqldb.jdbc.JDBCPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,12 +60,13 @@ public class ProcessorImportService implements ImportService {
 
     public static void main(String[] args) throws Exception {
         final JDBCPool pool = HsqlJdbc.initPool();
+        final ImportService saniImportSrv = new SanitizerImportService(new HsqlImportService(pool));
         final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
         final String convertedDir = "jtls/target/converted";
         final long now = System.currentTimeMillis();
         final Converter conv = new CsvJtlToAvroConverter();
 
-        Importer imp = new Importer(saniLogSrv, conv, convertedDir);
+        Importer imp = new Importer(saniImportSrv, saniLogSrv, conv, convertedDir);
         Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
         impThread.start();
 
@@ -77,7 +82,7 @@ public class ProcessorImportService implements ImportService {
         logsSrv = logsService;
         converter = dataConverter;
         convertedDir = convertedDirectory;
-        importer = new Importer(logsSrv, converter, convertedDir);
+        importer = new Importer(srv, logsSrv, converter, convertedDir);
         importerThread = new Thread(importer, "LogImporter-" + System.identityHashCode(importer));
         init();
     }
@@ -116,18 +121,28 @@ public class ProcessorImportService implements ImportService {
     }
 
     private void init() {
+        try {
+            Files.createDirectories(new File(convertedDir).toPath());
+        } catch (IOException ex) {
+            String msg = "Could not create directories for " + convertedDir + "!";
+            LOGGER.error(msg, ex);
+            throw new RuntimeException(msg, ex);
+        }
         importerThread.start();
     }
 
     private static class Importer implements Runnable {
 
+        private final ImportService importSrv;
         private final LogsService logsSrv;
         private final Converter conv;
         private final String convertedDir;
         private final BlockingQueue<ImportInfo> awaitingImport = new LinkedBlockingQueue<>();
         private final AtomicBoolean shutdown = new AtomicBoolean();
 
-        public Importer(LogsService logsService, Converter converter, String convertedDirectory) {
+        public Importer(ImportService importService, LogsService logsService, Converter converter,
+                String convertedDirectory) {
+            importSrv = importService;
             logsSrv = logsService;
             conv = converter;
             convertedDir = convertedDirectory;
@@ -151,6 +166,7 @@ public class ProcessorImportService implements ImportService {
                     Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(), source.getUploadedUtcMillis(), "");
                     Log resultLog = logsSrv.create(sourceLog);
                     LOGGER.info("...created log {}.", resultLog);
+                    importSrv.delete(source.getId());
                 } catch (InterruptedException ex) {
                     LOGGER.info("This is fine. We want this to happen.");
                     Thread.currentThread().interrupt();

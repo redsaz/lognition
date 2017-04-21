@@ -96,6 +96,7 @@ public class HsqlImportService implements ImportService {
             String digestHex = bytesToHex(md.digest());
             digestFile = getDigestFile(digestHex);
         } catch (IOException | NoSuchAlgorithmException ex) {
+            LOGGER.error("Exception when uploading log.", ex);
             throw new AppServerException("Failed to upload content.", ex);
         }
         if (!Files.exists(digestFile.toPath())) {
