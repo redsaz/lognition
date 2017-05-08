@@ -29,6 +29,7 @@ public class Log {
     private final String uriName;
     private final String title;
     private final long uploadedUtcMillis;
+    private final String dataFile;
     private final String notes;
 
     @JsonCreator
@@ -38,16 +39,18 @@ public class Log {
             @JsonProperty("uriName") String inUriName,
             @JsonProperty("title") String inTitle,
             @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
+            @JsonProperty("dataFile") String inDataFile,
             @JsonProperty("notes") String inNotes) {
         id = inId;
         uriName = inUriName;
         title = inTitle;
         uploadedUtcMillis = inUploadedUtcMillis;
+        dataFile = inDataFile;
         notes = inNotes;
     }
 
     public static Log emptyLog() {
-        return new Log(0, null, null, System.currentTimeMillis(), null);
+        return new Log(0, null, null, System.currentTimeMillis(), null, null);
     }
 
     public long getId() {
@@ -66,6 +69,10 @@ public class Log {
         return uploadedUtcMillis;
     }
 
+    public String getDataFile() {
+        return dataFile;
+    }
+
     public String getNotes() {
         return notes;
     }
@@ -76,16 +83,18 @@ public class Log {
                 + " uriName=" + uriName
                 + " title=" + title
                 + " uploadedUtcMillis=" + uploadedUtcMillis
+                + " dataFile=" + dataFile
                 + " notes=" + notes;
     }
 
     @Override
     public int hashCode() {
         return Long.hashCode(id)
-                ^ Objects.hashCode(uriName.hashCode())
-                ^ Objects.hashCode(title.hashCode())
+                ^ Objects.hashCode(uriName)
+                ^ Objects.hashCode(title)
                 ^ Long.hashCode(uploadedUtcMillis)
-                ^ Objects.hashCode(notes.hashCode());
+                ^ Objects.hashCode(dataFile)
+                ^ Objects.hashCode(notes);
     }
 
     @Override
@@ -105,6 +114,8 @@ public class Log {
         } else if (!Objects.equals(this.uriName, other.uriName)) {
             return false;
         } else if (!Objects.equals(this.title, other.title)) {
+            return false;
+        } else if (!Objects.equals(this.dataFile, other.dataFile)) {
             return false;
         } else if (!Objects.equals(this.notes, other.notes)) {
             return false;

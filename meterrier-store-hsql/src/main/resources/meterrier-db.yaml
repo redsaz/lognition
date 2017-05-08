@@ -69,6 +69,9 @@ databaseChangeLog:
                     unique: true
                     nullable: false
               - column:
+                  name: dataFile
+                  type: varchar(256)
+              - column:
                   name: uploadedUtcMillis
                   type: bigint
                   constraints:

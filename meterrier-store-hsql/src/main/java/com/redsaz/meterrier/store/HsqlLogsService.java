@@ -77,10 +77,12 @@ public class HsqlLogsService implements LogsService {
                     LOG.URINAME,
                     LOG.TITLE,
                     LOG.UPLOADEDUTCMILLIS,
+                    LOG.DATAFILE,
                     LOG.NOTES).values(
                             source.getUriName(),
                             source.getTitle(),
                             source.getUploadedUtcMillis(),
+                            source.getDataFile(),
                             source.getNotes())
                     .returning().fetchOne();
             LOGGER.info("...Created log entry in DB.");
@@ -180,6 +182,7 @@ public class HsqlLogsService implements LogsService {
                     record.getUriname(),
                     record.getTitle(),
                     record.getUploadedutcmillis(),
+                    record.getDatafile(),
                     record.getNotes()
             );
         }

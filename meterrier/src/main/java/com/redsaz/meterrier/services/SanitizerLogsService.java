@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Does not directly store logs, but is responsible for ensuring that the logs
- * and metadata sent to and retrieved from the store are correctly formatted,
- * sized, and without malicious/errorific content.
+ * Does not directly store logs, but is responsible for ensuring that the logs and metadata sent to
+ * and retrieved from the store are correctly formatted, sized, and without malicious/errorific
+ * content.
  *
  * Default values for jtl files:
  * timestamp,elapsed,label,responseCode,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
@@ -173,8 +173,8 @@ public class SanitizerLogsService implements LogsService {
 //        return new LogBrief(brief.getId(), uriName, title, notes, filename, brief.getUploadedTimestampMillis(), brief.getContentId());
 //    }
     /**
-     * A log must have at least a uri and a title. If neither are present, then
-     * it will be generated. The ID will remain unchanged.
+     * A log must have at least a uri and a title. If neither are present, then it will be
+     * generated. The ID will remain unchanged.
      *
      * @param source The log to sanitize
      * @return A new brief instance with sanitized data.
@@ -211,7 +211,7 @@ public class SanitizerLogsService implements LogsService {
             notes = "";
         }
 
-        return new Log(source.getId(), uriName, title, source.getUploadedUtcMillis(), notes);
+        return new Log(source.getId(), uriName, title, source.getUploadedUtcMillis(), source.getDataFile(), notes);
     }
 
     private static String shortened(String text) {

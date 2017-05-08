@@ -64,7 +64,7 @@ public class HsqlImportService implements ImportService {
     public HsqlImportService(JDBCPool jdbcPool) {
         LOGGER.info("Using given JDBC Pool.");
         pool = jdbcPool;
-        File originalLogsDir = new File("./meterrier-data/original-logs");
+        File originalLogsDir = new File("./meterrier-data/imported-logs");
         try {
             Files.createDirectories(originalLogsDir.toPath());
         } catch (IOException ex) {
@@ -168,7 +168,7 @@ public class HsqlImportService implements ImportService {
     public void delete(long id) {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
-            LOGGER.info("Deleting import_id={}...", id);
+            LOGGER.debug("Deleting import_id={}...", id);
             ImportInfo info = get(id);
             if (info == null) {
                 LOGGER.info("No such import_id={} exists.", id);
@@ -179,7 +179,7 @@ public class HsqlImportService implements ImportService {
                 LOGGER.error("Unable to delete imported file {}.", file);
             }
             context.delete(PENDINGIMPORT).where(PENDINGIMPORT.ID.eq(id)).execute();
-            LOGGER.info("...Finished deleting import_id{}.", id);
+            LOGGER.debug("...Deleted import_id={}.", id);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to delete pendingimport_id=" + id
                     + " because: " + ex.getMessage(), ex);
@@ -192,7 +192,7 @@ public class HsqlImportService implements ImportService {
             throw new NullPointerException("No import information was specified.");
         }
 
-        LOGGER.info("Updating entry in DB...");
+        LOGGER.debug("Updating entry in DB...");
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
 
@@ -210,7 +210,7 @@ public class HsqlImportService implements ImportService {
                 up.set(PENDINGIMPORT.UPLOADEDUTCMILLIS, source.getUploadedUtcMillis());
             }
             PendingimportRecord result = up.where(PENDINGIMPORT.ID.eq(source.getId())).returning().fetchOne();
-            LOGGER.info("...Updated entry in DB.");
+            LOGGER.debug("...Updated entry in DB.");
             return R2I.map(result);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to update import: " + ex.getMessage(), ex);

@@ -32,7 +32,6 @@ import java.nio.file.Files;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import org.hsqldb.jdbc.JDBCPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +61,7 @@ public class ProcessorImportService implements ImportService {
         final JDBCPool pool = HsqlJdbc.initPool();
         final ImportService saniImportSrv = new SanitizerImportService(new HsqlImportService(pool));
         final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
-        final String convertedDir = "jtls/target/converted";
+        final String convertedDir = "jtls/target/logs";
         final long now = System.currentTimeMillis();
         final Converter conv = new CsvJtlToAvroConverter();
 
@@ -156,21 +155,33 @@ public class ProcessorImportService implements ImportService {
         public void run() {
             while (!Thread.interrupted() && !shutdown.get()) {
                 try {
-                    LOGGER.info("Waiting for import...");
                     ImportInfo source = awaitingImport.take();
-                    LOGGER.info("...importing...");
-                    File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
-                    String hash = conv.convert(new File(source.getImportedFilename()), avro);
-                    LOGGER.info("...SHA-256: {}...", hash);
-
-                    Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(), source.getUploadedUtcMillis(), "");
-                    Log resultLog = logsSrv.create(sourceLog);
-                    LOGGER.info("...created log {}.", resultLog);
-                    importSrv.delete(source.getId());
+                    processImport(source);
                 } catch (InterruptedException ex) {
-                    LOGGER.info("This is fine. We want this to happen.");
+                    LOGGER.info("Interrupted while importing file. Closing thread.");
                     Thread.currentThread().interrupt();
+                } catch (Exception ex) {
+                    LOGGER.error("Unhandled exception while importing file: " + ex.getMessage(), ex);
                 }
+            }
+        }
+
+        private void processImport(ImportInfo source) {
+            try {
+                LOGGER.info("...importing...");
+                File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
+                String hash = conv.convert(new File(source.getImportedFilename()), avro);
+                LOGGER.info("...SHA-256: {}...", hash);
+                File dataFile = new File(convertedDir, String.format("%s.avro", hash));
+                Files.move(avro.toPath(), dataFile.toPath());
+
+                Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(),
+                        source.getUploadedUtcMillis(), dataFile.getName(), "");
+                Log resultLog = logsSrv.create(sourceLog);
+                LOGGER.info("...created log {}.", resultLog);
+                importSrv.delete(source.getId());
+            } catch (IOException ex) {
+                LOGGER.error("Could not import " + source.getImportedFilename(), ex);
             }
         }
 
