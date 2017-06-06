@@ -22,7 +22,7 @@ import java.util.List;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.convert.Converter;
-import com.redsaz.meterrier.convert.CsvJtlToAvroConverter;
+import com.redsaz.meterrier.convert.CsvJtlToAvroUnorderedConverter;
 import com.redsaz.meterrier.store.HsqlImportService;
 import com.redsaz.meterrier.store.HsqlJdbc;
 import com.redsaz.meterrier.store.HsqlLogsService;
@@ -63,7 +63,7 @@ public class ProcessorImportService implements ImportService {
         final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
         final String convertedDir = "jtls/target/logs";
         final long now = System.currentTimeMillis();
-        final Converter conv = new CsvJtlToAvroConverter();
+        final Converter conv = new CsvJtlToAvroUnorderedConverter();
 
         Importer imp = new Importer(saniImportSrv, saniLogSrv, conv, convertedDir);
         Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));

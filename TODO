@@ -1,0 +1,24 @@
+When converting, also...
+ - Create 1s min,25%,50%,75%,90%,95%,99%,max,average,#-of-calls,total-bytes,#-of-errors (hearafter called stats) for each label and overall
+ - Create 5s stats for labels and overall
+ - Create 15s stats for labels and overall
+ - Create 30s stats for labels and overall
+ - Create 1m stats for labels and overall
+ - Create 5m stats for labels and overall
+ - Create 15m stats for labels and overall
+ - Create 30m stats for labels and overall
+ - Create 1h stats for labels and overall
+ - Create All time stats for labels and overall
+ - Create 100-frame stats for each label and overall (a frame is a variably-long slice of time, depending on the total length of the operation, from the first offset (that is, 0), to the sample with the maximum offset+duration. So, if a job takes 1 hour, then each frame is 6 minutes long).
+ - Create 600-frame stats for each label and overall
+
+Besides individual log stats, there needs to be a way to tie these run logs into a project chronologically. Visiting the project overview page should show a couple of line graphs:
+- a line graph with three different lines: average, median, and 90%. Each point in the line comes from the respective "all time" stats of the run logs relating to the project.
+- a line (or area) graph with two lines: percent success and percent fail.
+- If these were to be stair-stepped line or area graphs, then that would avoid the optical illusion created by slopes (the brain doesn't perceive the points as important with area graphs, but the spaces between as important, so sloped areas look "smaller")
+
+
+
+Change millisOffset to offset
+Change millisElapsed to duration
+

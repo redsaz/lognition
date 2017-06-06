@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.convert;
 
+import com.redsaz.meterrier.convert.model.PreSample;
 import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
 import java.util.HashMap;
 import java.util.Locale;
@@ -32,6 +33,12 @@ import java.util.Map;
             dest.setTimeStamp((Long) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setOffset((Long) convert(value));
+            return dest;
+        }
     },
     // in milliseconds
     ELAPSED("elapsed", FromStrings.LONG_FS) {
@@ -40,11 +47,23 @@ import java.util.Map;
             dest.setElapsed((Long) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setDuration((Long) convert(value));
+            return dest;
+        }
     },
     // sampler label
     LABEL("label", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setLabel((String) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
             dest.setLabel((String) convert(value));
             return dest;
         }
@@ -56,12 +75,24 @@ import java.util.Map;
             dest.setResponseCode((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setStatusCode((String) convert(value));
+            return dest;
+        }
     },
     // e.g. OK
     RESPONSE_MESSAGE("responseMessage", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setResponseMessage((String) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setStatusMessage((String) convert(value));
             return dest;
         }
     },
@@ -72,6 +103,12 @@ import java.util.Map;
             dest.setThreadName((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setThreadName(value);
+            return dest;
+        }
     },
     // e.g. text
     DATA_TYPE("dataType", FromStrings.STRING_FS) {
@@ -80,11 +117,23 @@ import java.util.Map;
             dest.setDataType((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     // true or false
     SUCCESS("success", FromStrings.BOOLEAN_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+            dest.setSuccess((Boolean) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
             dest.setSuccess((Boolean) convert(value));
             return dest;
         }
@@ -96,12 +145,24 @@ import java.util.Map;
             dest.setFailureMessage((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     // number of bytes in the sample
     BYTES("bytes", FromStrings.LONG_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setBytes((Long) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setResponseBytes((Long) convert(value));
             return dest;
         }
     },
@@ -112,12 +173,24 @@ import java.util.Map;
             dest.setSentBytes((Long) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     // number of active threads in this thread group
     GRP_THREADS("grpThreads", FromStrings.INTEGER_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setGrpThreads((Integer) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
             return dest;
         }
     },
@@ -128,12 +201,24 @@ import java.util.Map;
             dest.setAllThreads((Integer) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            dest.setTotalThreads((Integer) convert(value));
+            return dest;
+        }
     },
     // Uniform Resource Locator
     URL("URL", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setURL((String) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
             return dest;
         }
     },
@@ -144,12 +229,23 @@ import java.util.Map;
             dest.setFilename((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     // Time to first response
     LATENCY("Latency", FromStrings.INTEGER_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setLatency((Integer) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
             return dest;
         }
     },
@@ -160,11 +256,23 @@ import java.util.Map;
             dest.setConnect((Integer) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     ENCODING("encoding", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setEncoding((String) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
             return dest;
         }
     },
@@ -175,12 +283,23 @@ import java.util.Map;
             dest.setSampleCount((Integer) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            return dest;
+        }
     },
     // ErrorCount - number of errors (0 or 1, unless multiple samples are aggregated)
     ERROR_COUNT("ErrorCount", FromStrings.INTEGER_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setErrorCount((Integer) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
             return dest;
         }
     },
@@ -191,6 +310,12 @@ import java.util.Map;
             dest.setHostname((String) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     // number of milliseconds of 'Idle' time (normally 0)
     IDLE_TIME("IdleTime", FromStrings.INTEGER_FS) {
@@ -199,12 +324,24 @@ import java.util.Map;
             dest.setIdleTime((Integer) convert(value));
             return dest;
         }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
+            return dest;
+        }
     },
     //if specified
     VARIABLES("Variables", FromStrings.STRING_FS) {
         @Override
         public CsvJtlRow putIn(CsvJtlRow dest, String value) {
             dest.setVariables((String) convert(value));
+            return dest;
+        }
+
+        @Override
+        public PreSample putIn(PreSample dest, String value) {
+            // Do nothing, PreSample doesn't use this.
             return dest;
         }
     };
@@ -227,6 +364,8 @@ import java.util.Map;
     }
 
     public abstract CsvJtlRow putIn(CsvJtlRow dest, String value);
+
+    public abstract PreSample putIn(PreSample dest, String value);
 
     public static JtlType fromHeader(String header) {
         return header2Type.get(header.toLowerCase(Locale.US));

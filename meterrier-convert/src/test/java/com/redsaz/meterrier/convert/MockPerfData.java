@@ -28,7 +28,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
@@ -182,6 +184,41 @@ public class MockPerfData {
 
             for (int i = 0; i < getNumRows(); ++i) {
                 HttpSample hs = getRow(i);
+                pw.printf("%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d\n",
+                        hs.getMillisOffset() + getEarliest(),
+                        hs.getMillisElapsed(),
+                        getLabels().get(hs.getLabelRef() - 1),
+                        scl.getCode(hs.getResponseCodeRef()),
+                        scl.getMessage(hs.getResponseCodeRef()),
+                        getThreadNames().get(hs.getThreadNameRef() - 1),
+                        "text",
+                        hs.getSuccess(),
+                        hs.getResponseBytes(),
+                        hs.getTotalThreads(),
+                        hs.getTotalThreads(),
+                        0
+                );
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public void createImportCsvFileUnordered(File dest, boolean includeHeader) {
+        StatusCodeLookup scl = new StatusCodeLookup(getCodes(), getMessages());
+        try (BufferedWriter bw = Files.newBufferedWriter(dest.toPath());
+                PrintWriter pw = new PrintWriter(bw)) {
+            if (includeHeader) {
+                pw.println("timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+            }
+
+            List<HttpSample> samples = new ArrayList<HttpSample>();
+            for (int i = 0; i < getNumRows(); ++i) {
+                HttpSample hs = getRow(i);
+                samples.add(hs);
+            }
+            Collections.shuffle(samples);
+            for (HttpSample hs : samples) {
                 pw.printf("%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%d,%d\n",
                         hs.getMillisOffset() + getEarliest(),
                         hs.getMillisElapsed(),

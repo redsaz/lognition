@@ -56,9 +56,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class CsvJtlToAvroConverter implements Converter {
+public class CsvJtlToAvroUnorderedConverter implements Converter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToAvroConverter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlToAvroUnorderedConverter.class);
 
     private static final Set<JtlType> REQUIRED_COLUMNS = EnumSet.of(
             JtlType.TIMESTAMP, JtlType.ELAPSED, JtlType.LABEL,
@@ -172,8 +172,8 @@ public class CsvJtlToAvroConverter implements Converter {
         }
 
         /**
-         * Converts the row into a typed row. If the number of columns don't
-         * match the expected columns, null is returned.
+         * Converts the row into a typed row. If the number of columns don't match the expected
+         * columns, null is returned.
          *
          * @param row what to convert
          * @return a typed row, or null if it couldn't be converted.
@@ -244,8 +244,7 @@ public class CsvJtlToAvroConverter implements Converter {
          *
          * @param intermediateSource Has the intermediate data
          * @param dest Destination of the final format
-         * @throws IOException If the input could not be read or the output
-         * could not be written.
+         * @throws IOException If the input could not be read or the output could not be written.
          */
         public String writeAvro(File intermediateSource, File dest) throws IOException {
             String sha256Hash = null;

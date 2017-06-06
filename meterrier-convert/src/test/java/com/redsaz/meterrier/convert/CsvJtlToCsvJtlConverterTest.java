@@ -26,6 +26,7 @@ import java.util.Arrays;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Test the CSV-JTL to CSV-JTL converter (Usually this operation is one that
@@ -64,7 +65,7 @@ public class CsvJtlToCsvJtlConverterTest extends ConverterBaseTest {
         File expectedDest = createTempFile("expected", ".avro");
         mpd.createAvroFile(expectedDest);
 
-        Converter conv = new CsvJtlToAvroConverter();
+        Converter conv = new CsvJtlToAvroUnorderedConverter();
         File actualDest = createTempFile("actual", ".avro");
         conv.convert(source, actualDest);
 
@@ -91,7 +92,7 @@ public class CsvJtlToCsvJtlConverterTest extends ConverterBaseTest {
             pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
         }
 
-        Converter conv = new CsvJtlToAvroConverter();
+        Converter conv = new CsvJtlToAvroUnorderedConverter();
         File actualDest = createTempFile("actual", ".avro");
         conv.convert(source, actualDest);
         File effectiveDest = createTempFile("effective", ".avro");
@@ -120,7 +121,7 @@ public class CsvJtlToCsvJtlConverterTest extends ConverterBaseTest {
             pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
         }
 
-        Converter conv = new CsvJtlToAvroConverter();
+        Converter conv = new CsvJtlToAvroUnorderedConverter();
         File actualDest = createTempFile("actual", ".avro");
         conv.convert(source, actualDest);
         File effectiveDest = createTempFile("effective", ".avro");
@@ -149,7 +150,7 @@ public class CsvJtlToCsvJtlConverterTest extends ConverterBaseTest {
             pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
         }
 
-        Converter conv = new CsvJtlToAvroConverter();
+        Converter conv = new CsvJtlToAvroUnorderedConverter();
         File actualDest = createTempFile("actual", ".avro");
         conv.convert(source, actualDest);
         File effectiveDest = createTempFile("effective", ".avro");

@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.Arrays;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Test the Avro to CSV-JTL converter.
