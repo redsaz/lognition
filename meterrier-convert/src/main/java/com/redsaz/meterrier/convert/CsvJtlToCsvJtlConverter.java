@@ -17,25 +17,24 @@ package com.redsaz.meterrier.convert;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Convert a CSV-based JTL file into another CSV-based JTL file, but with
- * different columns.
+ * Convert a CSV-based JTL file into another CSV-based JTL file, but with different columns.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -49,14 +48,15 @@ public class CsvJtlToCsvJtlConverter implements Converter {
         long totalRows = 0;
         LOGGER.debug("Converting {} to {}...", source, dest);
         String sha256Hash = null;
-        try (BufferedReader br = new BufferedReader(new FileReader(source));
-                CSVReader reader = new CSVReader(br)) {
-            Iterator<String[]> csvIter = reader.iterator();
+        try (BufferedReader br = new BufferedReader(new FileReader(source))) {
             JtlRowToJtlRow j2j = null;
-            if (!csvIter.hasNext()) {
-                throw new RuntimeException("No data in file.");
+            CsvParserSettings settings = new CsvParserSettings();
+            CsvParser parser = new CsvParser(settings);
+            parser.beginParsing(br);
+            String[] firstLine = parser.parseNext();
+            if (firstLine == null) {
+                throw new RuntimeException("JTL (CSV) contained no data.");
             }
-            String[] firstLine = csvIter.next();
             boolean firstLineIsHeader;
             if (HeaderCheckUtil.isJtlHeaderRow(firstLine)) {
                 j2j = new JtlRowToJtlRow(firstLine,
@@ -94,18 +94,25 @@ public class CsvJtlToCsvJtlConverter implements Converter {
             }
 
             try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
-                try (
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(hos, "UTF-8"));
-                        CSVWriter writer = new CSVWriter(bw)) {
-                    writer.writeNext(j2j.getHeaders(), false);
-                    if (!firstLineIsHeader) {
-                        ++totalRows;
-                        writer.writeNext(j2j.convert(firstLine), false);
-                    }
-                    while (csvIter.hasNext()) {
-                        String[] row = csvIter.next();
-                        ++totalRows;
-                        writer.writeNext(j2j.convert(row), false);
+                try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(hos, "UTF-8"))) {
+                    CsvWriter writer = null;
+                    try {
+                        writer = new CsvWriter(bw, new CsvWriterSettings());
+
+                        writer.writeHeaders(j2j.getHeaders());
+                        if (!firstLineIsHeader) {
+                            ++totalRows;
+                            writer.writeRow(j2j.convert(firstLine));
+                        }
+                        String[] row;
+                        while ((row = parser.parseNext()) != null) {
+                            ++totalRows;
+                            writer.writeRow(j2j.convert(row));
+                        }
+                    } finally {
+                        if (writer != null) {
+                            writer.close();
+                        }
                     }
                 }
                 sha256Hash = hos.hash().toString();

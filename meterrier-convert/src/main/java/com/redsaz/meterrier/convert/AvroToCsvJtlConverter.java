@@ -17,9 +17,10 @@ package com.redsaz.meterrier.convert;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
-import com.opencsv.CSVWriter;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.convert.model.HttpSample;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -59,14 +60,21 @@ public class AvroToCsvJtlConverter implements Converter {
         DatumReader<HttpSample> userDatumReader = new SpecificDatumReader<>(HttpSample.class);
         try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
             try (DataFileReader<HttpSample> dataFileReader = new DataFileReader<>(source, userDatumReader);
-                    OutputStreamWriter osw = new OutputStreamWriter(hos, Charset.forName("UTF8"));
-                    CSVWriter csvWriter = new CSVWriter(osw)) {
-                csvWriter.writeNext(h2j.getUsedHeaders(), false);
-                while (dataFileReader.hasNext()) {
-                    HttpSample hs = dataFileReader.next();
-                    String[] row = h2j.convert(hs);
-                    csvWriter.writeNext(row, false);
-                    ++totalRows;
+                    OutputStreamWriter osw = new OutputStreamWriter(hos, Charset.forName("UTF8"))) {
+                CsvWriter writer = null;
+                try {
+                    writer = new CsvWriter(osw, new CsvWriterSettings());
+                    writer.writeHeaders(h2j.getUsedHeaders());
+                    while (dataFileReader.hasNext()) {
+                        HttpSample hs = dataFileReader.next();
+                        String[] row = h2j.convert(hs);
+                        writer.writeRow(row);
+                        ++totalRows;
+                    }
+                } finally {
+                    if (writer != null) {
+                        writer.close();
+                    }
                 }
             }
             sha256Hash = hos.hash().toString();

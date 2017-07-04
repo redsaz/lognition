@@ -17,10 +17,11 @@ package com.redsaz.meterrier.convert;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
-import com.opencsv.CSVReader;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.convert.model.HttpSample;
 import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +34,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,14 +103,15 @@ public class CsvJtlToAvroUnorderedConverter implements Converter {
             LOGGER.debug("File \"{}\" already exists. It will be replaced.", dest);
         }
         try (BufferedReader br = new BufferedReader(new FileReader(source));
-                CSVReader reader = new CSVReader(br);
                 DataFileWriter<CsvJtlRow> dataFileWriter = new DataFileWriter<>(userDatumWriter)) {
-            Iterator<String[]> csvIter = reader.iterator();
-            if (!csvIter.hasNext()) {
+            CsvParserSettings settings = new CsvParserSettings();
+            CsvParser parser = new CsvParser(settings);
+            parser.beginParsing(br);
+            String[] row = parser.parseNext();
+            if (row == null) {
                 throw new RuntimeException("JTL (CSV) contained no data.");
             }
             dataFileWriter.create(CsvJtlRow.getClassSchema(), dest);
-            String[] row = csvIter.next();
             JtlTypeColumns jtc = new JtlTypeColumns(row);
             if (jtc.headerAbsent()) {
                 CsvJtlRow cjRow = jtc.convert(row);
@@ -119,8 +120,7 @@ public class CsvJtlToAvroUnorderedConverter implements Converter {
                     dataFileWriter.append(cjRow);
                 }
             }
-            while (csvIter.hasNext()) {
-                row = csvIter.next();
+            while ((row = parser.parseNext()) != null) {
                 CsvJtlRow cjRow = jtc.convert(row);
                 if (cjRow != null) {
                     info.update(cjRow);

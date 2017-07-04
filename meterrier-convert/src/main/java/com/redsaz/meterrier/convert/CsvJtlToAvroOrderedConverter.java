@@ -17,10 +17,11 @@ package com.redsaz.meterrier.convert;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
-import com.opencsv.CSVReader;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.convert.model.HttpSample;
 import com.redsaz.meterrier.convert.model.PreSample;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,23 +78,24 @@ public class CsvJtlToAvroOrderedConverter implements Converter {
                     dest);
             sha256Hash = info.writeAvro(dest);
             totalRows = info.numRows;
+            LOGGER.debug("{}ms to convert {} rows to {}.",
+                    (System.currentTimeMillis() - startMillis), totalRows, dest);
         } catch (RuntimeException | IOException ex) {
             throw new AppServerException("Unable to convert file.", ex);
         }
-        LOGGER.debug("{}ms to convert {} rows to {}.",
-                (System.currentTimeMillis() - startMillis), totalRows, dest);
         return sha256Hash;
     }
 
     private IntermediateInfo csvToIntermediate(File source) throws IOException {
         IntermediateInfo info = new IntermediateInfo();
-        try (BufferedReader br = new BufferedReader(new FileReader(source));
-                CSVReader reader = new CSVReader(br)) {
-            Iterator<String[]> csvIter = reader.iterator();
-            if (!csvIter.hasNext()) {
+        try (BufferedReader br = new BufferedReader(new FileReader(source))) {
+            CsvParserSettings settings = new CsvParserSettings();
+            CsvParser parser = new CsvParser(settings);
+            parser.beginParsing(br);
+            String[] row = parser.parseNext();
+            if (row == null) {
                 throw new RuntimeException("JTL (CSV) contained no data.");
             }
-            String[] row = csvIter.next();
             JtlTypeColumns jtc = new JtlTypeColumns(row);
             if (jtc.headerAbsent()) {
                 PreSample psRow = jtc.convert(row);
@@ -102,13 +103,13 @@ public class CsvJtlToAvroOrderedConverter implements Converter {
                     info.update(psRow);
                 }
             }
-            while (csvIter.hasNext()) {
-                row = csvIter.next();
+            while ((row = parser.parseNext()) != null) {
                 PreSample psRow = jtc.convert(row);
                 if (psRow != null) {
                     info.update(psRow);
                 }
             }
+            parser.stopParsing();
         }
         info.sort();
         return info;
@@ -361,7 +362,7 @@ public class CsvJtlToAvroOrderedConverter implements Converter {
             hs.setMillisElapsed(longOrDefault(row.getDuration(), 0));
             hs.setMillisOffset(row.getOffset() - earliest);
             hs.setResponseCodeRef(statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage()));
-            hs.setSuccess(booleanOrDefault(row.getSuccess(), true));
+            hs.setSuccess(booleanOrDefault(row.isSuccess(), true));
             hs.setThreadNameRef(threadNameLookup.getOrDefault(row.getThreadName(), 0));
 
             return hs;
