@@ -15,7 +15,7 @@
  */
 package com.redsaz.meterrier.convert;
 
-import com.redsaz.meterrier.convert.model.PreSample;
+import com.redsaz.meterrier.api.model.Sample;
 import java.util.List;
 
 /**
@@ -27,15 +27,15 @@ public interface Samples {
 
     long getEarliestMillis();
 
-    PreSample getEarliestSample();
+    Sample getEarliestSample();
 
     List<String> getLabels();
 
     long getLatestMillis();
 
-    PreSample getLatestSample();
+    Sample getLatestSample();
 
-    List<PreSample> getSamples();
+    List<Sample> getSamples();
 
     StatusCodeLookup getStatusCodeLookup();
 

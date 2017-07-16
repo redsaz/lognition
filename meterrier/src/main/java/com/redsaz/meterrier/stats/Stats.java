@@ -15,7 +15,7 @@
  */
 package com.redsaz.meterrier.stats;
 
-import com.redsaz.meterrier.convert.model.PreSample;
+import com.redsaz.meterrier.api.model.Sample;
 import com.univocity.parsers.annotations.Parsed;
 import java.util.List;
 
@@ -63,7 +63,7 @@ public class Stats {
      * start at
      * @param durationOrderedSamples The samples to calculate the stats on.
      */
-    public Stats(long offsetMillis, List<PreSample> durationOrderedSamples) {
+    public Stats(long offsetMillis, List<Sample> durationOrderedSamples) {
         this.offsetMillis = offsetMillis;
         if (!durationOrderedSamples.isEmpty()) {
             min = durationOrderedSamples.get(0).getDuration();
@@ -89,7 +89,7 @@ public class Stats {
         long cumulativeResponseBytes = 0;
         long cumulativeErrors = 0;
         for (int i = 0; i < durationOrderedSamples.size(); ++i) {
-            PreSample sample = durationOrderedSamples.get(i);
+            Sample sample = durationOrderedSamples.get(i);
             cumulativeDuration += sample.getDuration();
             cumulativeResponseBytes += sample.getResponseBytes();
             if (!sample.isSuccess()) {

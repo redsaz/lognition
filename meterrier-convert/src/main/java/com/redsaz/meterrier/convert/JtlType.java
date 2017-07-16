@@ -15,7 +15,7 @@
  */
 package com.redsaz.meterrier.convert;
 
-import com.redsaz.meterrier.convert.model.PreSample;
+import com.redsaz.meterrier.api.model.Sample;
 import com.redsaz.meterrier.convert.model.jmeter.CsvJtlRow;
 import java.util.HashMap;
 import java.util.Locale;
@@ -35,7 +35,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setOffset((Long) convert(value));
             return dest;
         }
@@ -49,7 +49,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setDuration((Long) convert(value));
             return dest;
         }
@@ -63,7 +63,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setLabel((String) convert(value));
             return dest;
         }
@@ -77,7 +77,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setStatusCode((String) convert(value));
             return dest;
         }
@@ -91,7 +91,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setStatusMessage((String) convert(value));
             return dest;
         }
@@ -105,7 +105,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setThreadName(value);
             return dest;
         }
@@ -119,7 +119,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -133,7 +133,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setSuccess((Boolean) convert(value));
             return dest;
         }
@@ -147,7 +147,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -161,7 +161,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setResponseBytes((Long) convert(value));
             return dest;
         }
@@ -175,7 +175,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -189,7 +189,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -203,7 +203,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             dest.setTotalThreads((Integer) convert(value));
             return dest;
         }
@@ -217,7 +217,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -231,7 +231,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -245,7 +245,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             return dest;
         }
     },
@@ -258,7 +258,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -271,7 +271,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -285,7 +285,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             return dest;
         }
     },
@@ -298,7 +298,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -312,7 +312,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -326,7 +326,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -340,7 +340,7 @@ import java.util.Map;
         }
 
         @Override
-        public PreSample putIn(PreSample dest, String value) {
+        public Sample putIn(Sample dest, String value) {
             // Do nothing, PreSample doesn't use this.
             return dest;
         }
@@ -365,7 +365,7 @@ import java.util.Map;
 
     public abstract CsvJtlRow putIn(CsvJtlRow dest, String value);
 
-    public abstract PreSample putIn(PreSample dest, String value);
+    public abstract Sample putIn(Sample dest, String value);
 
     public static JtlType fromHeader(String header) {
         return header2Type.get(header.toLowerCase(Locale.US));

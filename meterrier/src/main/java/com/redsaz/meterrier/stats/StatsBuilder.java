@@ -17,11 +17,11 @@ package com.redsaz.meterrier.stats;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
+import com.redsaz.meterrier.api.model.Sample;
 import com.redsaz.meterrier.convert.AvroSamplesWriter;
 import com.redsaz.meterrier.convert.CsvJtlSource;
 import com.redsaz.meterrier.convert.Samples;
 import com.redsaz.meterrier.convert.SamplesWriter;
-import com.redsaz.meterrier.convert.model.PreSample;
 import com.univocity.parsers.common.processor.BeanWriterProcessor;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Given PreSample data, creates statistics like: min, 25th %-ile, 50th %-ile, 75th %-ile, 90 %-ile,
+ * Given sample data, creates statistics like: min, 25th %-ile, 50th %-ile, 75th %-ile, 90 %-ile,
  * 95th %-ile, 99th %-ile, max, average, #-of-calls, total-bytes, #-of-errors
  *
  * @author Redsaz <redsaz@gmail.com>
@@ -66,10 +66,10 @@ public class StatsBuilder {
         List<Stats> timeSeries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
         StatsBuilder.writeStatsCsv(timeSeries, statsFile);
 
-        Map<String, List<PreSample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
-        for (Map.Entry<String, List<PreSample>> entry : labelsSamples.entrySet()) {
+        Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
+        for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
             String label = entry.getKey();
-            List<PreSample> labelSamples = entry.getValue();
+            List<Sample> labelSamples = entry.getValue();
             List<Stats> labelTimeSeries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
             File labelDest = new File("../meterrier/jtls/target/converted/real-550cps-1hour-stats-60s-"
                     + sanitize(label) + ".csv");
@@ -81,23 +81,6 @@ public class StatsBuilder {
         return label.toLowerCase().replaceAll("[^0-9a-zA-Z]+", "-").replaceAll("(^-+)|(-+$)", "");
     }
 
-//    public static Something calcStatsByLabel(List<PreSample> samples, long spanMillis) {
-//        // First, sort the samples by label, then by offset.
-//        Collections.sort(samples, LABEL_OFFSET_COMPARATOR);
-//
-//        // Now, for each label, get a sublist spanning the entire set of objects for that label.
-//        Map<String, List<PreSample>> labelsLists = splitByLabel(samples);
-//
-//        // Within each sublist, find sublists (bins) for each segment of time, and calculate the
-//        // stats for each.
-//        Something labelsStats = new Something();
-//        int numBins = (int) Math.ceil((double) spanMillis / 1000D);
-//        for (Entry<String, List<PreSample>> labelList : labelsLists.entrySet()) {
-//            StatsList statsList = createStatsList(labelList.getValue(), numBins, 1000L);
-//            labelsStats.put(labelList.getKey(), statsList);
-//        }
-//        return labelsStats;
-//    }
     /**
      * Calculates time series stats on a previously sorted (by offset) list of samples.
      *
@@ -105,7 +88,7 @@ public class StatsBuilder {
      * @param spanMillis
      * @return
      */
-    public static List<Stats> calcTimeSeriesStats(List<PreSample> offsetSortedSamples, long spanMillis) {
+    public static List<Stats> calcTimeSeriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
         // Find sublists (bins) for each segment of time, and calculate the
         // stats for each.
         double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();
@@ -126,16 +109,16 @@ public class StatsBuilder {
      * @param samples The samples to sort and return values.
      * @return a map where key=label, value=sublist where all elements are for that label.
      */
-    public static Map<String, List<PreSample>> sortAndSplitByLabel(List<PreSample> samples) {
+    public static Map<String, List<Sample>> sortAndSplitByLabel(List<Sample> samples) {
         Collections.sort(samples, LABEL_OFFSET_COMPARATOR);
-        Map<String, List<PreSample>> labelLists = new TreeMap<>();
+        Map<String, List<Sample>> labelLists = new TreeMap<>();
         int startIndex = 0;
         String currentLabel = samples.get(0).getLabel();
         for (int i = 0; i < samples.size(); ++i) {
-            PreSample sample = samples.get(i);
+            Sample sample = samples.get(i);
             if (!currentLabel.equals(sample.getLabel())) {
                 int endIndex = i;
-                List<PreSample> samplesForLabel = samples.subList(startIndex, endIndex);
+                List<Sample> samplesForLabel = samples.subList(startIndex, endIndex);
                 labelLists.put(currentLabel, samplesForLabel);
                 startIndex = i;
                 currentLabel = sample.getLabel();
@@ -143,7 +126,7 @@ public class StatsBuilder {
         }
         // The last label needs included too.
         int endIndex = samples.size();
-        List<PreSample> samplesForLabel = samples.subList(startIndex, endIndex);
+        List<Sample> samplesForLabel = samples.subList(startIndex, endIndex);
         labelLists.put(currentLabel, samplesForLabel);
 
         return labelLists;
@@ -168,13 +151,13 @@ public class StatsBuilder {
      * @param interval The size (in millis) of each bin
      * @return a list of stats
      */
-    private static List<Stats> createStatsList(List<PreSample> samples, int numBins, long interval) {
+    private static List<Stats> createStatsList(List<Sample> samples, int numBins, long interval) {
         List<Stats> list = new ArrayList<>(numBins);
         int samplesToSkip = 0;
         for (int i = 0; i < numBins; ++i) {
             long endOffset = interval * (i + 1);
             // First find the samples for the timerange of the bin
-            List<PreSample> binSamples = getSamplesWithinOffsets(samples, samplesToSkip, endOffset);
+            List<Sample> binSamples = getSamplesWithinOffsets(samples, samplesToSkip, endOffset);
             samplesToSkip += binSamples.size();
             // Then sort those samples in order from shortest duration to longest so that we
             // can calculate the percentiles.
@@ -200,7 +183,7 @@ public class StatsBuilder {
      * @return a sublist of samples before endOffset, or an empty list if no samples are before the
      * offset.
      */
-    private static List<PreSample> getSamplesWithinOffsets(List<PreSample> samples, int numSkip, long maxOffset) {
+    private static List<Sample> getSamplesWithinOffsets(List<Sample> samples, int numSkip, long maxOffset) {
         if (samples.size() <= numSkip) {
             return Collections.emptyList();
         }
@@ -241,7 +224,7 @@ public class StatsBuilder {
         return sha256Hash;
     }
 
-    public static final Comparator<PreSample> TEMPORAL_COMPARATOR = (PreSample o1, PreSample o2) -> {
+    public static final Comparator<Sample> TEMPORAL_COMPARATOR = (Sample o1, Sample o2) -> {
         if (o1 == o2) {
             return 0;
         } else if (o2 == null) {
@@ -305,7 +288,7 @@ public class StatsBuilder {
     /**
      * Sorts by label, then by offset. Everything else is sorted as normal.
      */
-    public static final Comparator<PreSample> LABEL_OFFSET_COMPARATOR = (PreSample o1, PreSample o2) -> {
+    public static final Comparator<Sample> LABEL_OFFSET_COMPARATOR = (Sample o1, Sample o2) -> {
         if (o1 == o2) {
             return 0;
         } else if (o2 == null) {
@@ -369,7 +352,7 @@ public class StatsBuilder {
     /**
      * Sorts by by duration. Everything else is sorted as normal.
      */
-    public static final Comparator<PreSample> DURATION_COMPARATOR = (PreSample o1, PreSample o2) -> {
+    public static final Comparator<Sample> DURATION_COMPARATOR = (Sample o1, Sample o2) -> {
         if (o1 == o2) {
             return 0;
         } else if (o2 == null) {

@@ -16,7 +16,7 @@
 package com.redsaz.meterrier.convert;
 
 import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.convert.model.PreSample;
+import com.redsaz.meterrier.api.model.Sample;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import java.io.BufferedReader;
@@ -49,11 +49,11 @@ public class CsvJtlSource implements Samples {
             JtlType.RESPONSE_CODE, JtlType.THREAD_NAME, JtlType.SUCCESS,
             JtlType.BYTES, JtlType.ALL_THREADS);
 
-    private final List<PreSample> samples = new ArrayList<>();
+    private final List<Sample> samples = new ArrayList<>();
     private long earliestMillis = Long.MAX_VALUE;
-    private PreSample earliest = null;
+    private Sample earliest = null;
     private long latestMillis = Long.MIN_VALUE;
-    private PreSample latest = null;
+    private Sample latest = null;
     private final List<String> labels = new ArrayList<>();
     private final List<String> threadNames = new ArrayList<>();
     private final StatusCodeLookup statusCodeLookup = new StatusCodeLookup();
@@ -73,7 +73,7 @@ public class CsvJtlSource implements Samples {
     }
 
     @Override
-    public List<PreSample> getSamples() {
+    public List<Sample> getSamples() {
         return samples;
     }
 
@@ -88,12 +88,12 @@ public class CsvJtlSource implements Samples {
     }
 
     @Override
-    public PreSample getEarliestSample() {
+    public Sample getEarliestSample() {
         return earliest;
     }
 
     @Override
-    public PreSample getLatestSample() {
+    public Sample getLatestSample() {
         return latest;
     }
 
@@ -125,7 +125,7 @@ public class CsvJtlSource implements Samples {
             }
             JtlTypeColumns jtc = new JtlTypeColumns(row);
             if (jtc.headerAbsent()) {
-                PreSample psRow = jtc.convert(row);
+                Sample psRow = jtc.convert(row);
                 if (psRow != null) {
                     update(psRow);
                     readLabels.add(psRow.getLabel());
@@ -133,7 +133,7 @@ public class CsvJtlSource implements Samples {
                 }
             }
             while ((row = parser.parseNext()) != null) {
-                PreSample psRow = jtc.convert(row);
+                Sample psRow = jtc.convert(row);
                 if (psRow != null) {
                     update(psRow);
                     readLabels.add(psRow.getLabel());
@@ -149,7 +149,7 @@ public class CsvJtlSource implements Samples {
         Collections.sort(outThreadNames);
     }
 
-    private void update(PreSample row) {
+    private void update(Sample row) {
         samples.add(row);
         calcMinMax(row);
         statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage());
@@ -158,7 +158,7 @@ public class CsvJtlSource implements Samples {
         }
     }
 
-    private void calcMinMax(PreSample row) {
+    private void calcMinMax(Sample row) {
         long timestamp = row.getOffset();
         if (timestamp < earliestMillis) {
             earliest = row;
@@ -182,7 +182,7 @@ public class CsvJtlSource implements Samples {
      * being when the test began, rather than the UNIX epoch.
      */
     private void normalizeOffset() {
-        for (PreSample sample : samples) {
+        for (Sample sample : samples) {
             sample.setOffset(sample.getOffset() - earliestMillis);
         }
     }
@@ -237,14 +237,14 @@ public class CsvJtlSource implements Samples {
          * @param row what to convert
          * @return a typed row, or null if it couldn't be converted.
          */
-        public PreSample convert(String[] row) {
+        public Sample convert(String[] row) {
             if (row.length != colTypes.size()) {
                 LOGGER.warn("Skipping bad row. Expected {} columns but got {}. Contents:\n{}",
                         colTypes.size(), row.length, Arrays.toString(row));
                 return null;
             }
             try {
-                PreSample out = new PreSample();
+                Sample out = new Sample();
                 for (int i = 0; i < row.length; ++i) {
                     String colVal = row[i];
                     JtlType colType = colTypes.get(i);

@@ -18,7 +18,7 @@ package com.redsaz.meterrier.convert;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.redsaz.meterrier.convert.model.HttpSample;
-import com.redsaz.meterrier.convert.model.PreSample;
+import com.redsaz.meterrier.api.model.Sample;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -91,7 +91,7 @@ public class AvroSamplesWriter implements SamplesWriter {
 
                 long numRowsWritten = 0;
                 long writeStartMs = System.currentTimeMillis();
-                for (PreSample presample : sourceSamples.getSamples()) {
+                for (Sample presample : sourceSamples.getSamples()) {
                     HttpSample httpSample = convert(presample, labelLookup, threadNameLookup,
                             statusCodeLookup);
                     dataFileWriter.append(httpSample);
@@ -150,7 +150,7 @@ public class AvroSamplesWriter implements SamplesWriter {
         }
     }
 
-    private static HttpSample convert(PreSample row,
+    private static HttpSample convert(Sample row,
             Map<CharSequence, Integer> labelLookup,
             Map<CharSequence, Integer> threadNameLookup,
             StatusCodeLookup statusCodeLookup) {

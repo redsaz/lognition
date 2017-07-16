@@ -1,8 +1,8 @@
-package com.redsaz.meterrier.convert.model;
+package com.redsaz.meterrier.api.model;
 
 import java.util.Objects;
 
-public class PreSample implements Comparable<PreSample> {
+public class Sample implements Comparable<Sample> {
 
     private long offset;
     private long duration;
@@ -14,7 +14,7 @@ public class PreSample implements Comparable<PreSample> {
     private long responseBytes;
     private int totalThreads;
 
-    public PreSample() {
+    public Sample() {
     }
 
     /**
@@ -30,7 +30,7 @@ public class PreSample implements Comparable<PreSample> {
      * @param responseBytes The new value for responseBytes
      * @param totalThreads The new value for totalThreads
      */
-    public PreSample(long offset, long duration, String label, String threadName,
+    public Sample(long offset, long duration, String label, String threadName,
             String statusCode, String statusMessage, boolean success, long responseBytes,
             int totalThreads) {
         this.offset = offset;
@@ -206,7 +206,7 @@ public class PreSample implements Comparable<PreSample> {
     }
 
     @Override
-    public int compareTo(PreSample obj) {
+    public int compareTo(Sample obj) {
         if (this == obj) {
             return 0;
         } else if (obj == null) {
@@ -291,7 +291,7 @@ public class PreSample implements Comparable<PreSample> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final PreSample other = (PreSample) obj;
+        final Sample other = (Sample) obj;
         if (this.offset != other.offset) {
             return false;
         }
