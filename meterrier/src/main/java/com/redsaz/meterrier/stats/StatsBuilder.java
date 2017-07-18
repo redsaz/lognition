@@ -162,7 +162,7 @@ public class StatsBuilder {
             // Then sort those samples in order from shortest duration to longest so that we
             // can calculate the percentiles.
             Collections.sort(binSamples, DURATION_COMPARATOR);
-            Stats binStats = new Stats(i * interval, binSamples);
+            Stats binStats = createStats(i * interval, binSamples);
             list.add(i, binStats);
         }
         return list;
@@ -412,4 +412,57 @@ public class StatsBuilder {
         }
         return 0;
     };
+
+    /**
+     * Creates stats based on the provided samples which should already be ordered from shortest
+     * duration to longest.
+     *
+     * @param offsetMillis The point in time, with 0 being the start of the test, that these stats
+     * start at
+     * @param durationOrderedSamples The samples to calculate the stats on.
+     */
+    private static Stats createStats(long offsetMillis, List<Sample> durationOrderedSamples) {
+        Long min = null;
+        Long p25 = null;
+        Long p50 = null;
+        Long p75 = null;
+        Long p90 = null;
+        Long p95 = null;
+        Long p99 = null;
+        Long max = null;
+
+        if (!durationOrderedSamples.isEmpty()) {
+            min = durationOrderedSamples.get(0).getDuration();
+            p25 = getElement(durationOrderedSamples, 0.25D).getDuration();
+            p50 = getElement(durationOrderedSamples, 0.50D).getDuration();
+            p75 = getElement(durationOrderedSamples, 0.75D).getDuration();
+            p90 = getElement(durationOrderedSamples, 0.90D).getDuration();
+            p95 = getElement(durationOrderedSamples, 0.95D).getDuration();
+            p99 = getElement(durationOrderedSamples, 0.99D).getDuration();
+            max = durationOrderedSamples.get(durationOrderedSamples.size() - 1).getDuration();
+        }
+        long numSamples = durationOrderedSamples.size();
+        long cumulativeDuration = 0;
+        long cumulativeResponseBytes = 0;
+        long cumulativeErrors = 0;
+        for (int i = 0; i < durationOrderedSamples.size(); ++i) {
+            Sample sample = durationOrderedSamples.get(i);
+            cumulativeDuration += sample.getDuration();
+            cumulativeResponseBytes += sample.getResponseBytes();
+            if (!sample.isSuccess()) {
+                ++cumulativeErrors;
+            }
+        }
+        Long avg = null;
+        if (numSamples != 0) {
+            avg = cumulativeDuration / numSamples;
+        }
+        return new Stats(offsetMillis, min, p25, p50, p75, p90, p95, p99, max, avg, numSamples, cumulativeResponseBytes, cumulativeErrors);
+    }
+
+    private static <T> T getElement(List<T> items, double percent) {
+        int index = (int) Math.ceil(((double) (items.size() - 1)) * percent);
+        return items.get(index);
+    }
+
 }

@@ -15,9 +15,7 @@
  */
 package com.redsaz.meterrier.stats;
 
-import com.redsaz.meterrier.api.model.Sample;
 import com.univocity.parsers.annotations.Parsed;
-import java.util.List;
 
 /**
  *
@@ -61,53 +59,34 @@ public class Stats {
      *
      * @param offsetMillis The point in time, with 0 being the start of the test, that these stats
      * start at
-     * @param durationOrderedSamples The samples to calculate the stats on.
+     * @param min smallest recorded value
+     * @param p25 value at 25th percentile
+     * @param p50 value at 59th percentile
+     * @param p75 value at 75th percentile
+     * @param p90 value at 90th percentile
+     * @param p95 value at 95th percentile
+     * @param p99 value at 99th percentile
+     * @param max largest recored value
+     * @param avg mean of all recorded values
+     * @param numSamples number of samples that these stats were taken from
+     * @param totalResponseBytes total bytes given across all samples
+     * @param numErrors number of responses were were in error.
      */
-    public Stats(long offsetMillis, List<Sample> durationOrderedSamples) {
+    public Stats(long offsetMillis, Long min, Long p25, Long p50, Long p75, Long p90, Long p95,
+            Long p99, Long max, Long avg, long numSamples, long totalResponseBytes, long numErrors) {
         this.offsetMillis = offsetMillis;
-        if (!durationOrderedSamples.isEmpty()) {
-            min = durationOrderedSamples.get(0).getDuration();
-            p25 = getElement(durationOrderedSamples, 0.25D).getDuration();
-            p50 = getElement(durationOrderedSamples, 0.50D).getDuration();
-            p75 = getElement(durationOrderedSamples, 0.75D).getDuration();
-            p90 = getElement(durationOrderedSamples, 0.90D).getDuration();
-            p95 = getElement(durationOrderedSamples, 0.95D).getDuration();
-            p99 = getElement(durationOrderedSamples, 0.99D).getDuration();
-            max = durationOrderedSamples.get(durationOrderedSamples.size() - 1).getDuration();
-        } else {
-            min = null;
-            p25 = null;
-            p50 = null;
-            p75 = null;
-            p90 = null;
-            p95 = null;
-            p99 = null;
-            max = null;
-        }
-        numSamples = durationOrderedSamples.size();
-        long cumulativeDuration = 0;
-        long cumulativeResponseBytes = 0;
-        long cumulativeErrors = 0;
-        for (int i = 0; i < durationOrderedSamples.size(); ++i) {
-            Sample sample = durationOrderedSamples.get(i);
-            cumulativeDuration += sample.getDuration();
-            cumulativeResponseBytes += sample.getResponseBytes();
-            if (!sample.isSuccess()) {
-                ++cumulativeErrors;
-            }
-        }
-        if (numSamples != 0) {
-            avg = cumulativeDuration / numSamples;
-        } else {
-            avg = null;
-        }
-        totalResponseBytes = cumulativeResponseBytes;
-        numErrors = cumulativeErrors;
-    }
-
-    private static <T> T getElement(List<T> items, double percent) {
-        int index = (int) Math.ceil(((double) (items.size() - 1)) * percent);
-        return items.get(index);
+        this.min = min;
+        this.p25 = p25;
+        this.p50 = p50;
+        this.p75 = p75;
+        this.p90 = p90;
+        this.p95 = p95;
+        this.p99 = p99;
+        this.max = max;
+        this.avg = avg;
+        this.numSamples = numSamples;
+        this.totalResponseBytes = totalResponseBytes;
+        this.numErrors = numErrors;
     }
 
     public Long getOffsetMillis() {
