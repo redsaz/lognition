@@ -17,18 +17,24 @@ package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
-import java.io.InputStream;
-import java.util.List;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
-import com.redsaz.meterrier.convert.Converter;
-import com.redsaz.meterrier.convert.CsvJtlToAvroUnorderedConverter;
+import com.redsaz.meterrier.api.model.Sample;
+import com.redsaz.meterrier.convert.AvroSamplesWriter;
+import com.redsaz.meterrier.convert.CsvJtlSource;
+import com.redsaz.meterrier.convert.Samples;
+import com.redsaz.meterrier.convert.SamplesWriter;
+import com.redsaz.meterrier.stats.Stats;
+import com.redsaz.meterrier.stats.StatsBuilder;
 import com.redsaz.meterrier.store.HsqlImportService;
 import com.redsaz.meterrier.store.HsqlJdbc;
 import com.redsaz.meterrier.store.HsqlLogsService;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,7 +58,6 @@ public class ProcessorImportService implements ImportService {
 
     private final ImportService srv;
     private final LogsService logsSrv;
-    private final Converter converter;
     private final String convertedDir;
     private final Importer importer;
     private final Thread importerThread;
@@ -63,9 +68,8 @@ public class ProcessorImportService implements ImportService {
         final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
         final String convertedDir = "jtls/target/logs";
         final long now = System.currentTimeMillis();
-        final Converter conv = new CsvJtlToAvroUnorderedConverter();
 
-        Importer imp = new Importer(saniImportSrv, saniLogSrv, conv, convertedDir);
+        Importer imp = new Importer(saniImportSrv, saniLogSrv, convertedDir);
         Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
         impThread.start();
 
@@ -76,12 +80,11 @@ public class ProcessorImportService implements ImportService {
     }
 
     public ProcessorImportService(ImportService importService, LogsService logsService,
-            Converter dataConverter, String convertedDirectory) {
+            String convertedDirectory) {
         srv = importService;
         logsSrv = logsService;
-        converter = dataConverter;
         convertedDir = convertedDirectory;
-        importer = new Importer(srv, logsSrv, converter, convertedDir);
+        importer = new Importer(srv, logsSrv, convertedDir);
         importerThread = new Thread(importer, "LogImporter-" + System.identityHashCode(importer));
         init();
     }
@@ -134,16 +137,14 @@ public class ProcessorImportService implements ImportService {
 
         private final ImportService importSrv;
         private final LogsService logsSrv;
-        private final Converter conv;
         private final String convertedDir;
         private final BlockingQueue<ImportInfo> awaitingImport = new LinkedBlockingQueue<>();
         private final AtomicBoolean shutdown = new AtomicBoolean();
 
-        public Importer(ImportService importService, LogsService logsService, Converter converter,
+        public Importer(ImportService importService, LogsService logsService,
                 String convertedDirectory) {
             importSrv = importService;
             logsSrv = logsService;
-            conv = converter;
             convertedDir = convertedDirectory;
         }
 
@@ -169,14 +170,28 @@ public class ProcessorImportService implements ImportService {
         private void processImport(ImportInfo source) {
             try {
                 LOGGER.info("...importing...");
+                Samples sourceSamples = new CsvJtlSource(new File(source.getImportedFilename()));
+                SamplesWriter writer = new AvroSamplesWriter();
+
                 File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
-                String hash = conv.convert(new File(source.getImportedFilename()), avro);
+                String hash = writer.write(sourceSamples, avro);
                 LOGGER.info("...SHA-256: {}...", hash);
-                File dataFile = new File(convertedDir, String.format("%s.avro", hash));
-                Files.move(avro.toPath(), dataFile.toPath());
+
+                List<Stats> timeSeries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
+                File overallSeriesFile = new File(convertedDir, String.format("%d-overall-timeseries-60s.csv", source.getId()));
+                StatsBuilder.writeStatsCsv(timeSeries, overallSeriesFile);
+
+                Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
+                for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
+                    String label = entry.getKey();
+                    List<Sample> labelSamples = entry.getValue();
+                    List<Stats> labelTimeSeries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
+                    File labelSeriesFile = new File(convertedDir, String.format("%d-label_%d-timeseries-60s.csv", source.getId(), sourceSamples.getLabels().indexOf(label)));
+                    StatsBuilder.writeStatsCsv(labelTimeSeries, labelSeriesFile);
+                }
 
                 Log sourceLog = new Log(source.getId(), source.getTitle(), source.getTitle(),
-                        source.getUploadedUtcMillis(), dataFile.getName(), "");
+                        source.getUploadedUtcMillis(), avro.getName(), "");
                 Log resultLog = logsSrv.create(sourceLog);
                 LOGGER.info("...created log {}.", resultLog);
                 importSrv.delete(source.getId());
