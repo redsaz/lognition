@@ -18,12 +18,11 @@ package com.redsaz.meterrier.services;
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.NotesService;
-import com.redsaz.meterrier.convert.Converter;
-import com.redsaz.meterrier.convert.CsvJtlToAvroUnorderedConverter;
 import com.redsaz.meterrier.store.HsqlImportService;
 import com.redsaz.meterrier.store.HsqlJdbc;
 import com.redsaz.meterrier.store.HsqlLogsService;
 import com.redsaz.meterrier.store.HsqlNotesService;
+import com.redsaz.meterrier.view.Processor;
 import com.redsaz.meterrier.view.Sanitizer;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
@@ -33,7 +32,6 @@ import javax.enterprise.inject.Produces;
 import org.hsqldb.jdbc.JDBCPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.redsaz.meterrier.view.Processor;
 
 /**
  *
@@ -45,9 +43,8 @@ public class ServiceProducers {
     private static final JDBCPool POOL = HsqlJdbc.initPool();
     private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new HsqlLogsService(POOL));
     private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new HsqlImportService(POOL));
-    private static final Converter CONVERTER = new CsvJtlToAvroUnorderedConverter();
     private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
-            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, CONVERTER, "./meterrier-data/logs");
+            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, "./meterrier-data/logs");
     private static final NotesService SANITIZER_NOTES_SERVICE = new SanitizedNotesService(new HsqlNotesService(POOL));
 
     @Produces
