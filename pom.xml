@@ -30,18 +30,11 @@
         <version.wildfly-swarm>1.0.0.Beta4</version.wildfly-swarm>
         <version.resteasy>3.0.19.Final</version.resteasy>
         <version.jackson>2.8.2</version.jackson>
-        <version.hsqldb>2.3.4</version.hsqldb>
-        <version.liquibase>3.5.1</version.liquibase>
-        <version.jooq>3.8.4</version.jooq>
         <version.snakeyaml>1.17</version.snakeyaml>
         <version.logback>1.1.7</version.logback>
         <version.avro>1.8.1</version.avro>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <temporaryBuildDbDriver>org.hsqldb.jdbcDriver</temporaryBuildDbDriver>
-        <temporaryBuildDb>jdbc:hsqldb:file:${project.build.directory}/tempForJooqDb;shutdown=true</temporaryBuildDb>
-        <temporaryBuildDbUser>SA</temporaryBuildDbUser>
-        <temporaryBuildDbPass>SA</temporaryBuildDbPass>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -116,21 +109,6 @@
                 <version>2.1.6</version>
             </dependency>
             <dependency>
-                <groupId>org.jooq</groupId>
-                <artifactId>jooq</artifactId>
-                <version>${version.jooq}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hsqldb</groupId>
-                <artifactId>hsqldb</artifactId>
-                <version>${version.hsqldb}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-core</artifactId>
-                <version>${version.liquibase}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.snakeyaml}</version>
@@ -198,14 +176,6 @@
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <version>${version.liquibase}</version>
-                    <configuration>
-                        <changeLogFile>src/main/resources/meterrier-db.yaml</changeLogFile>
-                        <driver>${temporaryBuildDbDriver}</driver>
-                        <url>${temporaryBuildDb}</url>
-                        <username>${temporaryBuildDbUser}</username>
-                        <password>${temporaryBuildDbPass}</password>
-                        <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
-                    </configuration>
                     <dependencies>
                         <dependency>
                             <groupId>org.yaml</groupId>
@@ -213,54 +183,11 @@
                             <version>${version.snakeyaml}</version>
                         </dependency>
                     </dependencies>
-                    <executions>
-                        <execution>
-                            <phase>generate-sources</phase>
-                            <goals>
-                                <goal>update</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.jooq</groupId>
                     <artifactId>jooq-codegen-maven</artifactId>
                     <version>${version.jooq}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>generate</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.hsqldb</groupId>
-                            <artifactId>hsqldb</artifactId>
-                            <version>${version.hsqldb}</version>
-                        </dependency>
-                    </dependencies>
-                    <configuration>
-                        <jdbc>
-                            <driver>${temporaryBuildDbDriver}</driver>
-                            <url>${temporaryBuildDb}</url>
-                            <user>${temporaryBuildDbUser}</user>
-                            <password>${temporaryBuildDbPass}</password>
-                        </jdbc>
-                        <generator>
-                            <name>org.jooq.util.DefaultGenerator</name>
-                            <database>
-                                <name>org.jooq.util.hsqldb.HSQLDBDatabase</name>
-                                <includes>.*</includes>
-                                <excludes></excludes>
-                                <inputSchema>PUBLIC</inputSchema>
-                            </database>
-                            <target>
-                                <packageName>com.redsaz.meterrier.model</packageName>
-                                <directory>target/generated-sources/jooq</directory>
-                            </target>
-                        </generator>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.avro</groupId>

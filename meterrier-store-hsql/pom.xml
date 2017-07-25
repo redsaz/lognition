@@ -31,6 +31,13 @@
     </parent>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <version.hsqldb>2.3.4</version.hsqldb>
+        <version.liquibase>3.5.1</version.liquibase>
+        <version.jooq>3.8.4</version.jooq>
+        <temporaryBuildDbDriver>org.hsqldb.jdbcDriver</temporaryBuildDbDriver>
+        <temporaryBuildDb>jdbc:hsqldb:file:${project.build.directory}/tempForJooqDb;shutdown=true</temporaryBuildDb>
+        <temporaryBuildDbUser>SA</temporaryBuildDbUser>
+        <temporaryBuildDbPass>SA</temporaryBuildDbPass>
     </properties>
 
     <build>
@@ -43,10 +50,61 @@
             <plugin>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
+                <configuration>
+                    <changeLogFile>src/main/resources/meterrier-db.yaml</changeLogFile>
+                    <driver>${temporaryBuildDbDriver}</driver>
+                    <url>${temporaryBuildDb}</url>
+                    <username>${temporaryBuildDbUser}</username>
+                    <password>${temporaryBuildDbPass}</password>
+                    <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>update</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-codegen-maven</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.hsqldb</groupId>
+                        <artifactId>hsqldb</artifactId>
+                        <version>${version.hsqldb}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <jdbc>
+                        <driver>${temporaryBuildDbDriver}</driver>
+                        <url>${temporaryBuildDb}</url>
+                        <user>${temporaryBuildDbUser}</user>
+                        <password>${temporaryBuildDbPass}</password>
+                    </jdbc>
+                    <generator>
+                        <name>org.jooq.util.DefaultGenerator</name>
+                        <database>
+                            <name>org.jooq.util.hsqldb.HSQLDBDatabase</name>
+                            <includes>.*</includes>
+                            <excludes></excludes>
+                            <inputSchema>PUBLIC</inputSchema>
+                        </database>
+                        <target>
+                            <packageName>com.redsaz.meterrier.model</packageName>
+                            <directory>target/generated-sources/jooq</directory>
+                        </target>
+                    </generator>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -58,16 +116,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>${version.jooq}</version>
+        </dependency>
+        <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
+            <version>${version.hsqldb}</version>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jooq</groupId>
-            <artifactId>jooq</artifactId>
+            <version>${version.liquibase}</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
