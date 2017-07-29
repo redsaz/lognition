@@ -15,17 +15,17 @@
  */
 package com.redsaz.meterrier.view;
 
-import com.redsaz.meterrier.services.ServiceProducers;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.redsaz.meterrier.api.exceptions.ExceptionMappers;
+import com.redsaz.meterrier.services.ServiceProducers;
 import java.util.HashSet;
 import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 /**
- * The base entrypoint for the application, lists the classes with endpoints
- * which comprise the application.
+ * The base entrypoint for the application, lists the classes with endpoints which comprise the
+ * application.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -36,8 +36,6 @@ public class MeterrierApplication extends Application {
     public Set<Class<?>> getClasses() {
         Set<Class<?>> classes = new HashSet<>();
         classes.add(MeterrierResource.class);
-        classes.add(NotesResource.class);
-        classes.add(BrowserNotesResource.class);
         classes.add(LogsResource.class);
         classes.add(BrowserLogsResource.class);
         classes.add(JacksonJsonProvider.class);

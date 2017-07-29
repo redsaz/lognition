@@ -26,9 +26,9 @@ import com.redsaz.meterrier.convert.Samples;
 import com.redsaz.meterrier.convert.SamplesWriter;
 import com.redsaz.meterrier.stats.Stats;
 import com.redsaz.meterrier.stats.StatsBuilder;
-import com.redsaz.meterrier.store.HsqlImportService;
-import com.redsaz.meterrier.store.HsqlJdbc;
-import com.redsaz.meterrier.store.HsqlLogsService;
+import com.redsaz.meterrier.store.ConnectionPool;
+import com.redsaz.meterrier.store.JooqImportService;
+import com.redsaz.meterrier.store.JooqLogsService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.hsqldb.jdbc.JDBCPool;
+import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +63,9 @@ public class ProcessorImportService implements ImportService {
     private final Thread importerThread;
 
     public static void main(String[] args) throws Exception {
-        final JDBCPool pool = HsqlJdbc.initPool();
-        final ImportService saniImportSrv = new SanitizerImportService(new HsqlImportService(pool));
-        final LogsService saniLogSrv = new SanitizerLogsService(new HsqlLogsService(pool));
+        final ConnectionPool pool = ConnectionPoolInit.initPool();
+        final ImportService saniImportSrv = new SanitizerImportService(new JooqImportService(pool, SQLDialect.HSQLDB));
+        final LogsService saniLogSrv = new SanitizerLogsService(new JooqLogsService(pool, SQLDialect.HSQLDB));
         final String convertedDir = "jtls/target/logs";
         final long now = System.currentTimeMillis();
 

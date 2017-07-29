@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.redsaz.meterrier</groupId>
-            <artifactId>meterrier-store-hsql</artifactId>
+            <artifactId>meterrier-store-jooq</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

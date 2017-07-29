@@ -17,11 +17,9 @@ package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
-import com.redsaz.meterrier.api.NotesService;
-import com.redsaz.meterrier.store.HsqlImportService;
-import com.redsaz.meterrier.store.HsqlJdbc;
-import com.redsaz.meterrier.store.HsqlLogsService;
-import com.redsaz.meterrier.store.HsqlNotesService;
+import com.redsaz.meterrier.store.ConnectionPool;
+import com.redsaz.meterrier.store.JooqImportService;
+import com.redsaz.meterrier.store.JooqLogsService;
 import com.redsaz.meterrier.view.Processor;
 import com.redsaz.meterrier.view.Sanitizer;
 import javax.enterprise.context.ApplicationScoped;
@@ -29,7 +27,7 @@ import javax.enterprise.context.Destroyed;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
-import org.hsqldb.jdbc.JDBCPool;
+import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +38,11 @@ import org.slf4j.LoggerFactory;
 public class ServiceProducers {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
-    private static final JDBCPool POOL = HsqlJdbc.initPool();
-    private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new HsqlLogsService(POOL));
-    private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new HsqlImportService(POOL));
+    private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
+    private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB));
+    private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
     private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
             SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, "./meterrier-data/logs");
-    private static final NotesService SANITIZER_NOTES_SERVICE = new SanitizedNotesService(new HsqlNotesService(POOL));
 
     @Produces
     @ApplicationScoped
@@ -59,13 +56,6 @@ public class ServiceProducers {
     @Processor
     public ImportService createProcessorImportService() {
         return PROCESSOR_IMPORT_SERVICE;
-    }
-
-    @Produces
-    @ApplicationScoped
-    @Sanitizer
-    public NotesService createSanitizedNotesService() {
-        return SANITIZER_NOTES_SERVICE;
     }
 
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {

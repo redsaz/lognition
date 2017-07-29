@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.redsaz.meterrier</groupId>
-            <artifactId>meterrier-store-hsql</artifactId>
+            <artifactId>meterrier-store-jooq</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -126,7 +126,15 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
+        </dependency>            
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+        </dependency>            
         <dependency>
             <groupId>org.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>

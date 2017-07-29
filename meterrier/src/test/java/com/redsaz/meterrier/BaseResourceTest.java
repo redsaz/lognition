@@ -16,10 +16,7 @@
 package com.redsaz.meterrier;
 
 import com.redsaz.meterrier.api.NotesService;
-import com.redsaz.meterrier.api.model.Note;
 import com.redsaz.meterrier.view.Templater;
-import com.redsaz.meterrier.view.BrowserNotesResource;
-import java.util.Collections;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
@@ -27,12 +24,12 @@ import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.resteasy.mock.MockHttpServletRequest;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Redsaz <redsaz@gmail.com>
@@ -57,10 +54,8 @@ public class BaseResourceTest extends Assert {
     private static Context setup() {
         Context context = new Context();
         context.dispatcher = createDispatcher();
-        context.notesService = createNotesGoods();
         context.templater = createTemplater();
 
-        context.dispatcher.getRegistry().addSingletonResource(new BrowserNotesResource(context.notesService, context.templater));
         context.dispatcher.getProviderFactory().registerProvider(BasicExceptionMapper.class);
 
         return context;
@@ -73,17 +68,6 @@ public class BaseResourceTest extends Assert {
                 .getContextDataMap()
                 .put(HttpServletRequest.class, new MockHttpServletRequest());
         return dispatcher;
-    }
-
-    private static NotesService createNotesGoods() {
-        NotesService mockedNotesGoods = mock(NotesService.class);
-        Note existingNote = new Note(1L, "mock", "mockTitle", "mockBody");
-        when(mockedNotesGoods.getNote(1L)).thenReturn(existingNote);
-        Note nonExistingNote = null;
-        when(mockedNotesGoods.getNote(0L)).thenReturn(nonExistingNote);
-        when(mockedNotesGoods.getNotes()).thenReturn(Collections.singletonList(existingNote));
-
-        return mockedNotesGoods;
     }
 
     private static Templater createTemplater() {

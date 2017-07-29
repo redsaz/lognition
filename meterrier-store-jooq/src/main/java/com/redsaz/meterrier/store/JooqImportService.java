@@ -16,6 +16,10 @@
 package com.redsaz.meterrier.store;
 
 import com.redsaz.meterrier.api.ImportService;
+import com.redsaz.meterrier.api.exceptions.AppServerException;
+import com.redsaz.meterrier.api.model.ImportInfo;
+import static com.redsaz.meterrier.model.tables.Pendingimport.PENDINGIMPORT;
+import com.redsaz.meterrier.model.tables.records.PendingimportRecord;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,19 +31,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
-import org.hsqldb.jdbc.JDBCPool;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import static com.redsaz.meterrier.model.tables.Pendingimport.PENDINGIMPORT;
-import com.redsaz.meterrier.api.exceptions.AppServerException;
-import com.redsaz.meterrier.api.model.ImportInfo;
-import com.redsaz.meterrier.model.tables.records.PendingimportRecord;
 import java.util.ArrayList;
+import java.util.List;
+import org.jooq.DSLContext;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
+import org.jooq.SQLDialect;
 import org.jooq.UpdateSetMoreStep;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,22 +47,25 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class HsqlImportService implements ImportService {
+public class JooqImportService implements ImportService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HsqlImportService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JooqImportService.class);
 
     private static final RecordToImportMapper R2I = new RecordToImportMapper();
 
-    private final JDBCPool pool;
+    private final ConnectionPool pool;
+    private final SQLDialect dialect;
 
     /**
-     * Create a new HSQLDB-base ImportService.
+     * Create a new ImportService backed by a data store.
      *
      * @param jdbcPool opens connections to database
+     * @param sqlDialect the type of SQL database that we should speak
      */
-    public HsqlImportService(JDBCPool jdbcPool) {
-        LOGGER.info("Using given JDBC Pool.");
+    public JooqImportService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
+        LOGGER.info("Using given Connection Pool.");
         pool = jdbcPool;
+        dialect = sqlDialect;
         File originalLogsDir = new File("./meterrier-data/imported-logs");
         try {
             Files.createDirectories(originalLogsDir.toPath());
@@ -120,7 +122,7 @@ public class HsqlImportService implements ImportService {
         LOGGER.info("Creating entry in DB...");
         LOGGER.info("Import: {}", source);
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
 
             // TODO make relative to storage.
             PendingimportRecord result = context.insertInto(PENDINGIMPORT,
@@ -144,7 +146,7 @@ public class HsqlImportService implements ImportService {
     @Override
     public ImportInfo get(long id) {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
             return context.selectFrom(PENDINGIMPORT)
                     .where(PENDINGIMPORT.ID.eq(id))
                     .fetchOne(R2I);
@@ -156,7 +158,7 @@ public class HsqlImportService implements ImportService {
     @Override
     public List<ImportInfo> list() {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
             PendingimportRecordsToListHandler r2iHandler = new PendingimportRecordsToListHandler();
             return context.selectFrom(PENDINGIMPORT).fetchInto(r2iHandler).getImports();
         } catch (SQLException ex) {
@@ -167,7 +169,7 @@ public class HsqlImportService implements ImportService {
     @Override
     public void delete(long id) {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
             LOGGER.debug("Deleting import_id={}...", id);
             ImportInfo info = get(id);
             if (info == null) {
@@ -194,7 +196,7 @@ public class HsqlImportService implements ImportService {
 
         LOGGER.debug("Updating entry in DB...");
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
 
             UpdateSetMoreStep<PendingimportRecord> up = context.update(PENDINGIMPORT).set(PENDINGIMPORT.ID, source.getId());
             if (source.getImportedFilename() != null) {

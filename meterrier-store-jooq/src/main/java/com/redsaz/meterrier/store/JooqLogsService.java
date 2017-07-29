@@ -15,22 +15,21 @@
  */
 package com.redsaz.meterrier.store;
 
-import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import org.hsqldb.jdbc.JDBCPool;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.Log;
 import static com.redsaz.meterrier.model.tables.Log.LOG;
 import com.redsaz.meterrier.model.tables.records.LogRecord;
+import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import org.jooq.DSLContext;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,22 +38,25 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class HsqlLogsService implements LogsService {
+public class JooqLogsService implements LogsService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HsqlLogsService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JooqLogsService.class);
 
     private static final RecordToLogMapper R2L = new RecordToLogMapper();
 
-    private final JDBCPool pool;
+    private final ConnectionPool pool;
+    private final SQLDialect dialect;
 
     /**
-     * Create a new HSQLDB-base LogsService.
+     * Create a new LogsService backed by a data store.
      *
      * @param jdbcPool opens connections to database
+     * @param sqlDialect the type of SQL database that we should speak
      */
-    public HsqlLogsService(JDBCPool jdbcPool) {
-        LOGGER.info("Using given JDBC Pool.");
+    public JooqLogsService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
+        LOGGER.info("Using given Connection Pool.");
         pool = jdbcPool;
+        dialect = sqlDialect;
     }
 
     @Override
@@ -71,7 +73,7 @@ public class HsqlLogsService implements LogsService {
 
         LOGGER.info("Creating entry in DB...");
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.insertInto(LOG,
                     LOG.URINAME,
@@ -96,7 +98,7 @@ public class HsqlLogsService implements LogsService {
     @Override
     public OutputStream getContent(long id) {
 //        try (Connection c = POOL.getConnection()) {
-//            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+//            DSLContext context = DSL.using(c, dialect);
 //
 //            LogRecord nr = context.selectFrom(LOG).where(LOG.ID.eq(id)).fetchOne();
 //            return recordToLog(nr);
@@ -109,7 +111,7 @@ public class HsqlLogsService implements LogsService {
     @Override
     public Log get(long id) {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
             return context.selectFrom(LOG)
                     .where(LOG.ID.eq(id))
                     .fetchOne(R2L);
@@ -121,7 +123,7 @@ public class HsqlLogsService implements LogsService {
     @Override
     public List<Log> list() {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
             RecordsToListHandler r2lHandler = new RecordsToListHandler();
             return context.selectFrom(LOG).fetchInto(r2lHandler).getLogs();
         } catch (SQLException ex) {
@@ -132,7 +134,7 @@ public class HsqlLogsService implements LogsService {
     @Override
     public void delete(long id) {
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
 
             context.delete(LOG).where(LOG.ID.eq(id)).execute();
         } catch (SQLException ex) {
@@ -155,7 +157,7 @@ public class HsqlLogsService implements LogsService {
 
         LOGGER.info("Updating entry in DB...");
         try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, SQLDialect.HSQLDB);
+            DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.update(LOG)
                     .set(LOG.URINAME, source.getUriName())
