@@ -15,7 +15,6 @@
  */
 package com.redsaz.meterrier;
 
-import com.redsaz.meterrier.api.NotesService;
 import com.redsaz.meterrier.view.Templater;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.resteasy.core.Dispatcher;
@@ -41,7 +40,6 @@ public class BaseResourceTest extends Assert {
     public static class Context {
 
         public Dispatcher dispatcher;
-        public NotesService notesService;
         public Templater templater;
 
         public HttpResponse invoke(HttpRequest request) {

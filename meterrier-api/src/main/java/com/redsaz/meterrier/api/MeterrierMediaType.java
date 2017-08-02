@@ -24,6 +24,4 @@ public class MeterrierMediaType {
 
     public static final String LOGBRIEFS_V1_JSON = "application/x-meterrier-v1-logbriefs+json";
     public static final String LOGBRIEF_V1_JSON = "application/x-meterrier-v1-logbrief+json";
-    public static final String NOTES_V1_JSON = "application/x-meterrier-v1-notes+json";
-    public static final String NOTE_V1_JSON = "application/x-meterrier-v1-note+json";
 }

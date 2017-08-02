@@ -21,32 +21,6 @@ databaseChangeLog:
       author: redsaz
       changes:
         - createTable:
-            tableName: note
-            columns:
-              - column:
-                  name: id
-                  type: bigint
-                  autoIncrement: true
-                  startWith: 101
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: uriname
-                  type: varchar(1024)
-                  constraints:
-                    unique: true
-                    nullable: false
-              - column:
-                  name: title
-                  type: varchar(1024)
-                  constraints:
-                    unique: true
-                    nullable: false
-              - column:
-                  name: body
-                  type: clob
-            schemaName: PUBLIC
-        - createTable:
             tableName: log
             columns:
               - column:

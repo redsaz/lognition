@@ -16,12 +16,12 @@
 package com.redsaz.meterrier.services;
 
 import com.github.slugify.Slugify;
-import java.io.OutputStream;
-import java.util.List;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.model.Log;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.slf4j.Logger;
@@ -116,10 +116,10 @@ public class SanitizerLogsService implements LogsService {
     }
 
 //    /**
-//     * Sanitizes a group of notes according to the
+//     * Sanitizes a group of logs according to the
 //     * {@link #sanitize(com.redsaz.meterrier.api.model.Note)} method.
 //     *
-//     * @param notes The notes to sanitize
+//     * @param logs The logs to sanitize
 //     * @return A List of new note instances with sanitized data.
 //     */
 //    private static List<LogBrief> sanitizeAll(List<LogBrief> briefs) {
@@ -132,7 +132,7 @@ public class SanitizerLogsService implements LogsService {
 //
 //    /**
 //     * A brief must have at least a uri and a title. If neither are present, nor
-//     * filename or notes, then it cannot be sanitized. The ID will remain
+//     * filename or lgos, then it cannot be sanitized. The ID will remain
 //     * unchanged.
 //     *
 //     * @param brief The brief to sanitize

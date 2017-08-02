@@ -1,5 +1,5 @@
 <#--
- Copyright 2016 Redsaz <redsaz@gmail.com>.
+ Copyright 2017 Redsaz <redsaz@gmail.com>.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
           <p>
           Sorry, we couldn't find what you wanted. Would you like to:
           <ul>
-            <li><a href="${base}/notes">View all</a> your notes?</li>
-            <li><a href="${base}/notes/create">Create</a> a new note?</li>
+            <li><a href="${base}/logs">View all</a> your logs?</li>
+            <li><a href="${base}/logs/create">Create</a> a new log?</li>
             <li><a href="javascript:history.back()">Go Back</a>?</li>
           </ul>
         </div>

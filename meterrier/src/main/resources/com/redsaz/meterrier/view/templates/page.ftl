@@ -50,7 +50,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="${base}/notes">meterrier</a>
+          <a class="navbar-brand" href="${base}/logs">meterrier</a>
         </div>
       </div>
     </nav>
