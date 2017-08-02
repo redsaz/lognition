@@ -55,6 +55,7 @@ public class JooqImportService implements ImportService {
 
     private final ConnectionPool pool;
     private final SQLDialect dialect;
+    private final File uploadedLogsDir;
 
     /**
      * Create a new ImportService backed by a data store.
@@ -66,9 +67,9 @@ public class JooqImportService implements ImportService {
         LOGGER.info("Using given Connection Pool.");
         pool = jdbcPool;
         dialect = sqlDialect;
-        File originalLogsDir = new File("./meterrier-data/imported-logs");
+        uploadedLogsDir = new File("./meterrier-data/uploaded-logs");
         try {
-            Files.createDirectories(originalLogsDir.toPath());
+            Files.createDirectories(uploadedLogsDir.toPath());
         } catch (IOException ex) {
             throw new RuntimeException("Unable to create data directories.", ex);
         }
@@ -83,10 +84,9 @@ public class JooqImportService implements ImportService {
         }
 
         LOGGER.info("Storing uploaded file...");
-        File firstFile = getTempFile();
-        LOGGER.info("Storing initially into {}", firstFile.getAbsolutePath());
-        File digestFile;
-        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(firstFile))) {
+        File destFile = getUploadFile(source);
+        LOGGER.info("Storing into {}", destFile.getAbsolutePath());
+        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] buff = new byte[4096];
             int num;
@@ -95,28 +95,9 @@ public class JooqImportService implements ImportService {
                 os.write(buff, 0, num);
             }
             os.flush();
-            String digestHex = bytesToHex(md.digest());
-            digestFile = getDigestFile(digestHex);
         } catch (IOException | NoSuchAlgorithmException ex) {
             LOGGER.error("Exception when uploading log.", ex);
             throw new AppServerException("Failed to upload content.", ex);
-        }
-        if (!Files.exists(digestFile.toPath())) {
-            try {
-                LOGGER.info("Moving content to permanent home {}...", digestFile);
-                Files.move(firstFile.toPath(), digestFile.toPath());
-                LOGGER.info("Moved  content to permanent home {}...", digestFile);
-            } catch (IOException ex) {
-                firstFile.delete(); // Assume the move failed so delete original.
-                throw new AppServerException("Failed to upload content.", ex);
-            }
-        } else {
-            LOGGER.info("Destination {} already exists. Deleting {}...", digestFile, firstFile);
-            if (firstFile.delete()) {
-                LOGGER.info("Deleted {}", firstFile);
-            } else {
-                LOGGER.error("Unable to delete {} for some reason.", firstFile);
-            }
         }
 
         LOGGER.info("Creating entry in DB...");
@@ -130,7 +111,7 @@ public class JooqImportService implements ImportService {
                     PENDINGIMPORT.TITLE,
                     PENDINGIMPORT.USERSPECIFIEDTYPE,
                     PENDINGIMPORT.UPLOADEDUTCMILLIS)
-                    .values(digestFile.getAbsolutePath(),
+                    .values(destFile.getAbsolutePath(),
                             source.getTitle(),
                             source.getUserSpecifiedType(),
                             source.getUploadedUtcMillis())
@@ -219,6 +200,10 @@ public class JooqImportService implements ImportService {
         }
     }
 
+    private File getUploadFile(ImportInfo info) {
+        return new File(uploadedLogsDir, Long.toString(info.getId()));
+    }
+
     final protected static char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     private static String bytesToHex(byte[] bytes) {
@@ -229,18 +214,6 @@ public class JooqImportService implements ImportService {
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
-    }
-
-    private static File getTempFile() {
-        try {
-            return File.createTempFile("meterrier-upload-", ".tmp");
-        } catch (IOException ex) {
-            throw new AppServerException("Unable to create temporary file to store upload.", ex);
-        }
-    }
-
-    private static File getDigestFile(String digestHex) {
-        return new File("./meterrier-data/original-logs", digestHex);
     }
 
     private static class RecordToImportMapper implements RecordMapper<PendingimportRecord, ImportInfo> {
