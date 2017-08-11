@@ -86,6 +86,7 @@ public class JooqImportService implements ImportService {
         LOGGER.info("Storing uploaded file...");
         File destFile = getUploadFile(source);
         LOGGER.info("Storing into {}", destFile.getAbsolutePath());
+        long bytesRead = 0;
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] buff = new byte[4096];
@@ -93,12 +94,14 @@ public class JooqImportService implements ImportService {
             while ((num = raw.read(buff)) >= 0) {
                 md.update(buff, 0, num);
                 os.write(buff, 0, num);
+                bytesRead += num;
             }
             os.flush();
         } catch (IOException | NoSuchAlgorithmException ex) {
             LOGGER.error("Exception when uploading log.", ex);
             throw new AppServerException("Failed to upload content.", ex);
         }
+        LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
 
         LOGGER.info("Creating entry in DB...");
         LOGGER.info("Import: {}", source);

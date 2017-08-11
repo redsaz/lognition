@@ -16,6 +16,10 @@
 package com.redsaz.meterrier.view;
 
 import com.redsaz.meterrier.api.ImportService;
+import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.MeterrierMediaType;
+import com.redsaz.meterrier.api.model.Log;
+import java.io.InputStream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -27,14 +31,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import com.redsaz.meterrier.api.MeterrierMediaType;
-import com.redsaz.meterrier.api.LogsService;
-import com.redsaz.meterrier.api.model.Log;
-import java.io.InputStream;
 
 /**
- * An endpoint for accessing log. Many of the REST endpoints and browser
- * endpoints are identical where possible; look at docs/endpoints.md for why.
+ * An endpoint for accessing log. Many of the REST endpoints and browser endpoints are identical
+ * where possible; look at docs/endpoints.md for why.
  *
  * @author Redsaz <redsaz@gmail.com>
  */

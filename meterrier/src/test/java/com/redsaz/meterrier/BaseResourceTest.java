@@ -16,17 +16,14 @@
 package com.redsaz.meterrier;
 
 import com.redsaz.meterrier.view.Templater;
-import javax.servlet.http.HttpServletRequest;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
 import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import org.resteasy.mock.MockHttpServletRequest;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 
@@ -61,10 +58,10 @@ public class BaseResourceTest extends Assert {
 
     private static Dispatcher createDispatcher() {
         Dispatcher dispatcher = MockDispatcherFactory.createDispatcher();
-
-        ResteasyProviderFactory
-                .getContextDataMap()
-                .put(HttpServletRequest.class, new MockHttpServletRequest());
+// NOTE: Add these back when we have actual tests.
+//        ResteasyProviderFactory
+//                .getContextDataMap()
+//                .put(HttpServletRequest.class, new MockHttpServletRequest());
         return dispatcher;
     }
 

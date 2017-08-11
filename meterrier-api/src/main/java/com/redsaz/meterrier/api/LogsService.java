@@ -16,6 +16,7 @@
 package com.redsaz.meterrier.api;
 
 import com.redsaz.meterrier.api.model.Log;
+import com.redsaz.meterrier.api.model.Stats;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -29,6 +30,8 @@ public interface LogsService {
     public Log create(Log source);
 
     public OutputStream getContent(long id);
+
+    public List<Stats> getOverallTimeseries(long id);
 
     public Log get(long id);
 

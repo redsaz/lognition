@@ -38,11 +38,12 @@ import org.slf4j.LoggerFactory;
 public class ServiceProducers {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
+    private static final String LOGS_DIR = "./meterrier-data/logs";
     private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
-    private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB));
+    private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR));
     private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
     private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
-            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, "./meterrier-data/logs");
+            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, LOGS_DIR);
 
     @Produces
     @ApplicationScoped

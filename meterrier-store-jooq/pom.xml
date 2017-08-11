@@ -121,7 +121,6 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>${version.hsqldb}</version>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
@@ -131,6 +130,10 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -20,11 +20,11 @@ import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.Sample;
+import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.convert.AvroSamplesWriter;
 import com.redsaz.meterrier.convert.CsvJtlSource;
 import com.redsaz.meterrier.convert.Samples;
 import com.redsaz.meterrier.convert.SamplesWriter;
-import com.redsaz.meterrier.stats.Stats;
 import com.redsaz.meterrier.stats.StatsBuilder;
 import com.redsaz.meterrier.store.ConnectionPool;
 import com.redsaz.meterrier.store.JooqImportService;
@@ -65,8 +65,9 @@ public class ProcessorImportService implements ImportService {
     public static void main(String[] args) throws Exception {
         final ConnectionPool pool = ConnectionPoolInit.initPool();
         final ImportService saniImportSrv = new SanitizerImportService(new JooqImportService(pool, SQLDialect.HSQLDB));
-        final LogsService saniLogSrv = new SanitizerLogsService(new JooqLogsService(pool, SQLDialect.HSQLDB));
         final String convertedDir = "jtls/target/logs";
+        final LogsService saniLogSrv = new SanitizerLogsService(
+                new JooqLogsService(pool, SQLDialect.HSQLDB, convertedDir));
         final long now = System.currentTimeMillis();
 
         Importer imp = new Importer(saniImportSrv, saniLogSrv, convertedDir);

@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.stats;
 
+import com.redsaz.meterrier.api.model.Stats;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.redsaz.meterrier.api.model.Sample;

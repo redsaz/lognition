@@ -1,5 +1,5 @@
 <#--
- Copyright 2016 Redsaz <redsaz@gmail.com>.
+ Copyright 2017 Redsaz <redsaz@gmail.com>.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -18,6 +18,12 @@
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.id}</h2>
           <p>${brief}</p>
+          <div id="graphdiv1"></div>
         </div>
       </div>
+
+      <script src="${dist}/js/dygraph.min.js"></script>
+      <script>
+        <#noescape>${overallTimeseries}</#noescape>
+      </script>
 </#escape>

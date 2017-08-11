@@ -16,6 +16,11 @@
 package com.redsaz.meterrier.view;
 
 import com.redsaz.meterrier.api.ImportService;
+import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.model.ImportInfo;
+import com.redsaz.meterrier.api.model.Log;
+import com.redsaz.meterrier.api.model.LogBrief;
+import com.redsaz.meterrier.api.model.Stats;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -36,17 +41,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import com.redsaz.meterrier.api.LogsService;
-import com.redsaz.meterrier.api.model.ImportInfo;
-import com.redsaz.meterrier.api.model.Log;
-import com.redsaz.meterrier.api.model.LogBrief;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An endpoint for accessing measurements/logs. The REST endpoints and browser
- * endpoints are identical; look at docs/endpoints.md for why.
+ * An endpoint for accessing measurements/logs. The REST endpoints and browser endpoints are
+ * identical; look at docs/endpoints.md for why.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -110,8 +111,10 @@ public class BrowserLogsResource {
         if (log == null) {
             throw new NotFoundException("Could not find note id=" + id);
         }
+        List<Stats> overallTimeseries = logsSrv.getOverallTimeseries(id);
         Map<String, Object> root = new HashMap<>();
         root.put("brief", log);
+        root.put("overallTimeseries", createDygraphScript(overallTimeseries));
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getId());
@@ -272,6 +275,35 @@ public class BrowserLogsResource {
         }
         outNameValPair[1] = value.toString();
         return cursor;
+    }
+
+    private static String createDygraphScript(List<Stats> statsList) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"graphdiv1\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"offsetMillis,Overall\\n\"").append(csvRowTail);
+        for (Stats stats : statsList) {
+            sb.append("\"")
+                    .append(stats.getOffsetMillis())
+                    .append(",")
+                    .append(stats.getP25())
+                    .append(";")
+                    .append(stats.getP50())
+                    .append(";")
+                    .append(stats.getP75())
+                    .append("\\n\"")
+                    .append(csvRowTail);
+        }
+        if (!statsList.isEmpty()) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: 'Overall',\n");
+        sb.append("customBars: true,\n");
+        sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("});");
+        return sb.toString();
     }
 
     private static interface NameValueListener {

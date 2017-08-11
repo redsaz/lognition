@@ -45,7 +45,7 @@ public class ConnectionPoolInit {
      * @return the JDBCPool to use for all services using the HSQLDB.
      */
     public static ConnectionPool initPool() {
-        LOGGER.info("Initing DB...");
+        LOGGER.info("Initing Connection Pool...");
         File deciDir = new File("./meterrier-data");
         if (!deciDir.exists() && !deciDir.mkdirs()) {
             throw new RuntimeException("Could not create " + deciDir);

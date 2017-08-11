@@ -27,8 +27,7 @@
         <module>meterrier</module>
     </modules>
     <properties>
-        <version.wildfly-swarm>1.0.0.Beta4</version.wildfly-swarm>
-        <version.resteasy>3.0.19.Final</version.resteasy>
+        <version.wildfly-swarm>2017.8.1</version.wildfly-swarm>
         <version.jackson>2.8.2</version.jackson>
         <version.snakeyaml>1.17</version.snakeyaml>
         <version.logback>1.1.7</version.logback>
@@ -60,31 +59,6 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>jsr250-api</artifactId>
                 <version>1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${version.resteasy}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-cdi</artifactId>
-                <version>${version.resteasy}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-servlet-initializer</artifactId>
-                <version>${version.resteasy}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-undertow</artifactId>
-                <version>${version.resteasy}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${version.resteasy}</version>
             </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>
@@ -148,13 +122,10 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.swarm</groupId>
-                <artifactId>jaxrs-weld</artifactId>
+                <artifactId>bom</artifactId>
                 <version>${version.wildfly-swarm}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.swarm</groupId>
-                <artifactId>weld</artifactId>
-                <version>${version.wildfly-swarm}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

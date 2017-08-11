@@ -25,6 +25,8 @@
 
     <title>${title}</title>
 
+    <link href="${dist}/css/dygraph.css" rel="stylesheet">
+
     <#-- Bootstrap core CSS -->
     <link href="${dist}/css/bootstrap.min.css" rel="stylesheet">
 
