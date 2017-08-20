@@ -84,9 +84,9 @@ public class JooqImportService implements ImportService {
         }
 
         LOGGER.info("Storing uploaded file...");
+        long bytesRead = 0;
         File destFile = getUploadFile(source);
         LOGGER.info("Storing into {}", destFile.getAbsolutePath());
-        long bytesRead = 0;
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] buff = new byte[4096];
@@ -204,7 +204,12 @@ public class JooqImportService implements ImportService {
     }
 
     private File getUploadFile(ImportInfo info) {
-        return new File(uploadedLogsDir, Long.toString(info.getId()));
+        try {
+            return File.createTempFile("log-", ".tmp", uploadedLogsDir);
+        } catch (IOException ex) {
+            LOGGER.error("Exception when creating upload file.", ex);
+            throw new AppServerException("Failed to upload content.", ex);
+        }
     }
 
     final protected static char[] HEX_ARRAY = "0123456789abcdef".toCharArray();

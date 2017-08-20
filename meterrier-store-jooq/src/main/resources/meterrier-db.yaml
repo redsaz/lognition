@@ -27,20 +27,20 @@ databaseChangeLog:
                   name: id
                   type: bigint
                   autoIncrement: true
-                  startWith: 101
+                  startWith: 1
                   constraints:
                     primaryKey: true
               - column:
                   name: uriName
                   type: varchar(1024)
                   constraints:
-                    unique: true
+                    unique: false
                     nullable: false
               - column:
                   name: title
                   type: varchar(1024)
                   constraints:
-                    unique: true
+                    unique: false
                     nullable: false
               - column:
                   name: dataFile
@@ -61,7 +61,7 @@ databaseChangeLog:
                   name: id
                   type: bigint
                   autoIncrement: true
-                  startWith: 101
+                  startWith: 1
                   constraints:
                     primaryKey: true
               - column:
