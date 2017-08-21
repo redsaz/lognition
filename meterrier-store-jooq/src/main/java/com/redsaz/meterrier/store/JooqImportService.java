@@ -18,8 +18,8 @@ package com.redsaz.meterrier.store;
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.ImportInfo;
-import static com.redsaz.meterrier.model.tables.Pendingimport.PENDINGIMPORT;
-import com.redsaz.meterrier.model.tables.records.PendingimportRecord;
+import static com.redsaz.meterrier.model.tables.PendingImport.PENDING_IMPORT;
+import com.redsaz.meterrier.model.tables.records.PendingImportRecord;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -109,18 +109,18 @@ public class JooqImportService implements ImportService {
             DSLContext context = DSL.using(c, dialect);
 
             // TODO make relative to storage.
-            PendingimportRecord result = context.insertInto(PENDINGIMPORT,
-                    PENDINGIMPORT.IMPORTEDFILENAME,
-                    PENDINGIMPORT.TITLE,
-                    PENDINGIMPORT.USERSPECIFIEDTYPE,
-                    PENDINGIMPORT.UPLOADEDUTCMILLIS)
+            PendingImportRecord result = context.insertInto(PENDING_IMPORT,
+                    PENDING_IMPORT.IMPORTED_FILENAME,
+                    PENDING_IMPORT.TITLE,
+                    PENDING_IMPORT.USER_SPECIFIED_TYPE,
+                    PENDING_IMPORT.UPLOADED_UTC_MILLIS)
                     .values(destFile.getAbsolutePath(),
                             source.getTitle(),
                             source.getUserSpecifiedType(),
                             source.getUploadedUtcMillis())
                     .returning().fetchOne();
             LOGGER.info("...Created entry in DB.");
-            LOGGER.info("Finished uploading import {} {}.", result.getId(), result.getImportedfilename());
+            LOGGER.info("Finished uploading import {} {}.", result.getId(), result.getImportedFilename());
             return R2I.map(result);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create import: " + ex.getMessage(), ex);
@@ -131,8 +131,8 @@ public class JooqImportService implements ImportService {
     public ImportInfo get(long id) {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
-            return context.selectFrom(PENDINGIMPORT)
-                    .where(PENDINGIMPORT.ID.eq(id))
+            return context.selectFrom(PENDING_IMPORT)
+                    .where(PENDING_IMPORT.ID.eq(id))
                     .fetchOne(R2I);
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get import_id=" + id + " because: " + ex.getMessage(), ex);
@@ -144,7 +144,7 @@ public class JooqImportService implements ImportService {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
             PendingimportRecordsToListHandler r2iHandler = new PendingimportRecordsToListHandler();
-            return context.selectFrom(PENDINGIMPORT).fetchInto(r2iHandler).getImports();
+            return context.selectFrom(PENDING_IMPORT).fetchInto(r2iHandler).getImports();
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get imports list because: " + ex.getMessage(), ex);
         }
@@ -164,7 +164,7 @@ public class JooqImportService implements ImportService {
             if (!file.delete()) {
                 LOGGER.error("Unable to delete imported file {}.", file);
             }
-            context.delete(PENDINGIMPORT).where(PENDINGIMPORT.ID.eq(id)).execute();
+            context.delete(PENDING_IMPORT).where(PENDING_IMPORT.ID.eq(id)).execute();
             LOGGER.debug("...Deleted import_id={}.", id);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to delete pendingimport_id=" + id
@@ -182,20 +182,20 @@ public class JooqImportService implements ImportService {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
 
-            UpdateSetMoreStep<PendingimportRecord> up = context.update(PENDINGIMPORT).set(PENDINGIMPORT.ID, source.getId());
+            UpdateSetMoreStep<PendingImportRecord> up = context.update(PENDING_IMPORT).set(PENDING_IMPORT.ID, source.getId());
             if (source.getImportedFilename() != null) {
-                up.set(PENDINGIMPORT.IMPORTEDFILENAME, source.getImportedFilename());
+                up.set(PENDING_IMPORT.IMPORTED_FILENAME, source.getImportedFilename());
             }
             if (source.getTitle() != null) {
-                up.set(PENDINGIMPORT.TITLE, source.getTitle());
+                up.set(PENDING_IMPORT.TITLE, source.getTitle());
             }
             if (source.getUserSpecifiedType() != null) {
-                up.set(PENDINGIMPORT.USERSPECIFIEDTYPE, source.getUserSpecifiedType());
+                up.set(PENDING_IMPORT.USER_SPECIFIED_TYPE, source.getUserSpecifiedType());
             }
             if (source.getUploadedUtcMillis() != 0) {
-                up.set(PENDINGIMPORT.UPLOADEDUTCMILLIS, source.getUploadedUtcMillis());
+                up.set(PENDING_IMPORT.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis());
             }
-            PendingimportRecord result = up.where(PENDINGIMPORT.ID.eq(source.getId())).returning().fetchOne();
+            PendingImportRecord result = up.where(PENDING_IMPORT.ID.eq(source.getId())).returning().fetchOne();
             LOGGER.debug("...Updated entry in DB.");
             return R2I.map(result);
         } catch (SQLException ex) {
@@ -224,29 +224,29 @@ public class JooqImportService implements ImportService {
         return new String(hexChars);
     }
 
-    private static class RecordToImportMapper implements RecordMapper<PendingimportRecord, ImportInfo> {
+    private static class RecordToImportMapper implements RecordMapper<PendingImportRecord, ImportInfo> {
 
         @Override
-        public ImportInfo map(PendingimportRecord record) {
+        public ImportInfo map(PendingImportRecord record) {
             if (record == null) {
                 return null;
             }
             return new ImportInfo(record.getId(),
-                    record.getImportedfilename(),
+                    record.getImportedFilename(),
                     record.getTitle(),
-                    record.getUserspecifiedtype(),
-                    record.getUploadedutcmillis(),
+                    record.getUserSpecifiedType(),
+                    record.getUploadedUtcMillis(),
                     null
             );
         }
     }
 
-    private static class PendingimportRecordsToListHandler implements RecordHandler<PendingimportRecord> {
+    private static class PendingimportRecordsToListHandler implements RecordHandler<PendingImportRecord> {
 
         private final List<ImportInfo> imports = new ArrayList<>();
 
         @Override
-        public void next(PendingimportRecord record) {
+        public void next(PendingImportRecord record) {
             imports.add(R2I.map(record));
         }
 

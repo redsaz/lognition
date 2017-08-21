@@ -85,10 +85,10 @@ public class JooqLogsService implements LogsService {
             DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.insertInto(LOG,
-                    LOG.URINAME,
+                    LOG.URI_NAME,
                     LOG.TITLE,
-                    LOG.UPLOADEDUTCMILLIS,
-                    LOG.DATAFILE,
+                    LOG.UPLOADED_UTC_MILLIS,
+                    LOG.DATA_FILE,
                     LOG.NOTES).values(
                             source.getUriName(),
                             source.getTitle(),
@@ -212,9 +212,9 @@ public class JooqLogsService implements LogsService {
             DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.update(LOG)
-                    .set(LOG.URINAME, source.getUriName())
+                    .set(LOG.URI_NAME, source.getUriName())
                     .set(LOG.TITLE, source.getTitle())
-                    .set(LOG.UPLOADEDUTCMILLIS, source.getUploadedUtcMillis())
+                    .set(LOG.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis())
                     .set(LOG.NOTES, source.getNotes())
                     .where(LOG.ID.eq(source.getId()))
                     .returning().fetchOne();
@@ -233,10 +233,10 @@ public class JooqLogsService implements LogsService {
                 return null;
             }
             return new Log(record.getId(),
-                    record.getUriname(),
+                    record.getUriName(),
                     record.getTitle(),
-                    record.getUploadedutcmillis(),
-                    record.getDatafile(),
+                    record.getUploadedUtcMillis(),
+                    record.getDataFile(),
                     record.getNotes()
             );
         }
