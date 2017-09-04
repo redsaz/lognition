@@ -26,35 +26,39 @@ import java.util.Objects;
 public class Log {
 
     private final long id;
+    private final Status status;
     private final String uriName;
     private final String title;
-    private final long uploadedUtcMillis;
     private final String dataFile;
     private final String notes;
 
     @JsonCreator
-    @ConstructorProperties({"id", "uriName", "title", "uploadedUtcMillis", "notes"})
+    @ConstructorProperties({"id", "uriName", "title", "notes"})
     public Log(
             @JsonProperty("id") long inId,
+            @JsonProperty("status") Status inStatus,
             @JsonProperty("uriName") String inUriName,
             @JsonProperty("title") String inTitle,
-            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
             @JsonProperty("dataFile") String inDataFile,
             @JsonProperty("notes") String inNotes) {
         id = inId;
+        status = inStatus;
         uriName = inUriName;
         title = inTitle;
-        uploadedUtcMillis = inUploadedUtcMillis;
         dataFile = inDataFile;
         notes = inNotes;
     }
 
     public static Log emptyLog() {
-        return new Log(0, null, null, System.currentTimeMillis(), null, null);
+        return new Log(0, Status.UNSPECIFIED, null, null, null, null);
     }
 
     public long getId() {
         return id;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     public String getUriName() {
@@ -63,10 +67,6 @@ public class Log {
 
     public String getTitle() {
         return title;
-    }
-
-    public long getUploadedUtcMillis() {
-        return uploadedUtcMillis;
     }
 
     public String getDataFile() {
@@ -80,9 +80,9 @@ public class Log {
     @Override
     public String toString() {
         return "log_id=" + id
+                + " status=" + status
                 + " uriName=" + uriName
                 + " title=" + title
-                + " uploadedUtcMillis=" + uploadedUtcMillis
                 + " dataFile=" + dataFile
                 + " notes=" + notes;
     }
@@ -90,9 +90,9 @@ public class Log {
     @Override
     public int hashCode() {
         return Long.hashCode(id)
+                ^ Objects.hashCode(status)
                 ^ Objects.hashCode(uriName)
                 ^ Objects.hashCode(title)
-                ^ Long.hashCode(uploadedUtcMillis)
                 ^ Objects.hashCode(dataFile)
                 ^ Objects.hashCode(notes);
     }
@@ -109,7 +109,7 @@ public class Log {
         final Log other = (Log) obj;
         if (this.id != other.id) {
             return false;
-        } else if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
+        } else if (!Objects.equals(this.status, other.status)) {
             return false;
         } else if (!Objects.equals(this.uriName, other.uriName)) {
             return false;
@@ -121,5 +121,12 @@ public class Log {
             return false;
         }
         return true;
+    }
+
+    public static enum Status {
+        UNSPECIFIED,
+        AWAITING_UPLOAD,
+        IMPORTING,
+        FINISHED
     }
 }

@@ -143,7 +143,7 @@ public class BrowserLogsResource {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from {}...", filename);
-                            ImportInfo meta = new ImportInfo(0, null, filename, null, updateMillis, null);
+                            ImportInfo meta = new ImportInfo(0, filename, null, updateMillis, null);
                             content = importSrv.upload(contentStream, meta);
                             LOGGER.info("Uploaded content from {}.", filename);
                             LOGGER.info("Created import_id={}.", content.getId());

@@ -31,6 +31,11 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
               - column:
+                  name: status
+                  type: int
+                  constraints:
+                      nullable: false
+              - column:
                   name: uri_name
                   type: varchar(1024)
                   constraints:
@@ -46,37 +51,29 @@ databaseChangeLog:
                   name: data_file
                   type: varchar(256)
               - column:
-                  name: uploaded_utc_millis
-                  type: bigint
-                  constraints:
-                    nullable: false
-              - column:
                   name: notes
                   type: clob
             schemaName: PUBLIC
         - createTable:
-            tableName: pending_import
+            tableName: import_info
             columns:
               - column:
                   name: id
                   type: bigint
-                  autoIncrement: true
-                  startWith: 1
                   constraints:
                     primaryKey: true
+                    foreignKeyName: fk_import_info_log
+                    references: log(id)
               - column:
                   name: imported_filename
                   type: varchar(1024)
                   constraints:
                     nullable: false
               - column:
-                  name: title
-                  type: varchar(1024)
-              - column:
-                  name: user_specified_type
-                  type: varchar(127)
-              - column:
                   name: uploaded_utc_millis
                   type: bigint
                   constraints:
                     nullable: false
+              - column:
+                  name: user_specified_type
+                  type: varchar(127)

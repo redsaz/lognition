@@ -18,6 +18,7 @@ package com.redsaz.meterrier.store;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.Log;
+import com.redsaz.meterrier.api.model.Log.Status;
 import com.redsaz.meterrier.api.model.Stats;
 import static com.redsaz.meterrier.model.tables.Log.LOG;
 import com.redsaz.meterrier.model.tables.records.LogRecord;
@@ -72,6 +73,8 @@ public class JooqLogsService implements LogsService {
     public Log create(Log source) {
         if (source == null) {
             throw new NullPointerException("No log information was specified.");
+        } else if (source.getStatus() == null) {
+            throw new NullPointerException("Log status must not be null.");
         } else if (source.getNotes() == null) {
             throw new NullPointerException("Log notes must not be null.");
         } else if (source.getTitle() == null) {
@@ -85,14 +88,14 @@ public class JooqLogsService implements LogsService {
             DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.insertInto(LOG,
+                    LOG.STATUS,
                     LOG.URI_NAME,
                     LOG.TITLE,
-                    LOG.UPLOADED_UTC_MILLIS,
                     LOG.DATA_FILE,
                     LOG.NOTES).values(
+                            source.getStatus().ordinal(),
                             source.getUriName(),
                             source.getTitle(),
-                            source.getUploadedUtcMillis(),
                             source.getDataFile(),
                             source.getNotes())
                     .returning().fetchOne();
@@ -199,6 +202,8 @@ public class JooqLogsService implements LogsService {
     public Log update(Log source) {
         if (source == null) {
             throw new NullPointerException("No log information was specified.");
+        } else if (source.getStatus() == null) {
+            throw new NullPointerException("Log status must not be null.");
         } else if (source.getNotes() == null) {
             throw new NullPointerException("Log notes must not be null.");
         } else if (source.getTitle() == null) {
@@ -212,9 +217,9 @@ public class JooqLogsService implements LogsService {
             DSLContext context = DSL.using(c, dialect);
 
             LogRecord result = context.update(LOG)
+                    .set(LOG.STATUS, source.getStatus().ordinal())
                     .set(LOG.URI_NAME, source.getUriName())
                     .set(LOG.TITLE, source.getTitle())
-                    .set(LOG.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis())
                     .set(LOG.NOTES, source.getNotes())
                     .where(LOG.ID.eq(source.getId()))
                     .returning().fetchOne();
@@ -233,9 +238,9 @@ public class JooqLogsService implements LogsService {
                 return null;
             }
             return new Log(record.getId(),
+                    Status.values()[record.getStatus()],
                     record.getUriName(),
                     record.getTitle(),
-                    record.getUploadedUtcMillis(),
                     record.getDataFile(),
                     record.getNotes()
             );

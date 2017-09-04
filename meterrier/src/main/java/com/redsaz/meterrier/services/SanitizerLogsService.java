@@ -18,10 +18,10 @@ package com.redsaz.meterrier.services;
 import com.github.slugify.Slugify;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.model.Log;
+import com.redsaz.meterrier.api.model.Log.Status;
 import com.redsaz.meterrier.api.model.Stats;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -179,8 +179,7 @@ public class SanitizerLogsService implements LogsService {
 //        return new LogBrief(brief.getId(), uriName, title, notes, filename, brief.getUploadedTimestampMillis(), brief.getContentId());
 //    }
     /**
-     * A log must have at least a uri and a title. If neither are present, then it will be
-     * generated. The ID will remain unchanged.
+     * Ensures nothing is null. The ID will remain unchanged.
      *
      * @param source The log to sanitize
      * @return A new brief instance with sanitized data.
@@ -189,23 +188,17 @@ public class SanitizerLogsService implements LogsService {
         if (source == null) {
             source = Log.emptyLog();
         }
+        Status status = source.getStatus();
+        if (status == null) {
+            status = Status.UNSPECIFIED;
+        }
         String uriName = source.getUriName();
-        String title = source.getTitle();
-        if (uriName == null || uriName.isEmpty()) {
-            uriName = source.getTitle();
-            if (uriName == null || uriName.isEmpty()) {
-                uriName = shortened(source.getNotes());
-                if (uriName == null || uriName.isEmpty()) {
-                    // At this point, there is nothing to latch onto to identify
-                    // the log, so we'll use the upload date for
-                    // the uriName and title.
-                    title = LONG_DATE.get().format(new Date(source.getUploadedUtcMillis()));
-                    uriName = title;
-                }
-            }
+        if (uriName == null) {
+            uriName = "";
         }
         uriName = SLG.slugify(uriName);
 
+        String title = source.getTitle();
         if (title == null) {
             title = shortened(source.getNotes());
             if (title == null) {
@@ -217,7 +210,7 @@ public class SanitizerLogsService implements LogsService {
             notes = "";
         }
 
-        return new Log(source.getId(), uriName, title, source.getUploadedUtcMillis(), source.getDataFile(), notes);
+        return new Log(source.getId(), source.getStatus(), uriName, title, source.getDataFile(), notes);
     }
 
     private static String shortened(String text) {

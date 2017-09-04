@@ -16,10 +16,10 @@
 package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
-import java.io.InputStream;
-import java.util.List;
 import com.redsaz.meterrier.api.model.ImportInfo;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.slf4j.Logger;
@@ -90,25 +90,9 @@ public class SanitizerImportService implements ImportService {
      */
     private static ImportInfo sanitize(ImportInfo source) {
         if (source == null) {
-            source = new ImportInfo(0, null, null, null, System.currentTimeMillis(), null);
+            source = new ImportInfo(0, null, null, System.currentTimeMillis(), null);
         }
-        String title = shortened(source.getTitle(), SHORTENED_MAX);
-
-        return new ImportInfo(source.getId(), source.getImportedFilename(), title, source.getUserSpecifiedType(), source.getUploadedUtcMillis(), source.getStatus());
-    }
-
-    private static String shortened(String text, int max) {
-        if (text == null || text.length() <= max) {
-            return text;
-        }
-        max -= 3;
-        text = text.substring(0, max);
-        String candidate = text.replaceFirst("\\S+$", "");
-        if (candidate.length() < max) {
-            candidate = text;
-        }
-
-        return candidate + "...";
+        return new ImportInfo(source.getId(), source.getImportedFilename(), source.getUserSpecifiedType(), source.getUploadedUtcMillis(), source.getStatus());
     }
 
 }
