@@ -26,22 +26,16 @@ public class ImportInfo {
 
     private final long id;
     private final String importedFilename;
-    private final String userSpecifiedType;
     private final long uploadedUtcMillis;
-    private final String status;
 
     @JsonCreator
     public ImportInfo(
             @JsonProperty("id") long inId,
             @JsonProperty("importedFilename") String inImportedFilename,
-            @JsonProperty("userSpecifiedType") String inUserSpecifiedType,
-            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis,
-            @JsonProperty("status") String inStatus) {
+            @JsonProperty("uploadedUtcMillis") long inUploadedUtcMillis) {
         id = inId;
         importedFilename = inImportedFilename;
-        userSpecifiedType = inUserSpecifiedType;
         uploadedUtcMillis = inUploadedUtcMillis;
-        status = inStatus;
     }
 
     public long getId() {
@@ -56,26 +50,17 @@ public class ImportInfo {
         return uploadedUtcMillis;
     }
 
-    public String getUserSpecifiedType() {
-        return userSpecifiedType;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
     @Override
     public String toString() {
         return "imported_id=" + id
                 + " importedFilename=" + importedFilename
-                + " uploadedUtcMillis=" + uploadedUtcMillis
-                + " status=" + status;
+                + " uploadedUtcMillis=" + uploadedUtcMillis;
     }
 
     @Override
     public int hashCode() {
         return Long.hashCode(id) ^ Long.hashCode(uploadedUtcMillis)
-                ^ Objects.hash(importedFilename, userSpecifiedType, status);
+                ^ Objects.hash(importedFilename);
     }
 
     @Override
@@ -90,8 +75,6 @@ public class ImportInfo {
         final ImportInfo other = (ImportInfo) obj;
         return this.id == other.id
                 && this.uploadedUtcMillis == other.uploadedUtcMillis
-                && Objects.equals(this.importedFilename, other.importedFilename)
-                && Objects.equals(this.userSpecifiedType, other.userSpecifiedType)
-                && Objects.equals(this.status, other.status);
+                && Objects.equals(this.importedFilename, other.importedFilename);
     }
 }

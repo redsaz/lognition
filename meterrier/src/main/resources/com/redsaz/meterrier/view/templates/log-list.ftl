@@ -23,7 +23,8 @@
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Title</th>
+                  <th>Id</th>
+                  <th>Name</th>
                   <th>Notes</th>
                   <th>Action</th>
                 </tr>
@@ -32,7 +33,8 @@
                 <#list briefs as brief>
                 <tr>
                   <td><a href="logs/${brief.id}">${brief.id}</a></td>
-                  <td>${brief.title}</td>
+                  <td>${brief.name}</td>
+                  <td>${brief.notes}</td>
                   <td>
                     <form action="${base}/logs/delete" method="POST">
                       <a href="logs/${brief.id}/edit">
@@ -51,9 +53,8 @@
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Notes</th>
-                  <th>Action</th>
+                  <th>Id</th>
+                  <th>Imported Filename</th>
                 </tr>
               </thead>
               <tbody>
@@ -61,16 +62,6 @@
                 <tr>
                   <td><a href="logs/${import.id}">${import.id}</a></td>
                   <td>${import.importedFilename}</td>
-                  <td>
-                    <form action="${base}/logs/delete" method="POST">
-                      <a href="logs/${import.id}/edit">
-                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                        <span class="sr-only">Edit</span>
-                      </a>
-                      <input type="hidden" name="id" value="${import.id}"/>
-                      <button type="submit" class="btn btn-link glyphicon glyphicon-trash"><span class="sr-only">Trash</span></button>
-                    </form>
-                  </td>
                 </tr>
                 </#list>
               </tbody>

@@ -74,7 +74,7 @@ public class BrowserLogsResource {
      * Presents a web page of {@link LogBrief}s.
      *
      * @param httpRequest The request for the page.
-     * @return Briefs, by URI and title.
+     * @return Web page of LogBriefs.
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
@@ -117,8 +117,7 @@ public class BrowserLogsResource {
         root.put("overallTimeseries", createDygraphScript(overallTimeseries));
         root.put("base", base);
         root.put("dist", dist);
-        root.put("title", log.getId());
-//        root.put("title", brief.getTitle());
+        root.put("title", log.getName());
         root.put("content", "log-view.ftl");
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
     }
@@ -130,7 +129,9 @@ public class BrowserLogsResource {
         LOGGER.info("Uploading log for import...");
         try {
             ImportInfo content = null;
+            String name = null;
             String filename = null;
+            String notes = null;
             long updateMillis = System.currentTimeMillis();
             ContentDispositionSubParts subParts = new ContentDispositionSubParts();
             for (InputPart part : input.getParts()) {
@@ -143,8 +144,11 @@ public class BrowserLogsResource {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from {}...", filename);
-                            ImportInfo meta = new ImportInfo(0, filename, null, updateMillis, null);
-                            content = importSrv.upload(contentStream, meta);
+
+                            Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+                            Log resultLog = logsSrv.create(sourceLog);
+
+                            content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
                             LOGGER.info("Uploaded content from {}.", filename);
                             LOGGER.info("Created import_id={}.", content.getId());
                             break;
@@ -153,9 +157,25 @@ public class BrowserLogsResource {
                             Response resp = Response.serverError().entity(ex).build();
                             return resp;
                         }
-                    default:
-                        // Skip it, we don't use it.
+                    case "name":
+                        try {
+                            name = part.getBodyAsString();
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting name.", ex);
+                        }
                         break;
+                    case "notes":
+                        try {
+                            notes = part.getBodyAsString();
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting name.", ex);
+                        }
+                        break;
+                    default: {
+                        // Skip it, we don't use it.
+                        LOGGER.info("Skipped part={}", subParts.getName());
+                    }
+                    break;
                 }
             }
             Response resp = Response.seeOther(URI.create("logs")).build();

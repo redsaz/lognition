@@ -17,7 +17,7 @@
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
           <form action="${base}/logs" method="POST" enctype="multipart/form-data">
-            <input type="text" class="form-control" name="title" placeholder="Title"/><br/>
+            <input type="text" class="form-control" name="name" placeholder="Name"/><br/>
             <textarea class="form-control" rows="20" name="notes"></textarea>
             <input type="file" name="content">
             <button type="submit" class="btn btn-primary">Create</button>

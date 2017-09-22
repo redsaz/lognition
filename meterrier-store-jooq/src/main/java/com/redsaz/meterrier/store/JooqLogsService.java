@@ -77,7 +77,7 @@ public class JooqLogsService implements LogsService {
             throw new NullPointerException("Log status must not be null.");
         } else if (source.getNotes() == null) {
             throw new NullPointerException("Log notes must not be null.");
-        } else if (source.getTitle() == null) {
+        } else if (source.getName() == null) {
             throw new NullPointerException("Log title must not be null.");
         } else if (source.getUriName() == null) {
             throw new NullPointerException("Log uriName must not be null.");
@@ -90,12 +90,12 @@ public class JooqLogsService implements LogsService {
             LogRecord result = context.insertInto(LOG,
                     LOG.STATUS,
                     LOG.URI_NAME,
-                    LOG.TITLE,
+                    LOG.NAME,
                     LOG.DATA_FILE,
                     LOG.NOTES).values(
                             source.getStatus().ordinal(),
                             source.getUriName(),
-                            source.getTitle(),
+                            source.getName(),
                             source.getDataFile(),
                             source.getNotes())
                     .returning().fetchOne();
@@ -206,7 +206,7 @@ public class JooqLogsService implements LogsService {
             throw new NullPointerException("Log status must not be null.");
         } else if (source.getNotes() == null) {
             throw new NullPointerException("Log notes must not be null.");
-        } else if (source.getTitle() == null) {
+        } else if (source.getName() == null) {
             throw new NullPointerException("Log title must not be null.");
         } else if (source.getUriName() == null) {
             throw new NullPointerException("Log uriName must not be null.");
@@ -219,7 +219,7 @@ public class JooqLogsService implements LogsService {
             LogRecord result = context.update(LOG)
                     .set(LOG.STATUS, source.getStatus().ordinal())
                     .set(LOG.URI_NAME, source.getUriName())
-                    .set(LOG.TITLE, source.getTitle())
+                    .set(LOG.NAME, source.getName())
                     .set(LOG.NOTES, source.getNotes())
                     .where(LOG.ID.eq(source.getId()))
                     .returning().fetchOne();
@@ -240,7 +240,7 @@ public class JooqLogsService implements LogsService {
             return new Log(record.getId(),
                     Status.values()[record.getStatus()],
                     record.getUriName(),
-                    record.getTitle(),
+                    record.getName(),
                     record.getDataFile(),
                     record.getNotes()
             );

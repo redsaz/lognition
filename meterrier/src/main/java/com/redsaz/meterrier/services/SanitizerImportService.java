@@ -17,6 +17,7 @@ package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.model.ImportInfo;
+import com.redsaz.meterrier.api.model.Log;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -73,9 +74,9 @@ public class SanitizerImportService implements ImportService {
     }
 
     @Override
-    public ImportInfo upload(InputStream raw, ImportInfo source) {
-        source = sanitize(source);
-        return srv.upload(raw, source);
+    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
+        importedFilename = sanitizeFilename(importedFilename);
+        return srv.upload(raw, log, importedFilename, uploadedUtcMillis);
     }
 
     @Override
@@ -90,9 +91,18 @@ public class SanitizerImportService implements ImportService {
      */
     private static ImportInfo sanitize(ImportInfo source) {
         if (source == null) {
-            source = new ImportInfo(0, null, null, System.currentTimeMillis(), null);
+            source = new ImportInfo(0, null, System.currentTimeMillis());
         }
-        return new ImportInfo(source.getId(), source.getImportedFilename(), source.getUserSpecifiedType(), source.getUploadedUtcMillis(), source.getStatus());
+        return new ImportInfo(source.getId(), source.getImportedFilename(), source.getUploadedUtcMillis());
+    }
+
+    private static String sanitizeFilename(String original) {
+        if (original == null) {
+            return null;
+        }
+        original = original.trim();
+        original = original.replaceAll("[!&;*?<>`\"']", "");
+        return original;
     }
 
 }

@@ -16,6 +16,7 @@
 package com.redsaz.meterrier.api;
 
 import com.redsaz.meterrier.api.model.ImportInfo;
+import com.redsaz.meterrier.api.model.Log;
 import java.io.InputStream;
 import java.util.List;
 
@@ -26,7 +27,7 @@ import java.util.List;
  */
 public interface ImportService {
 
-    public ImportInfo upload(InputStream raw, ImportInfo source);
+    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis);
 
     public ImportInfo get(long id);
 

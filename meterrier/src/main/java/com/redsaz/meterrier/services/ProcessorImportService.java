@@ -74,7 +74,7 @@ public class ProcessorImportService implements ImportService {
         Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
         impThread.start();
 
-        ImportInfo ii = new ImportInfo(now, "jtls/target/real-without-header.jtl", "csv", now, "Good");
+        ImportInfo ii = new ImportInfo(now, "jtls/target/real-without-header.jtl", now);
         imp.addJob(ii);
 
         imp.shutdown();
@@ -106,12 +106,8 @@ public class ProcessorImportService implements ImportService {
     }
 
     @Override
-    public ImportInfo upload(InputStream raw, ImportInfo source) {
-        Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, "", source.getImportedFilename(), "", source.getImportedFilename());
-        Log resultLog = logsSrv.create(sourceLog);
-        source = new ImportInfo(resultLog.getId(), source.getImportedFilename(),
-                source.getUserSpecifiedType(), source.getUploadedUtcMillis(), source.getStatus());
-        ImportInfo result = srv.upload(raw, source);
+    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
+        ImportInfo result = srv.upload(raw, log, importedFilename, uploadedUtcMillis);
         importer.addJob(result);
         return result;
     }
@@ -196,7 +192,7 @@ public class ProcessorImportService implements ImportService {
                 }
 
                 Log sourceLog = logsSrv.get(source.getId());
-                sourceLog = new Log(sourceLog.getId(), Log.Status.FINISHED, sourceLog.getUriName(), sourceLog.getTitle(),
+                sourceLog = new Log(sourceLog.getId(), Log.Status.FINISHED, sourceLog.getUriName(), sourceLog.getName(),
                         sourceLog.getDataFile(), sourceLog.getNotes());
                 Log resultLog = logsSrv.update(sourceLog);
                 LOGGER.info("...updated log {}.", resultLog);

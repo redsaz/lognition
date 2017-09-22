@@ -18,6 +18,7 @@ package com.redsaz.meterrier.store;
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.ImportInfo;
+import com.redsaz.meterrier.api.model.Log;
 import static com.redsaz.meterrier.model.tables.ImportInfo.IMPORT_INFO;
 import com.redsaz.meterrier.model.tables.records.ImportInfoRecord;
 import java.io.BufferedOutputStream;
@@ -76,16 +77,16 @@ public class JooqImportService implements ImportService {
     }
 
     @Override
-    public ImportInfo upload(InputStream raw, ImportInfo source) {
+    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
         if (raw == null) {
             throw new NullPointerException("No import was specified.");
-        } else if (source == null) {
+        } else if (log == null) {
             throw new NullPointerException("No import information was specified.");
         }
 
         LOGGER.info("Storing uploaded file...");
         long bytesRead = 0;
-        File destFile = getUploadFile(source);
+        File destFile = createUploadFile();
         LOGGER.info("Storing into {}", destFile.getAbsolutePath());
         try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -104,7 +105,7 @@ public class JooqImportService implements ImportService {
         LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
 
         LOGGER.info("Creating entry in DB...");
-        LOGGER.info("Import: {}", source);
+        LOGGER.info("Import for log: {}", log);
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
 
@@ -112,12 +113,10 @@ public class JooqImportService implements ImportService {
             ImportInfoRecord result = context.insertInto(IMPORT_INFO,
                     IMPORT_INFO.ID,
                     IMPORT_INFO.IMPORTED_FILENAME,
-                    IMPORT_INFO.USER_SPECIFIED_TYPE,
                     IMPORT_INFO.UPLOADED_UTC_MILLIS)
-                    .values(source.getId(),
+                    .values(log.getId(),
                             destFile.getAbsolutePath(),
-                            source.getUserSpecifiedType(),
-                            source.getUploadedUtcMillis())
+                            uploadedUtcMillis)
                     .returning().fetchOne();
             LOGGER.info("...Created entry in DB.");
             LOGGER.info("Finished uploading import {} {}.", result.getId(), result.getImportedFilename());
@@ -186,9 +185,6 @@ public class JooqImportService implements ImportService {
             if (source.getImportedFilename() != null) {
                 up.set(IMPORT_INFO.IMPORTED_FILENAME, source.getImportedFilename());
             }
-            if (source.getUserSpecifiedType() != null) {
-                up.set(IMPORT_INFO.USER_SPECIFIED_TYPE, source.getUserSpecifiedType());
-            }
             if (source.getUploadedUtcMillis() != 0) {
                 up.set(IMPORT_INFO.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis());
             }
@@ -200,7 +196,7 @@ public class JooqImportService implements ImportService {
         }
     }
 
-    private File getUploadFile(ImportInfo info) {
+    private File createUploadFile() {
         try {
             return File.createTempFile("log-", ".tmp", uploadedLogsDir);
         } catch (IOException ex) {
@@ -230,9 +226,7 @@ public class JooqImportService implements ImportService {
             }
             return new ImportInfo(record.getId(),
                     record.getImportedFilename(),
-                    record.getUserSpecifiedType(),
-                    record.getUploadedUtcMillis(),
-                    null
+                    record.getUploadedUtcMillis()
             );
         }
     }

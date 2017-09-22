@@ -85,7 +85,10 @@ public class LogsResource {
     @Consumes("application/octet-stream")
     @Produces({MeterrierMediaType.LOGBRIEF_V1_JSON})
     public Response importLog(InputStream source) {
-        return Response.status(Status.CREATED).entity(importSrv.upload(source, null)).build();
+        Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, "uploaded", null, null);
+        Log resultLog = logsSrv.create(sourceLog);
+
+        return Response.status(Status.CREATED).entity(importSrv.upload(source, resultLog, "uploaded", System.currentTimeMillis())).build();
     }
 
     @DELETE

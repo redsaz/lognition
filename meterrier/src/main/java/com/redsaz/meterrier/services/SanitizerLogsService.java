@@ -198,7 +198,7 @@ public class SanitizerLogsService implements LogsService {
         }
         uriName = SLG.slugify(uriName);
 
-        String title = source.getTitle();
+        String title = source.getName();
         if (title == null) {
             title = shortened(source.getNotes());
             if (title == null) {

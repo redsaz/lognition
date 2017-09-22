@@ -42,7 +42,7 @@ databaseChangeLog:
                     unique: false
                     nullable: false
               - column:
-                  name: title
+                  name: name
                   type: varchar(1024)
                   constraints:
                     unique: false
@@ -74,6 +74,3 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
-              - column:
-                  name: user_specified_type
-                  type: varchar(127)

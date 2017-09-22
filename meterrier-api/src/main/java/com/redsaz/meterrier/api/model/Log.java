@@ -28,23 +28,23 @@ public class Log {
     private final long id;
     private final Status status;
     private final String uriName;
-    private final String title;
+    private final String name;
     private final String dataFile;
     private final String notes;
 
     @JsonCreator
-    @ConstructorProperties({"id", "uriName", "title", "notes"})
+    @ConstructorProperties({"id", "uriName", "name", "notes"})
     public Log(
             @JsonProperty("id") long inId,
             @JsonProperty("status") Status inStatus,
             @JsonProperty("uriName") String inUriName,
-            @JsonProperty("title") String inTitle,
+            @JsonProperty("title") String inName,
             @JsonProperty("dataFile") String inDataFile,
             @JsonProperty("notes") String inNotes) {
         id = inId;
         status = inStatus;
         uriName = inUriName;
-        title = inTitle;
+        name = inName;
         dataFile = inDataFile;
         notes = inNotes;
     }
@@ -65,8 +65,8 @@ public class Log {
         return uriName;
     }
 
-    public String getTitle() {
-        return title;
+    public String getName() {
+        return name;
     }
 
     public String getDataFile() {
@@ -82,7 +82,7 @@ public class Log {
         return "log_id=" + id
                 + " status=" + status
                 + " uriName=" + uriName
-                + " title=" + title
+                + " name=" + name
                 + " dataFile=" + dataFile
                 + " notes=" + notes;
     }
@@ -92,7 +92,7 @@ public class Log {
         return Long.hashCode(id)
                 ^ Objects.hashCode(status)
                 ^ Objects.hashCode(uriName)
-                ^ Objects.hashCode(title)
+                ^ Objects.hashCode(name)
                 ^ Objects.hashCode(dataFile)
                 ^ Objects.hashCode(notes);
     }
@@ -113,7 +113,7 @@ public class Log {
             return false;
         } else if (!Objects.equals(this.uriName, other.uriName)) {
             return false;
-        } else if (!Objects.equals(this.title, other.title)) {
+        } else if (!Objects.equals(this.name, other.name)) {
             return false;
         } else if (!Objects.equals(this.dataFile, other.dataFile)) {
             return false;
