@@ -39,5 +39,7 @@ public interface LogsService {
 
     public Log update(Log source);
 
+    public void updateStatus(long id, Log.Status newStatus);
+
     public void delete(long id);
 }

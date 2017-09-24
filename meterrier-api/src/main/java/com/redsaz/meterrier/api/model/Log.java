@@ -126,7 +126,11 @@ public class Log {
     public static enum Status {
         UNSPECIFIED,
         AWAITING_UPLOAD,
+        UPLOADING,
+        UPLOAD_FAILED,
+        QUEUED,
         IMPORTING,
-        FINISHED
+        IMPORT_FAILED,
+        COMPLETE
     }
 }

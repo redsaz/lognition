@@ -121,6 +121,11 @@ public class SanitizerLogsService implements LogsService {
         return srv.update(source);
     }
 
+    @Override
+    public void updateStatus(long id, Status newStatus) {
+        srv.updateStatus(id, newStatus);
+    }
+
 //    /**
 //     * Sanitizes a group of logs according to the
 //     * {@link #sanitize(com.redsaz.meterrier.api.model.Note)} method.

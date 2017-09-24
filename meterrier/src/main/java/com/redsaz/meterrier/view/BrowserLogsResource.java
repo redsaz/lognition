@@ -17,6 +17,7 @@ package com.redsaz.meterrier.view;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
@@ -82,11 +83,9 @@ public class BrowserLogsResource {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
         List<Log> logs = logsSrv.list();
-        List<ImportInfo> imports = importSrv.list();
 
         Map<String, Object> root = new HashMap<>();
         root.put("briefs", logs);
-        root.put("imports", imports);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", "Logs");
@@ -143,14 +142,22 @@ public class BrowserLogsResource {
                         try (InputStream contentStream = part.getBody(InputStream.class, null)) {
                             LOGGER.info("Retrieving filename...");
                             filename = subParts.getFilename();
-                            LOGGER.info("Uploading content from {}...", filename);
+                            LOGGER.info("Uploading content from filename={}...", filename);
 
-                            Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
-                            Log resultLog = logsSrv.create(sourceLog);
+                            Log resultLog = null;
+                            try {
+                                Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+                                resultLog = logsSrv.create(sourceLog);
 
-                            content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
-                            LOGGER.info("Uploaded content from {}.", filename);
-                            LOGGER.info("Created import_id={}.", content.getId());
+                                content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
+                                LOGGER.info("Uploaded content from {}.", filename);
+                                LOGGER.info("Created import_id={}.", content.getId());
+                            } catch (AppClientException ex) {
+                                if (resultLog != null) {
+                                    logsSrv.delete(resultLog.getId());
+                                }
+                                throw ex;
+                            }
                             break;
                         } catch (IOException ex) {
                             LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);

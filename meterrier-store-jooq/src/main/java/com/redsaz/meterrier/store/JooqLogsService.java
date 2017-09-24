@@ -230,6 +230,23 @@ public class JooqLogsService implements LogsService {
         }
     }
 
+    @Override
+    public void updateStatus(long id, Status newStatus) {
+        LOGGER.info("Updating log id={} status={}...", id, newStatus);
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+
+            context.update(LOG)
+                    .set(LOG.STATUS, newStatus.ordinal())
+                    .where(LOG.ID.eq(id))
+                    .execute();
+            LOGGER.info("...Updated log id={} status={}.", id, newStatus);
+        } catch (SQLException ex) {
+            LOGGER.error("...Failed to update log id={} status={}.", id, newStatus);
+            throw new AppServerException("Failed to update log: " + ex.getMessage(), ex);
+        }
+    }
+
     private static class RecordToLogMapper implements RecordMapper<LogRecord, Log> {
 
         @Override

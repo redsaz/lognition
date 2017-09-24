@@ -16,6 +16,7 @@
 package com.redsaz.meterrier.store;
 
 import com.redsaz.meterrier.api.ImportService;
+import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
@@ -102,10 +103,14 @@ public class JooqImportService implements ImportService {
             LOGGER.error("Exception when uploading log.", ex);
             throw new AppServerException("Failed to upload content.", ex);
         }
+        if (bytesRead == 0) {
+            destFile.delete();
+            throw new AppClientException("No data was uploaded.");
+        }
         LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
 
         LOGGER.info("Creating entry in DB...");
-        LOGGER.info("Import for log: {}", log);
+        LOGGER.info("Import for log id={}", log.getId());
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
 

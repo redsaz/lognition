@@ -107,9 +107,15 @@ public class ProcessorImportService implements ImportService {
 
     @Override
     public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
-        ImportInfo result = srv.upload(raw, log, importedFilename, uploadedUtcMillis);
-        importer.addJob(result);
-        return result;
+        logsSrv.updateStatus(log.getId(), Log.Status.UPLOADING);
+        try {
+            ImportInfo result = srv.upload(raw, log, importedFilename, uploadedUtcMillis);
+            importer.addJob(result);
+            return result;
+        } catch (Exception ex) {
+            logsSrv.updateStatus(log.getId(), Log.Status.UPLOAD_FAILED);
+            throw ex;
+        }
     }
 
     @Override
@@ -150,6 +156,7 @@ public class ProcessorImportService implements ImportService {
         }
 
         public void addJob(ImportInfo info) {
+            logsSrv.updateStatus(info.getId(), Log.Status.QUEUED);
             awaitingImport.add(info);
         }
 
@@ -169,15 +176,33 @@ public class ProcessorImportService implements ImportService {
         }
 
         private void processImport(ImportInfo source) {
+            Samples sourceSamples = null;
             try {
                 LOGGER.info("...importing...");
-                Samples sourceSamples = new CsvJtlSource(new File(source.getImportedFilename()));
+                logsSrv.updateStatus(source.getId(), Log.Status.IMPORTING);
+                sourceSamples = new CsvJtlSource(new File(source.getImportedFilename()));
                 SamplesWriter writer = new AvroSamplesWriter();
 
                 File avro = new File(convertedDir, String.format("%d.avro", source.getId()));
                 String hash = writer.write(sourceSamples, avro);
                 LOGGER.info("...SHA-256: {}...", hash);
+            } catch (IOException ex) {
+                logsSrv.updateStatus(source.getId(), Log.Status.IMPORT_FAILED);
+                LOGGER.error("Could not import " + source.getImportedFilename(), ex);
 
+                return;
+            }
+
+            logsSrv.updateStatus(source.getId(), Log.Status.COMPLETE);
+            LOGGER.info("...imported log id={}.", source.getId());
+
+            importSrv.delete(source.getId());
+
+            eagerCalculateStats(source, sourceSamples);
+        }
+
+        private void eagerCalculateStats(ImportInfo source, Samples sourceSamples) {
+            try {
                 List<Stats> timeSeries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
                 File overallSeriesFile = new File(convertedDir, String.format("%d-overall-timeseries-60s.csv", source.getId()));
                 StatsBuilder.writeStatsCsv(timeSeries, overallSeriesFile);
@@ -190,15 +215,8 @@ public class ProcessorImportService implements ImportService {
                     File labelSeriesFile = new File(convertedDir, String.format("%d-label_%d-timeseries-60s.csv", source.getId(), sourceSamples.getLabels().indexOf(label)));
                     StatsBuilder.writeStatsCsv(labelTimeSeries, labelSeriesFile);
                 }
-
-                Log sourceLog = logsSrv.get(source.getId());
-                sourceLog = new Log(sourceLog.getId(), Log.Status.FINISHED, sourceLog.getUriName(), sourceLog.getName(),
-                        sourceLog.getDataFile(), sourceLog.getNotes());
-                Log resultLog = logsSrv.update(sourceLog);
-                LOGGER.info("...updated log {}.", resultLog);
-                importSrv.delete(source.getId());
-            } catch (IOException ex) {
-                LOGGER.error("Could not import " + source.getImportedFilename(), ex);
+            } catch (Exception ex) {
+                LOGGER.error("Hit exception while calculating stats for log id={}. No more stats will be eagerly processed for this log.", source.getId(), ex);
             }
         }
 

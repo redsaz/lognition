@@ -49,23 +49,6 @@
                 </#list>
               </tbody>
             </table>
-            <h2>Pending Imports</h2>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Id</th>
-                  <th>Imported Filename</th>
-                </tr>
-              </thead>
-              <tbody>
-                <#list imports as import>
-                <tr>
-                  <td><a href="logs/${import.id}">${import.id}</a></td>
-                  <td>${import.importedFilename}</td>
-                </tr>
-                </#list>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
