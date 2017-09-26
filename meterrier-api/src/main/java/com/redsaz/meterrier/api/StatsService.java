@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Redsaz <redsaz@gmail.com>.
+ * Copyright 2017 Redsaz <redsaz@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,22 @@
  */
 package com.redsaz.meterrier.api;
 
-import com.redsaz.meterrier.api.model.Log;
-import java.io.OutputStream;
+import com.redsaz.meterrier.api.model.Timeseries;
 import java.util.List;
 
 /**
- * Stores and accesses logs/measurements.
+ * Stores and accesses statistics such as timeseries.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public interface LogsService {
+public interface StatsService {
 
-    public Log create(Log source);
+    public void createSampleLabels(long logId, List<String> labels);
 
-    public OutputStream getContent(long id);
+    public List<String> getSampleLabels(long logId);
 
-    public Log get(long id);
+    public Timeseries getTimeseries(long logId, long labelId);
 
-    public List<Log> list();
-
-    public Log update(Log source);
-
-    public void updateStatus(long id, Log.Status newStatus);
-
-    public void delete(long id);
+    public void createOrUpdateTimeseries(long logId, long labelId, Timeseries timeseries);
 
 }

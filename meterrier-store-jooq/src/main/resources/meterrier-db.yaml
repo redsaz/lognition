@@ -74,3 +74,58 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
+        - createTable:
+            tableName: sample_label
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_sample_label_log
+                    references: log(id)
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: sample_label
+            columnNames: log_id, label_id
+            constraintName: pk_sample_label
+        - createTable:
+            tableName: timeseries
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: span_millis
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: series_data
+                  type: blob
+        - addPrimaryKey:
+            tableName: timeseries
+            columnNames: log_id, label_id, span_millis
+            constraintName: pk_timeseries
+        - addForeignKeyConstraint:
+            baseColumnNames: log_id, label_id
+            baseTableName: timeseries
+            referencedColumnNames: log_id, label_id
+            referencedTableName: sample_label
+            constraintName: fk_timeseries_sample_label

@@ -15,10 +15,11 @@
  */
 package com.redsaz.meterrier.stats;
 
-import com.redsaz.meterrier.api.model.Stats;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.redsaz.meterrier.api.model.Sample;
+import com.redsaz.meterrier.api.model.Stats;
+import com.redsaz.meterrier.api.model.Timeseries;
 import com.redsaz.meterrier.convert.AvroSamplesWriter;
 import com.redsaz.meterrier.convert.CsvJtlSource;
 import com.redsaz.meterrier.convert.Samples;
@@ -64,17 +65,17 @@ public class StatsBuilder {
         Samples sourceSamples = new CsvJtlSource(source);
         SamplesWriter writer = new AvroSamplesWriter();
         writer.write(sourceSamples, dest);
-        List<Stats> timeSeries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
-        StatsBuilder.writeStatsCsv(timeSeries, statsFile);
+        Timeseries timeseries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
+        StatsBuilder.writeStatsCsv(timeseries, statsFile);
 
         Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
         for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
             String label = entry.getKey();
             List<Sample> labelSamples = entry.getValue();
-            List<Stats> labelTimeSeries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
+            Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
             File labelDest = new File("../meterrier/jtls/target/converted/real-550cps-1hour-stats-60s-"
                     + sanitize(label) + ".csv");
-            StatsBuilder.writeStatsCsv(labelTimeSeries, labelDest);
+            StatsBuilder.writeStatsCsv(labelTimeseries, labelDest);
         }
     }
 
@@ -89,14 +90,14 @@ public class StatsBuilder {
      * @param spanMillis
      * @return
      */
-    public static List<Stats> calcTimeSeriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
+    public static Timeseries calcTimeSeriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
         // Find sublists (bins) for each segment of time, and calculate the
         // stats for each.
         double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();
         int numBins = (int) Math.ceil((double) lastOffset / spanMillis);
         List<Stats> statsList = createStatsList(offsetSortedSamples, numBins, spanMillis);
 
-        return statsList;
+        return new Timeseries(spanMillis, statsList);
     }
 
     /**
@@ -196,7 +197,7 @@ public class StatsBuilder {
         return samples.subList(numSkip, samples.size());
     }
 
-    public static String writeStatsCsv(List<Stats> stats, File dest) {
+    public static String writeStatsCsv(Timeseries timeseries, File dest) {
         long startMillis = System.currentTimeMillis();
         String sha256Hash = null;
         try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
@@ -209,7 +210,7 @@ public class StatsBuilder {
                     writer = new CsvWriter(bw, settings);
 
                     writer.writeHeaders();
-                    writer.processRecords(stats);
+                    writer.processRecords(timeseries.getStatsList());
                 } finally {
                     if (writer != null) {
                         writer.close();
@@ -221,7 +222,7 @@ public class StatsBuilder {
             throw new RuntimeException("Could not write stats file " + dest.toString() + ".", ex);
         }
         LOGGER.info("Took {}ms to write {} lines of CSV for {}.",
-                (System.currentTimeMillis() - startMillis), stats.size(), dest.getPath());
+                (System.currentTimeMillis() - startMillis), timeseries.getStatsList().size(), dest.getPath());
         return sha256Hash;
     }
 

@@ -17,14 +17,17 @@ package com.redsaz.meterrier.view;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.exceptions.AppClientException;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
 import com.redsaz.meterrier.api.model.Stats;
+import com.redsaz.meterrier.api.model.Timeseries;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,15 +62,18 @@ public class BrowserLogsResource {
 
     private LogsService logsSrv;
     private ImportService importSrv;
+    private StatsService statsSrv;
     private Templater cfg;
 
     public BrowserLogsResource() {
     }
 
     @Inject
-    public BrowserLogsResource(@Sanitizer LogsService logsService, @Processor ImportService importService, Templater config) {
+    public BrowserLogsResource(@Sanitizer LogsService logsService,
+            @Processor ImportService importService, StatsService statsService, Templater config) {
         logsSrv = logsService;
         importSrv = importService;
+        statsSrv = statsService;
         cfg = config;
     }
 
@@ -97,23 +103,33 @@ public class BrowserLogsResource {
      * Presents a web page for viewing a specific log brief.
      *
      * @param httpRequest The request for the page.
-     * @param id The id of the brief.
+     * @param logId The id of the brief.
      * @return Brief view page.
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Path("{id}")
-    public Response getLogBrief(@Context HttpServletRequest httpRequest, @PathParam("id") long id) {
+    public Response getLogBrief(@Context HttpServletRequest httpRequest, @PathParam("id") long logId) {
         String base = httpRequest.getContextPath();
         String dist = base + "/dist";
-        Log log = logsSrv.get(id);
+        Log log = logsSrv.get(logId);
         if (log == null) {
-            throw new NotFoundException("Could not find note id=" + id);
+            throw new NotFoundException("Could not find logId=" + logId);
         }
-        List<Stats> overallTimeseries = logsSrv.getOverallTimeseries(id);
+
+        List<String> labels = statsSrv.getSampleLabels(logId);
+        List<String> graphs = new ArrayList<>();
+        for (int i = 0; i < labels.size(); ++i) {
+            String label = labels.get(i);
+            Timeseries timeseries = statsSrv.getTimeseries(logId, i);
+            String dygraph = createDygraphScript(timeseries, label, i);
+            graphs.add(dygraph);
+        }
+
         Map<String, Object> root = new HashMap<>();
         root.put("brief", log);
-        root.put("overallTimeseries", createDygraphScript(overallTimeseries));
+        root.put("sampleLabels", labels);
+        root.put("graphs", graphs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getName());
@@ -304,11 +320,16 @@ public class BrowserLogsResource {
         return cursor;
     }
 
-    private static String createDygraphScript(List<Stats> statsList) {
+    private static String createDygraphScript(Timeseries timeseries, String label, int index) {
+        if (timeseries == null) {
+            LOGGER.debug("Timeseries is empty.");
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
-        sb.append("new Dygraph(document.getElementById(\"graphdiv1\"),\n");
+        sb.append("new Dygraph(document.getElementById(\"graphdiv").append(index).append("\"),\n");
         String csvRowTail = " +\n";
-        sb.append("\"offsetMillis,Overall\\n\"").append(csvRowTail);
+        sb.append("\"offsetMillis,").append(label).append("\\n\"").append(csvRowTail);
+        List<Stats> statsList = timeseries.getStatsList();
         for (Stats stats : statsList) {
             sb.append("\"")
                     .append(stats.getOffsetMillis())
@@ -326,7 +347,7 @@ public class BrowserLogsResource {
         }
         sb.append(", {\n");
         sb.append("legend: 'always',\n");
-        sb.append("title: 'Overall',\n");
+        sb.append("title: '").append(label).append("',\n");
         sb.append("customBars: true,\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("});");

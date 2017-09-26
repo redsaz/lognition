@@ -52,7 +52,7 @@ public class ConnectionPoolInit {
         }
         File deciDb = new File(deciDir, "meterrierdb");
         JDBCPool jdbc = new JDBCPool();
-        jdbc.setUrl("jdbc:hsqldb:" + deciDb.toURI());
+        jdbc.setUrl("jdbc:hsqldb:" + deciDb.toURI() + ";shutdown=true;hsqldb.lob_file_scale=4;hsqldb.lob_compressed=true");
         jdbc.setUser("SA");
         jdbc.setPassword("SA");
 

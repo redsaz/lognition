@@ -17,9 +17,11 @@ package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.store.ConnectionPool;
 import com.redsaz.meterrier.store.JooqImportService;
 import com.redsaz.meterrier.store.JooqLogsService;
+import com.redsaz.meterrier.store.JooqStatsService;
 import com.redsaz.meterrier.view.Processor;
 import com.redsaz.meterrier.view.Sanitizer;
 import javax.enterprise.context.ApplicationScoped;
@@ -42,8 +44,10 @@ public class ServiceProducers {
     private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
     private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR));
     private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
+    private static final StatsService STATS_SERVICE = new JooqStatsService(POOL, SQLDialect.HSQLDB);
     private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
-            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, LOGS_DIR);
+            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, STATS_SERVICE, LOGS_DIR
+    );
 
     @Produces
     @ApplicationScoped
@@ -57,6 +61,12 @@ public class ServiceProducers {
     @Processor
     public ImportService createProcessorImportService() {
         return PROCESSOR_IMPORT_SERVICE;
+    }
+
+    @Produces
+    @ApplicationScoped
+    public StatsService createStatsService() {
+        return STATS_SERVICE;
     }
 
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {

@@ -17,10 +17,11 @@ package com.redsaz.meterrier.services;
 
 import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
+import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.Sample;
-import com.redsaz.meterrier.api.model.Stats;
+import com.redsaz.meterrier.api.model.Timeseries;
 import com.redsaz.meterrier.convert.AvroSamplesWriter;
 import com.redsaz.meterrier.convert.CsvJtlSource;
 import com.redsaz.meterrier.convert.Samples;
@@ -29,10 +30,12 @@ import com.redsaz.meterrier.stats.StatsBuilder;
 import com.redsaz.meterrier.store.ConnectionPool;
 import com.redsaz.meterrier.store.JooqImportService;
 import com.redsaz.meterrier.store.JooqLogsService;
+import com.redsaz.meterrier.store.JooqStatsService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -55,9 +58,12 @@ import org.slf4j.LoggerFactory;
 public class ProcessorImportService implements ImportService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorImportService.class);
+    private static final long OVERALL_LABEL_ID = 0; // label ID for "Overall" category.
+    private static final long DEFAULT_SPAN_MILLIS = 60000L;
 
     private final ImportService srv;
     private final LogsService logsSrv;
+    private final StatsService statsSrv;
     private final String convertedDir;
     private final Importer importer;
     private final Thread importerThread;
@@ -68,9 +74,10 @@ public class ProcessorImportService implements ImportService {
         final String convertedDir = "jtls/target/logs";
         final LogsService saniLogSrv = new SanitizerLogsService(
                 new JooqLogsService(pool, SQLDialect.HSQLDB, convertedDir));
+        final StatsService jooqStatsSrv = new JooqStatsService(pool, SQLDialect.HSQLDB);
         final long now = System.currentTimeMillis();
 
-        Importer imp = new Importer(saniImportSrv, saniLogSrv, convertedDir);
+        Importer imp = new Importer(saniImportSrv, saniLogSrv, jooqStatsSrv, convertedDir);
         Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
         impThread.start();
 
@@ -81,11 +88,12 @@ public class ProcessorImportService implements ImportService {
     }
 
     public ProcessorImportService(ImportService importService, LogsService logsService,
-            String convertedDirectory) {
+            StatsService statsService, String convertedDirectory) {
         srv = importService;
         logsSrv = logsService;
+        statsSrv = statsService;
         convertedDir = convertedDirectory;
-        importer = new Importer(srv, logsSrv, convertedDir);
+        importer = new Importer(srv, logsSrv, statsSrv, convertedDir);
         importerThread = new Thread(importer, "LogImporter-" + System.identityHashCode(importer));
         init();
     }
@@ -144,14 +152,16 @@ public class ProcessorImportService implements ImportService {
 
         private final ImportService importSrv;
         private final LogsService logsSrv;
+        private final StatsService statsSrv;
         private final String convertedDir;
         private final BlockingQueue<ImportInfo> awaitingImport = new LinkedBlockingQueue<>();
         private final AtomicBoolean shutdown = new AtomicBoolean();
 
         public Importer(ImportService importService, LogsService logsService,
-                String convertedDirectory) {
+                StatsService statsService, String convertedDirectory) {
             importSrv = importService;
             logsSrv = logsService;
+            statsSrv = statsService;
             convertedDir = convertedDirectory;
         }
 
@@ -203,17 +213,28 @@ public class ProcessorImportService implements ImportService {
 
         private void eagerCalculateStats(ImportInfo source, Samples sourceSamples) {
             try {
-                List<Stats> timeSeries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
-                File overallSeriesFile = new File(convertedDir, String.format("%d-overall-timeseries-60s.csv", source.getId()));
-                StatsBuilder.writeStatsCsv(timeSeries, overallSeriesFile);
+                long logId = source.getId();
+                Timeseries overall = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
 
                 Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
-                for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
-                    String label = entry.getKey();
-                    List<Sample> labelSamples = entry.getValue();
-                    List<Stats> labelTimeSeries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
-                    File labelSeriesFile = new File(convertedDir, String.format("%d-label_%d-timeseries-60s.csv", source.getId(), sourceSamples.getLabels().indexOf(label)));
-                    StatsBuilder.writeStatsCsv(labelTimeSeries, labelSeriesFile);
+
+                List<String> labels = new ArrayList<>(labelsSamples.size() + 1);
+                labels.add("Overall"); // OVerall is always labelId=0
+                labels.addAll(sourceSamples.getLabels());
+                statsSrv.createSampleLabels(logId, labels);
+
+                statsSrv.createOrUpdateTimeseries(logId, OVERALL_LABEL_ID, overall);
+
+                for (int labelId = 1; labelId < labels.size(); ++labelId) {
+                    String label = labels.get(labelId);
+                    List<Sample> labelSamples = labelsSamples.get(label);
+                    if (labelSamples == null) {
+                        LOGGER.warn("Encountered null logId={} labelId={} while eagerly calculating stats, which shouldn't happen! Skipping.", logId, labelId);
+                        continue;
+                    }
+                    Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, DEFAULT_SPAN_MILLIS);
+
+                    statsSrv.createOrUpdateTimeseries(logId, labelId, labelTimeseries);
                 }
             } catch (Exception ex) {
                 LOGGER.error("Hit exception while calculating stats for log id={}. No more stats will be eagerly processed for this log.", source.getId(), ex);

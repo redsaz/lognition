@@ -19,16 +19,9 @@ import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.Log.Status;
-import com.redsaz.meterrier.api.model.Stats;
 import static com.redsaz.meterrier.model.tables.Log.LOG;
 import com.redsaz.meterrier.model.tables.records.LogRecord;
-import com.univocity.parsers.common.Context;
-import com.univocity.parsers.common.processor.core.Processor;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
-import java.io.File;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -118,49 +111,6 @@ public class JooqLogsService implements LogsService {
 //            throw new AppServerException("Cannot get log_id=" + id + " because: " + ex.getMessage(), ex);
 //        }
         return null;
-    }
-
-    @Override
-    public List<Stats> getOverallTimeseries(long id) {
-        List<Stats> series = new ArrayList<>();
-        File overallFile = new File(logsDir, id + "-overall-timeseries-60s.csv");
-        CsvParserSettings settings = new CsvParserSettings();
-        settings.setHeaderExtractionEnabled(true);
-        settings.setProcessor(new Processor<Context>() {
-            @Override
-            public void processStarted(Context context) {
-                // Do nothing.
-            }
-
-            @Override
-            public void rowProcessed(String[] row, Context context) {
-                long offsetMillis = Long.parseLong(row[0]);
-                Long min = Long.valueOf(row[1]);
-                Long p25 = Long.valueOf(row[2]);
-                Long p50 = Long.valueOf(row[3]);
-                Long p75 = Long.valueOf(row[4]);
-                Long p90 = Long.valueOf(row[5]);
-                Long p95 = Long.valueOf(row[6]);
-                Long p99 = Long.valueOf(row[7]);
-                Long max = Long.valueOf(row[8]);
-                Long avg = Long.valueOf(row[9]);
-                long numSamples = Long.valueOf(row[10]);
-                long totalResponseBytes = Long.valueOf(row[11]);
-                long numErrors = Long.valueOf(row[12]);
-                Stats stats = new Stats(offsetMillis, min, p25, p50, p75, p90, p95, p99, max, avg,
-                        numSamples, totalResponseBytes, numErrors);
-                series.add(stats);
-            }
-
-            @Override
-            public void processEnded(Context context) {
-                // Do nothing.
-            }
-
-        });
-        CsvParser parser = new CsvParser(settings);
-        parser.parse(overallFile, Charset.forName("UTF8"));
-        return series;
     }
 
     @Override

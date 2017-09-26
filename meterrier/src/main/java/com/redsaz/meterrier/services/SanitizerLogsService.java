@@ -19,7 +19,6 @@ import com.github.slugify.Slugify;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.Log.Status;
-import com.redsaz.meterrier.api.model.Stats;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -78,11 +77,6 @@ public class SanitizerLogsService implements LogsService {
     @Override
     public OutputStream getContent(long id) {
         return srv.getContent(id);
-    }
-
-    @Override
-    public List<Stats> getOverallTimeseries(long id) {
-        return srv.getOverallTimeseries(id);
     }
 
 //    @Override

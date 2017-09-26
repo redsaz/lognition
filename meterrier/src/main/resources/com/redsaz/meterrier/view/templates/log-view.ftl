@@ -18,12 +18,16 @@
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.id}</h2>
           <p>${brief}</p>
-          <div id="graphdiv1"></div>
+          <#list graphs as graph>
+            <div id="graphdiv${graph?index}"></div>
+          </#list>
         </div>
       </div>
 
       <script src="${dist}/js/dygraph.min.js"></script>
-      <script>
-        <#noescape>${overallTimeseries}</#noescape>
-      </script>
+      <#list graphs as graph>
+        <script>
+          <#noescape>${graph}</#noescape>
+        </script>
+      </#list>
 </#escape>
