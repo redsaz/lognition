@@ -328,7 +328,7 @@ public class BrowserLogsResource {
         StringBuilder sb = new StringBuilder();
         sb.append("new Dygraph(document.getElementById(\"graphdiv").append(index).append("\"),\n");
         String csvRowTail = " +\n";
-        sb.append("\"offsetMillis,").append(label).append("\\n\"").append(csvRowTail);
+        sb.append("\"offsetMillis,").append(label).append(",p25,p75\\n\"").append(csvRowTail);
         List<Stats> statsList = timeseries.getStatsList();
         for (Stats stats : statsList) {
             sb.append("\"")
@@ -337,6 +337,18 @@ public class BrowserLogsResource {
                     .append(stats.getP25())
                     .append(";")
                     .append(stats.getP50())
+                    .append(";")
+                    .append(stats.getP75())
+                    .append(",")
+                    .append(stats.getP25())
+                    .append(";")
+                    .append(stats.getP25())
+                    .append(";")
+                    .append(stats.getP25())
+                    .append(",")
+                    .append(stats.getP75())
+                    .append(";")
+                    .append(stats.getP75())
                     .append(";")
                     .append(stats.getP75())
                     .append("\\n\"")
