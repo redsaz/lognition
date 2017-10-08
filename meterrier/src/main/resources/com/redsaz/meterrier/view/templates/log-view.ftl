@@ -18,6 +18,44 @@
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.id}</h2>
           <p>${brief}</p>
+          <table class="table table-hover">
+            <thead>
+            <tr>
+              <th>Label</th>
+              <th># Samples</th>
+              <th>Min</th>
+              <th>25% line</th>
+              <th>50% line</th>
+              <th>75% line</th>
+              <th>90% line</th>
+              <th>95% line</th>
+              <th>99% line</th>
+              <th>Max</th>
+              <th>Average</th>
+              <th>Total Response Bytes</th>
+              <th># Errors</th>
+            </tr>
+            </thead>
+            <tbody>
+          <#list aggregates as a>
+            <tr>
+              <th>${sampleLabels[a?index]}</th>
+              <td>${a.numSamples}</td>
+              <td>${a.min}</td>
+              <td>${a.p25}</td>
+              <td>${a.p50}</td>
+              <td>${a.p75}</td>
+              <td>${a.p90}</td>
+              <td>${a.p95}</td>
+              <td>${a.p99}</td>
+              <td>${a.max}</td>
+              <td>${a.avg}</td>
+              <td>${a.totalResponseBytes}</td>
+              <td>${a.numErrors}</td>
+            </tr>
+          </#list>
+            </tbody>
+          </table>
           <#list graphs as graph>
             <div id="graphdiv${graph?index}"></div>
           </#list>

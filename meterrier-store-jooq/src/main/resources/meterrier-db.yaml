@@ -99,6 +99,71 @@ databaseChangeLog:
             columnNames: log_id, label_id
             constraintName: pk_sample_label
         - createTable:
+            tableName: aggregate
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: min
+                  type: bigint
+              - column:
+                  name: p25
+                  type: bigint
+              - column:
+                  name: p50
+                  type: bigint
+              - column:
+                  name: p75
+                  type: bigint
+              - column:
+                  name: p90
+                  type: bigint
+              - column:
+                  name: p95
+                  type: bigint
+              - column:
+                  name: p99
+                  type: bigint
+              - column:
+                  name: max
+                  type: bigint
+              - column:
+                  name: avg
+                  type: bigint
+              - column:
+                  name: num_samples
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_response_bytes
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: num_errors
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: aggregate
+            columnNames: log_id, label_id
+            constraintName: pk_aggregate
+        - addForeignKeyConstraint:
+            baseTableName: aggregate
+            baseColumnNames: log_id, label_id
+            referencedTableName: sample_label
+            referencedColumnNames: log_id, label_id
+            constraintName: fk_aggregate_sample_label
+        - createTable:
             tableName: timeseries
             columns:
               - column:
@@ -124,8 +189,8 @@ databaseChangeLog:
             columnNames: log_id, label_id, span_millis
             constraintName: pk_timeseries
         - addForeignKeyConstraint:
-            baseColumnNames: log_id, label_id
             baseTableName: timeseries
-            referencedColumnNames: log_id, label_id
+            baseColumnNames: log_id, label_id
             referencedTableName: sample_label
+            referencedColumnNames: log_id, label_id
             constraintName: fk_timeseries_sample_label

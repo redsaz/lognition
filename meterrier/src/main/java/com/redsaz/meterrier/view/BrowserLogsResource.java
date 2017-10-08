@@ -118,18 +118,22 @@ public class BrowserLogsResource {
         }
 
         List<String> labels = statsSrv.getSampleLabels(logId);
-        List<String> graphs = new ArrayList<>();
+        List<String> graphs = new ArrayList<>(labels.size());
+        List<Stats> aggregates = new ArrayList<>(labels.size());
         for (int i = 0; i < labels.size(); ++i) {
             String label = labels.get(i);
             Timeseries timeseries = statsSrv.getTimeseries(logId, i);
             String dygraph = createDygraphScript(timeseries, label, i);
             graphs.add(dygraph);
+            Stats aggregate = statsSrv.getAggregate(logId, i);
+            aggregates.add(aggregate);
         }
 
         Map<String, Object> root = new HashMap<>();
         root.put("brief", log);
         root.put("sampleLabels", labels);
         root.put("graphs", graphs);
+        root.put("aggregates", aggregates);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getName());

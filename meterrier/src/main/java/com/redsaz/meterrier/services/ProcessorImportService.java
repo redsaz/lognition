@@ -21,6 +21,7 @@ import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.Sample;
+import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
 import com.redsaz.meterrier.convert.AvroSamplesWriter;
 import com.redsaz.meterrier.convert.CsvJtlSource;
@@ -212,18 +213,21 @@ public class ProcessorImportService implements ImportService {
         }
 
         private void eagerCalculateStats(ImportInfo source, Samples sourceSamples) {
+            // label, samples, average, median, p90, p95, p99, min, max, error %, throughput,
             try {
                 long logId = source.getId();
                 Timeseries overall = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
+                Stats overallAggregate = StatsBuilder.calcAggregateStats(sourceSamples.getSamples());
 
                 Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
 
                 List<String> labels = new ArrayList<>(labelsSamples.size() + 1);
-                labels.add("Overall"); // OVerall is always labelId=0
+                labels.add("Overall"); // Overall is always labelId=0
                 labels.addAll(sourceSamples.getLabels());
                 statsSrv.createSampleLabels(logId, labels);
 
                 statsSrv.createOrUpdateTimeseries(logId, OVERALL_LABEL_ID, overall);
+                statsSrv.createOrUpdateAggregate(logId, OVERALL_LABEL_ID, overallAggregate);
 
                 for (int labelId = 1; labelId < labels.size(); ++labelId) {
                     String label = labels.get(labelId);
@@ -233,8 +237,10 @@ public class ProcessorImportService implements ImportService {
                         continue;
                     }
                     Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, DEFAULT_SPAN_MILLIS);
+                    Stats labelAggregate = StatsBuilder.calcAggregateStats(labelSamples);
 
                     statsSrv.createOrUpdateTimeseries(logId, labelId, labelTimeseries);
+                    statsSrv.createOrUpdateAggregate(logId, labelId, labelAggregate);
                 }
             } catch (Exception ex) {
                 LOGGER.error("Hit exception while calculating stats for log id={}. No more stats will be eagerly processed for this log.", source.getId(), ex);

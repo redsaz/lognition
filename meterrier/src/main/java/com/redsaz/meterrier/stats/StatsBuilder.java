@@ -83,12 +83,18 @@ public class StatsBuilder {
         return label.toLowerCase().replaceAll("[^0-9a-zA-Z]+", "-").replaceAll("(^-+)|(-+$)", "");
     }
 
+    public static Stats calcAggregateStats(List<Sample> samples) {
+        Collections.sort(samples, DURATION_COMPARATOR);
+        Stats stats = createStats(0, samples);
+        return stats;
+    }
+
     /**
      * Calculates time series stats on a previously sorted (by offset) list of samples.
      *
-     * @param offsetSortedSamples
-     * @param spanMillis
-     * @return
+     * @param offsetSortedSamples list of samples, sorted in the order that they occurred
+     * @param spanMillis The time that each bucket spans
+     * @return the timeseries.
      */
     public static Timeseries calcTimeSeriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
         // Find sublists (bins) for each segment of time, and calculate the

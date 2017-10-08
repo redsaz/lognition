@@ -15,6 +15,7 @@
  */
 package com.redsaz.meterrier.api;
 
+import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
 import java.util.List;
 
@@ -29,7 +30,11 @@ public interface StatsService {
 
     public List<String> getSampleLabels(long logId);
 
+    public Stats getAggregate(long logId, long labelId);
+
     public Timeseries getTimeseries(long logId, long labelId);
+
+    public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate);
 
     public void createOrUpdateTimeseries(long logId, long labelId, Timeseries timeseries);
 

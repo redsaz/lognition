@@ -19,8 +19,10 @@ import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
 import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
+import static com.redsaz.meterrier.model.tables.Aggregate.AGGREGATE;
 import static com.redsaz.meterrier.model.tables.SampleLabel.SAMPLE_LABEL;
 import static com.redsaz.meterrier.model.tables.Timeseries.TIMESERIES;
+import com.redsaz.meterrier.model.tables.records.AggregateRecord;
 import com.redsaz.meterrier.model.tables.records.SampleLabelRecord;
 import com.redsaz.meterrier.model.tables.records.TimeseriesRecord;
 import com.univocity.parsers.common.Context;
@@ -59,6 +61,7 @@ public class JooqStatsService implements StatsService {
 
     private static final RecordToTimeseriesMapper R2TIMESERIES = new RecordToTimeseriesMapper();
     private static final RecordToSampleLabelMapper R2SAMPLE_LABEL = new RecordToSampleLabelMapper();
+    private static final RecordToStatsMapper R2STATS = new RecordToStatsMapper();
 
     private final ConnectionPool pool;
     private final SQLDialect dialect;
@@ -120,6 +123,20 @@ public class JooqStatsService implements StatsService {
     }
 
     @Override
+    public Stats getAggregate(long logId, long labelId) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            return context.selectFrom(AGGREGATE)
+                    .where(AGGREGATE.LOG_ID.eq(logId))
+                    .and(AGGREGATE.LABEL_ID.eq(labelId))
+                    .fetchOne(R2STATS);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get aggregate for log=" + logId + " labelId="
+                    + labelId + "because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
     public Timeseries getTimeseries(long logId, long labelId) {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
@@ -130,6 +147,55 @@ public class JooqStatsService implements StatsService {
                     .fetchOne(R2TIMESERIES);
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get timeseries_id=" + logId + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate) {
+        if (aggregate == null) {
+            throw new NullPointerException("No aggregate was specified.");
+        } else if (logId < 1L) {
+            throw new IllegalArgumentException("Bad log id.");
+        }
+
+        LOGGER.info("Creating entry in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+
+            context.mergeInto(AGGREGATE,
+                    AGGREGATE.LOG_ID,
+                    AGGREGATE.LABEL_ID,
+                    AGGREGATE.MIN,
+                    AGGREGATE.P25,
+                    AGGREGATE.P50,
+                    AGGREGATE.P75,
+                    AGGREGATE.P90,
+                    AGGREGATE.P95,
+                    AGGREGATE.P99,
+                    AGGREGATE.MAX,
+                    AGGREGATE.AVG,
+                    AGGREGATE.NUM_SAMPLES,
+                    AGGREGATE.TOTAL_RESPONSE_BYTES,
+                    AGGREGATE.NUM_ERRORS
+            ).values(
+                    logId,
+                    labelId,
+                    aggregate.getMin(),
+                    aggregate.getP25(),
+                    aggregate.getP50(),
+                    aggregate.getP75(),
+                    aggregate.getP90(),
+                    aggregate.getP95(),
+                    aggregate.getP99(),
+                    aggregate.getMax(),
+                    aggregate.getAvg(),
+                    aggregate.getNumSamples(),
+                    aggregate.getTotalResponseBytes(),
+                    aggregate.getNumErrors()
+            ).execute();
+            LOGGER.info("...Created aggregate entry in DB.");
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to create timeseries: " + ex.getMessage(), ex);
         }
     }
 
@@ -273,6 +339,21 @@ public class JooqStatsService implements StatsService {
                 return null;
             }
             return record.getLabel();
+        }
+    }
+
+    private static class RecordToStatsMapper implements RecordMapper<AggregateRecord, Stats> {
+
+        @Override
+        public Stats map(AggregateRecord record) {
+            if (record == null) {
+                return null;
+            }
+
+            return new Stats(0L, record.getMin(), record.getP25(), record.getP50(), record.getP75(),
+                    record.getP90(), record.getP95(), record.getP99(), record.getMax(),
+                    record.getAvg(), record.getNumSamples(), record.getTotalResponseBytes(),
+                    record.getNumErrors());
         }
     }
 
