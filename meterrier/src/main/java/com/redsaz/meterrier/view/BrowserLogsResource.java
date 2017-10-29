@@ -19,9 +19,11 @@ import com.redsaz.meterrier.api.ImportService;
 import com.redsaz.meterrier.api.LogsService;
 import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.exceptions.AppClientException;
+import com.redsaz.meterrier.api.model.Histogram;
 import com.redsaz.meterrier.api.model.ImportInfo;
 import com.redsaz.meterrier.api.model.Log;
 import com.redsaz.meterrier.api.model.LogBrief;
+import com.redsaz.meterrier.api.model.Percentiles;
 import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
 import java.io.IOException;
@@ -120,13 +122,21 @@ public class BrowserLogsResource {
         List<String> labels = statsSrv.getSampleLabels(logId);
         List<String> graphs = new ArrayList<>(labels.size());
         List<Stats> aggregates = new ArrayList<>(labels.size());
+        List<String> histogramGraphs = new ArrayList<>(labels.size());
+        List<String> percentileGraphs = new ArrayList<>(labels.size());
         for (int i = 0; i < labels.size(); ++i) {
             String label = labels.get(i);
             Timeseries timeseries = statsSrv.getTimeseries(logId, i);
-            String dygraph = createDygraphScript(timeseries, label, i);
+            String dygraph = createTimeseriesGraph(timeseries, label, i);
             graphs.add(dygraph);
             Stats aggregate = statsSrv.getAggregate(logId, i);
             aggregates.add(aggregate);
+            Histogram histogram = statsSrv.getHistogram(logId, i);
+            String histogramGraph = createHistogramGraph(histogram, label, i);
+            histogramGraphs.add(histogramGraph);
+            Percentiles percentile = statsSrv.getPercentiles(logId, i);
+            String percentileGraph = createPercentileGraph(percentile, label, i);
+            percentileGraphs.add(percentileGraph);
         }
 
         Map<String, Object> root = new HashMap<>();
@@ -134,6 +144,8 @@ public class BrowserLogsResource {
         root.put("sampleLabels", labels);
         root.put("graphs", graphs);
         root.put("aggregates", aggregates);
+        root.put("histogramGraphs", histogramGraphs);
+        root.put("percentileGraphs", percentileGraphs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getName());
@@ -324,7 +336,7 @@ public class BrowserLogsResource {
         return cursor;
     }
 
-    private static String createDygraphScript(Timeseries timeseries, String label, int index) {
+    private static String createTimeseriesGraph(Timeseries timeseries, String label, int index) {
         if (timeseries == null) {
             LOGGER.debug("Timeseries is empty.");
             return "";
@@ -332,7 +344,7 @@ public class BrowserLogsResource {
         StringBuilder sb = new StringBuilder();
         sb.append("new Dygraph(document.getElementById(\"graphdiv").append(index).append("\"),\n");
         String csvRowTail = " +\n";
-        sb.append("\"offsetMillis,").append(label).append(",p25,p75\\n\"").append(csvRowTail);
+        sb.append("\"offsetMillis,p50,p25,p75\\n\"").append(csvRowTail);
         List<Stats> statsList = timeseries.getStatsList();
         for (Stats stats : statsList) {
             sb.append("\"")
@@ -365,6 +377,62 @@ public class BrowserLogsResource {
         sb.append("legend: 'always',\n");
         sb.append("title: '").append(label).append("',\n");
         sb.append("customBars: true,\n");
+        sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("});");
+        return sb.toString();
+    }
+
+    private static String createHistogramGraph(Histogram histogram, String label, int index) {
+        if (histogram == null) {
+            LOGGER.debug("Histogram is empty.");
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"histogramgraphdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"maxInclusive,count\\n\"").append(csvRowTail);
+        for (int i = 0; i < histogram.size(); ++i) {
+            sb.append("\"")
+                    .append(histogram.bucketMaxInclusive(i))
+                    .append(",")
+                    .append(histogram.bucketCount(i))
+                    .append("\\n\"")
+                    .append(csvRowTail);
+        }
+        if (histogram.size() != 0) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(label).append(" Histogram',\n");
+        sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("});");
+        return sb.toString();
+    }
+
+    private static String createPercentileGraph(Percentiles percentile, String label, int index) {
+        if (percentile == null) {
+            LOGGER.debug("Percentile is empty.");
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"percentilegraphdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"percentile,Response time (ms)\\n\"").append(csvRowTail);
+        for (int i = 0; i < percentile.size(); ++i) {
+            sb.append("\"")
+                    .append(percentile.getPercentiles().get(i))
+                    .append(",")
+                    .append(percentile.getValues().get(i))
+                    .append("\\n\"")
+                    .append(csvRowTail);
+        }
+        if (percentile.size() != 0) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(label).append(" Percentiles',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("});");
         return sb.toString();

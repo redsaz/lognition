@@ -17,12 +17,18 @@ package com.redsaz.meterrier.store;
 
 import com.redsaz.meterrier.api.StatsService;
 import com.redsaz.meterrier.api.exceptions.AppServerException;
+import com.redsaz.meterrier.api.model.Histogram;
+import com.redsaz.meterrier.api.model.Percentiles;
 import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
 import static com.redsaz.meterrier.model.tables.Aggregate.AGGREGATE;
+import static com.redsaz.meterrier.model.tables.Histogram.HISTOGRAM;
+import static com.redsaz.meterrier.model.tables.Percentile.PERCENTILE;
 import static com.redsaz.meterrier.model.tables.SampleLabel.SAMPLE_LABEL;
 import static com.redsaz.meterrier.model.tables.Timeseries.TIMESERIES;
 import com.redsaz.meterrier.model.tables.records.AggregateRecord;
+import com.redsaz.meterrier.model.tables.records.HistogramRecord;
+import com.redsaz.meterrier.model.tables.records.PercentileRecord;
 import com.redsaz.meterrier.model.tables.records.SampleLabelRecord;
 import com.redsaz.meterrier.model.tables.records.TimeseriesRecord;
 import com.univocity.parsers.common.Context;
@@ -60,6 +66,8 @@ public class JooqStatsService implements StatsService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JooqStatsService.class);
 
     private static final RecordToTimeseriesMapper R2TIMESERIES = new RecordToTimeseriesMapper();
+    private static final RecordToHistogramMapper R2HISTOGRAM = new RecordToHistogramMapper();
+    private static final RecordToPercentilesMapper R2PERCENTILES = new RecordToPercentilesMapper();
     private static final RecordToSampleLabelMapper R2SAMPLE_LABEL = new RecordToSampleLabelMapper();
     private static final RecordToStatsMapper R2STATS = new RecordToStatsMapper();
 
@@ -151,6 +159,32 @@ public class JooqStatsService implements StatsService {
     }
 
     @Override
+    public Histogram getHistogram(long logId, long labelId) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            return context.selectFrom(HISTOGRAM)
+                    .where(HISTOGRAM.LOG_ID.eq(logId))
+                    .and(HISTOGRAM.LABEL_ID.eq(labelId))
+                    .fetchOne(R2HISTOGRAM);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get histogram_id=" + logId + " label_id=" + labelId + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public Percentiles getPercentiles(long logId, long labelId) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            return context.selectFrom(PERCENTILE)
+                    .where(PERCENTILE.LOG_ID.eq(logId))
+                    .and(PERCENTILE.LABEL_ID.eq(labelId))
+                    .fetchOne(R2PERCENTILES);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get percentiles_id=" + logId + " label_id=" + labelId + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
     public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate) {
         if (aggregate == null) {
             throw new NullPointerException("No aggregate was specified.");
@@ -204,14 +238,14 @@ public class JooqStatsService implements StatsService {
         if (timeseries == null) {
             throw new NullPointerException("No timeseries was specified.");
         } else if (timeseries.getStatsList() == null) {
-            throw new NullPointerException("No timeseries data was specified.");
+            throw new NullPointerException("No timeseries data were specified.");
         } else if (timeseries.getSpanMillis() < 1L) {
             throw new IllegalArgumentException("Bad resolution (ms) for timeseries.");
         } else if (logId < 1L) {
             throw new IllegalArgumentException("Bad log id.");
         }
 
-        byte[] compressedStatsBytes = convertToSeriesData(timeseries);
+        byte[] statsBytes = convertToSeriesData(timeseries);
 
         LOGGER.info("Creating entry in DB...");
         try (Connection c = pool.getConnection()) {
@@ -225,11 +259,77 @@ public class JooqStatsService implements StatsService {
                             logId,
                             labelId,
                             timeseries.getSpanMillis(),
-                            compressedStatsBytes)
+                            statsBytes)
                     .execute();
             LOGGER.info("...Created timeseries entry in DB.");
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create timeseries: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void createOrUpdateHistogram(long logId, long labelId, Histogram histogram) {
+        if (histogram == null) {
+            throw new NullPointerException("No histogram was specified.");
+        } else if (histogram.getBucketMaximums() == null) {
+            throw new NullPointerException("No histogram bucket maximums were specified.");
+        } else if (histogram.getCounts() == null) {
+            throw new NullPointerException("No histogram counts were specified.");
+        } else if (logId < 1L) {
+            throw new IllegalArgumentException("Bad log id.");
+        }
+
+        byte[] statsBytes = convertToSeriesData(histogram);
+
+        LOGGER.info("Creating entry in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+
+            context.mergeInto(HISTOGRAM,
+                    HISTOGRAM.LOG_ID,
+                    HISTOGRAM.LABEL_ID,
+                    HISTOGRAM.SERIES_DATA).values(
+                            logId,
+                            labelId,
+                            statsBytes)
+                    .execute();
+            LOGGER.info("...Created histogram entry in DB.");
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to create histogram: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public void createOrUpdatePercentiles(long logId, long labelId, Percentiles percentiles) {
+        if (percentiles == null) {
+            throw new NullPointerException("No percentiles object was specified.");
+        } else if (percentiles.getCounts() == null) {
+            throw new NullPointerException("No percentiles counts were specified.");
+        } else if (percentiles.getValues() == null) {
+            throw new NullPointerException("No percentiles values were specified.");
+        } else if (percentiles.getPercentiles() == null) {
+            throw new NullPointerException("No percentiles were specified.");
+        } else if (logId < 1L) {
+            throw new IllegalArgumentException("Bad log id.");
+        }
+
+        byte[] statsBytes = convertToSeriesData(percentiles);
+
+        LOGGER.info("Creating entry in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+
+            context.mergeInto(PERCENTILE,
+                    PERCENTILE.LOG_ID,
+                    PERCENTILE.LABEL_ID,
+                    PERCENTILE.SERIES_DATA).values(
+                            logId,
+                            labelId,
+                            statsBytes)
+                    .execute();
+            LOGGER.info("...Created percentiles entry in DB.");
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to create percentiles: " + ex.getMessage(), ex);
         }
     }
 
@@ -240,6 +340,155 @@ public class JooqStatsService implements StatsService {
     private static Timeseries convertToTimeseries(long resolutionMillis, byte[] seriesData) {
         List<Stats> series = readTimeseriesCsv(seriesData);
         return new Timeseries(resolutionMillis, series);
+    }
+
+    private static byte[] convertToSeriesData(Histogram histogram) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (Writer w = new OutputStreamWriter(baos)) {
+            CsvWriter writer = null;
+            try {
+                CsvWriterSettings settings = new CsvWriterSettings();
+                settings.setHeaders("maximum", "count");
+
+                writer = new CsvWriter(w, settings);
+
+                writer.writeHeaders();
+                List<Long> maxs = histogram.getBucketMaximums();
+                List<Long> counts = histogram.getCounts();
+                for (int i = 0; i < maxs.size(); ++i) {
+                    writer.writeRow(maxs.get(i), counts.get(i));
+                }
+            } finally {
+                if (writer != null) {
+                    writer.close();
+                }
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        return baos.toByteArray();
+    }
+
+    private static Histogram convertToHistogram(byte[] seriesData) {
+        List<Long> maxs = new ArrayList<>();
+        List<Long> counts = new ArrayList<>();
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(seriesData)) {
+            CsvParserSettings settings = new CsvParserSettings();
+            settings.setHeaderExtractionEnabled(true);
+            settings.setProcessor(new Processor<Context>() {
+                @Override
+                public void processStarted(Context context) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void rowProcessed(String[] row, Context context) {
+                    Long max = getLongOrNull(row[0]);
+                    maxs.add(max);
+                    Long count = getLongOrNull(row[1]);
+                    counts.add(count);
+                }
+
+                @Override
+                public void processEnded(Context context) {
+                    // Do nothing.
+                }
+
+                private Long getLongOrNull(String val) {
+                    if ("".equals(val) || "null".equals(val) || val == null) {
+                        return null;
+                    }
+                    return Long.valueOf(val);
+                }
+
+            });
+            CsvParser parser = new CsvParser(settings);
+            parser.parse(bais, Charset.forName("UTF8"));
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        Histogram histogram = new Histogram(counts, maxs);
+        return histogram;
+    }
+
+    private static byte[] convertToSeriesData(Percentiles percentiles) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (Writer w = new OutputStreamWriter(baos)) {
+            CsvWriter writer = null;
+            try {
+                CsvWriterSettings settings = new CsvWriterSettings();
+                settings.setHeaders("percentile", "count", "value");
+
+                writer = new CsvWriter(w, settings);
+
+                writer.writeHeaders();
+                List<Double> percs = percentiles.getPercentiles();
+                List<Long> counts = percentiles.getCounts();
+                List<Long> values = percentiles.getValues();
+                for (int i = 0; i < percs.size(); ++i) {
+                    writer.writeRow(percs.get(i), counts.get(i), values.get(i));
+                }
+            } finally {
+                if (writer != null) {
+                    writer.close();
+                }
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        return baos.toByteArray();
+    }
+
+    private static Percentiles convertToPercentiles(byte[] seriesData) {
+        List<Double> percs = new ArrayList<>();
+        List<Long> counts = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(seriesData)) {
+            CsvParserSettings settings = new CsvParserSettings();
+            settings.setHeaderExtractionEnabled(true);
+            settings.setProcessor(new Processor<Context>() {
+                @Override
+                public void processStarted(Context context) {
+                    // Do nothing.
+                }
+
+                @Override
+                public void rowProcessed(String[] row, Context context) {
+                    Double percentile = getDoubleOrNull(row[0]);
+                    Long count = getLongOrNull(row[1]);
+                    Long value = getLongOrNull(row[2]);
+                    percs.add(percentile);
+                    counts.add(count);
+                    values.add(value);
+                }
+
+                @Override
+                public void processEnded(Context context) {
+                    // Do nothing.
+                }
+
+                private Long getLongOrNull(String val) {
+                    if ("".equals(val) || "null".equals(val) || val == null) {
+                        return null;
+                    }
+                    return Long.valueOf(val);
+                }
+
+                private Double getDoubleOrNull(String val) {
+                    if ("".equals(val) || "null".equals(val) || val == null) {
+                        return null;
+                    }
+                    return Double.valueOf(val);
+                }
+
+            });
+            CsvParser parser = new CsvParser(settings);
+            parser.parse(bais, Charset.forName("UTF8"));
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        Percentiles percentiles = new Percentiles(counts, values, percs);
+        return percentiles;
     }
 
     public static byte[] writeTimeseriesCsv(List<Stats> stats) {
@@ -326,6 +575,32 @@ public class JooqStatsService implements StatsService {
             }
             return convertToTimeseries(
                     record.getSpanMillis(),
+                    record.getSeriesData()
+            );
+        }
+    }
+
+    private static class RecordToHistogramMapper implements RecordMapper<HistogramRecord, Histogram> {
+
+        @Override
+        public Histogram map(HistogramRecord record) {
+            if (record == null) {
+                return null;
+            }
+            return convertToHistogram(
+                    record.getSeriesData()
+            );
+        }
+    }
+
+    private static class RecordToPercentilesMapper implements RecordMapper<PercentileRecord, Percentiles> {
+
+        @Override
+        public Percentiles map(PercentileRecord record) {
+            if (record == null) {
+                return null;
+            }
+            return convertToPercentiles(
                     record.getSeriesData()
             );
         }

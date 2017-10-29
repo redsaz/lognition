@@ -17,6 +17,8 @@ package com.redsaz.meterrier.stats;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
+import com.redsaz.meterrier.api.model.Histogram;
+import com.redsaz.meterrier.api.model.Percentiles;
 import com.redsaz.meterrier.api.model.Sample;
 import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
@@ -39,6 +41,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.HdrHistogram.AbstractHistogram;
+import org.HdrHistogram.AbstractHistogram.LogarithmicBucketValues;
+import org.HdrHistogram.HistogramIterationValue;
+import org.HdrHistogram.IntCountsHistogram;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,18 +71,19 @@ public class StatsBuilder {
         Samples sourceSamples = new CsvJtlSource(source);
         SamplesWriter writer = new AvroSamplesWriter();
         writer.write(sourceSamples, dest);
-        Timeseries timeseries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
-        StatsBuilder.writeStatsCsv(timeseries, statsFile);
-
-        Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
-        for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
-            String label = entry.getKey();
-            List<Sample> labelSamples = entry.getValue();
-            Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
-            File labelDest = new File("../meterrier/jtls/target/converted/real-550cps-1hour-stats-60s-"
-                    + sanitize(label) + ".csv");
-            StatsBuilder.writeStatsCsv(labelTimeseries, labelDest);
-        }
+        StatsBuilder.calcHistogram(sourceSamples.getSamples());
+//        Timeseries timeseries = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), 60000L);
+//        StatsBuilder.writeStatsCsv(timeseries, statsFile);
+//
+//        Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
+//        for (Map.Entry<String, List<Sample>> entry : labelsSamples.entrySet()) {
+//            String label = entry.getKey();
+//            List<Sample> labelSamples = entry.getValue();
+//            Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, 60000L);
+//            File labelDest = new File("../meterrier/jtls/target/converted/real-550cps-1hour-stats-60s-"
+//                    + sanitize(label) + ".csv");
+//            StatsBuilder.writeStatsCsv(labelTimeseries, labelDest);
+//        }
     }
 
     private static String sanitize(String label) {
@@ -87,6 +94,56 @@ public class StatsBuilder {
         Collections.sort(samples, DURATION_COMPARATOR);
         Stats stats = createStats(0, samples);
         return stats;
+    }
+
+    public static StatsItems calcHistogram(List<Sample> samples) {
+        long maxValue = -1L;
+        for (Sample sample : samples) {
+            if (maxValue < sample.getDuration()) {
+                maxValue = sample.getDuration();
+            }
+        }
+        AbstractHistogram hist = new IntCountsHistogram(maxValue, 5);
+        for (Sample sample : samples) {
+            hist.recordValue(sample.getDuration());
+        }
+//        Note: It seems "From" is exclusive and "To" is inclusive
+        LogarithmicBucketValues buckets = hist.logarithmicBucketValues(1, 1.1d);
+        List<Long> counts = new ArrayList<>();
+        List<Long> bucketMaxiumums = new ArrayList<>();
+        long previousTo = -1;
+        for (HistogramIterationValue value : buckets) {
+            long from = value.getValueIteratedFrom();
+            long to = value.getValueIteratedTo();
+            long count = value.getCountAddedInThisIterationStep();
+            // If we already did a bucket for the (inclusive) to-value AND the count is 0, then
+            // skip it. The count would be 0 anyway (a value only goes into one bucket) but this
+            // is to make sure we're not missing anything.
+            if (previousTo == to && count == 0) {
+                continue;
+            }
+            counts.add(count);
+            bucketMaxiumums.add(to);
+//            System.out.printf("%4d: %8d - %8d: %10d (%3.3f)\n", counts.size(), from, to, count,
+//                    ((double) count / (double) samples.size() * 100d));
+            previousTo = to;
+        }
+        Histogram histogram = new Histogram(counts, bucketMaxiumums);
+
+        List<Long> countList = new ArrayList<>();
+        List<Long> valueList = new ArrayList<>();
+        List<Double> percList = new ArrayList<>();
+        for (HistogramIterationValue iterValue : hist.percentiles(5)) {
+            long count = iterValue.getCountAddedInThisIterationStep();
+            long value = iterValue.getValueIteratedTo();
+            double perc = iterValue.getPercentile();
+            countList.add(count);
+            valueList.add(value);
+            percList.add(perc);
+        }
+        Percentiles percs = new Percentiles(countList, valueList, percList);
+
+        return new StatsItems(histogram, percs);
     }
 
     /**
@@ -473,4 +530,22 @@ public class StatsBuilder {
         return items.get(index);
     }
 
+    public static class StatsItems {
+
+        private final Histogram histogram;
+        private final Percentiles percentiles;
+
+        public StatsItems(Histogram histogram, Percentiles percentiles) {
+            this.histogram = histogram;
+            this.percentiles = percentiles;
+        }
+
+        public Histogram getHistogram() {
+            return histogram;
+        }
+
+        public Percentiles getPercentiles() {
+            return percentiles;
+        }
+    }
 }

@@ -28,6 +28,7 @@ import com.redsaz.meterrier.convert.CsvJtlSource;
 import com.redsaz.meterrier.convert.Samples;
 import com.redsaz.meterrier.convert.SamplesWriter;
 import com.redsaz.meterrier.stats.StatsBuilder;
+import com.redsaz.meterrier.stats.StatsBuilder.StatsItems;
 import com.redsaz.meterrier.store.ConnectionPool;
 import com.redsaz.meterrier.store.JooqImportService;
 import com.redsaz.meterrier.store.JooqLogsService;
@@ -218,6 +219,7 @@ public class ProcessorImportService implements ImportService {
                 long logId = source.getId();
                 Timeseries overall = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
                 Stats overallAggregate = StatsBuilder.calcAggregateStats(sourceSamples.getSamples());
+                StatsItems histAndPercs = StatsBuilder.calcHistogram(sourceSamples.getSamples());
 
                 Map<String, List<Sample>> labelsSamples = StatsBuilder.sortAndSplitByLabel(sourceSamples.getSamples());
 
@@ -228,6 +230,8 @@ public class ProcessorImportService implements ImportService {
 
                 statsSrv.createOrUpdateTimeseries(logId, OVERALL_LABEL_ID, overall);
                 statsSrv.createOrUpdateAggregate(logId, OVERALL_LABEL_ID, overallAggregate);
+                statsSrv.createOrUpdateHistogram(logId, OVERALL_LABEL_ID, histAndPercs.getHistogram());
+                statsSrv.createOrUpdatePercentiles(logId, OVERALL_LABEL_ID, histAndPercs.getPercentiles());
 
                 for (int labelId = 1; labelId < labels.size(); ++labelId) {
                     String label = labels.get(labelId);
@@ -238,9 +242,12 @@ public class ProcessorImportService implements ImportService {
                     }
                     Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, DEFAULT_SPAN_MILLIS);
                     Stats labelAggregate = StatsBuilder.calcAggregateStats(labelSamples);
+                    histAndPercs = StatsBuilder.calcHistogram(labelSamples);
 
                     statsSrv.createOrUpdateTimeseries(logId, labelId, labelTimeseries);
                     statsSrv.createOrUpdateAggregate(logId, labelId, labelAggregate);
+                    statsSrv.createOrUpdateHistogram(logId, labelId, histAndPercs.getHistogram());
+                    statsSrv.createOrUpdatePercentiles(logId, labelId, histAndPercs.getPercentiles());
                 }
             } catch (Exception ex) {
                 LOGGER.error("Hit exception while calculating stats for log id={}. No more stats will be eagerly processed for this log.", source.getId(), ex);

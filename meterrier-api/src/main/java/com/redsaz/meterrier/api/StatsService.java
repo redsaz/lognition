@@ -15,6 +15,8 @@
  */
 package com.redsaz.meterrier.api;
 
+import com.redsaz.meterrier.api.model.Histogram;
+import com.redsaz.meterrier.api.model.Percentiles;
 import com.redsaz.meterrier.api.model.Stats;
 import com.redsaz.meterrier.api.model.Timeseries;
 import java.util.List;
@@ -34,8 +36,16 @@ public interface StatsService {
 
     public Timeseries getTimeseries(long logId, long labelId);
 
+    public Histogram getHistogram(long logId, long labelId);
+
+    public Percentiles getPercentiles(long logId, long labelId);
+
     public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate);
 
     public void createOrUpdateTimeseries(long logId, long labelId, Timeseries timeseries);
+
+    public void createOrUpdateHistogram(long logId, long labelId, Histogram histogram);
+
+    public void createOrUpdatePercentiles(long logId, long labelId, Percentiles percentiles);
 
 }

@@ -56,6 +56,12 @@
           </#list>
             </tbody>
           </table>
+          <#list histogramGraphs as h>
+            <div id="histogramgraphdiv${h?index}"></div>
+          </#list>
+          <#list percentileGraphs as p>
+            <div id="percentilegraphdiv${p?index}"></div>
+          </#list>
           <#list graphs as graph>
             <div id="graphdiv${graph?index}"></div>
           </#list>
@@ -63,6 +69,16 @@
       </div>
 
       <script src="${dist}/js/dygraph.min.js"></script>
+      <#list histogramGraphs as h>
+        <script>
+          <#noescape>${h}</#noescape>
+        </script>
+      </#list>
+      <#list percentileGraphs as p>
+        <script>
+          <#noescape>${p}</#noescape>
+        </script>
+      </#list>
       <#list graphs as graph>
         <script>
           <#noescape>${graph}</#noescape>

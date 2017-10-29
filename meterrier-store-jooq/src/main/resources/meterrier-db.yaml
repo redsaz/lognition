@@ -194,3 +194,55 @@ databaseChangeLog:
             referencedTableName: sample_label
             referencedColumnNames: log_id, label_id
             constraintName: fk_timeseries_sample_label
+        - createTable:
+            tableName: histogram
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: series_data
+                  type: blob
+        - addPrimaryKey:
+            tableName: histogram
+            columnNames: log_id, label_id
+            constraintName: pk_histogram
+        - addForeignKeyConstraint:
+            baseTableName: histogram
+            baseColumnNames: log_id, label_id
+            referencedTableName: sample_label
+            referencedColumnNames: log_id, label_id
+            constraintName: fk_histogram_sample_label
+        - createTable:
+            tableName: percentile
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: series_data
+                  type: blob
+        - addPrimaryKey:
+            tableName: percentile
+            columnNames: log_id, label_id
+            constraintName: pk_percentile
+        - addForeignKeyConstraint:
+            baseTableName: percentile
+            baseColumnNames: log_id, label_id
+            referencedTableName: sample_label
+            referencedColumnNames: log_id, label_id
+            constraintName: fk_percentile_sample_label
