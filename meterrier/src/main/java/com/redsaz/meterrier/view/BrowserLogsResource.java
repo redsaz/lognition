@@ -126,14 +126,18 @@ public class BrowserLogsResource {
         List<String> percentileGraphs = new ArrayList<>(labels.size());
         for (int i = 0; i < labels.size(); ++i) {
             String label = labels.get(i);
+
             Timeseries timeseries = statsSrv.getTimeseries(logId, i);
             String dygraph = createTimeseriesGraph(timeseries, label, i);
             graphs.add(dygraph);
+
             Stats aggregate = statsSrv.getAggregate(logId, i);
             aggregates.add(aggregate);
+
             Histogram histogram = statsSrv.getHistogram(logId, i);
             String histogramGraph = createHistogramGraph(histogram, label, i);
             histogramGraphs.add(histogramGraph);
+
             Percentiles percentile = statsSrv.getPercentiles(logId, i);
             String percentileGraph = createPercentileGraph(percentile, label, i);
             percentileGraphs.add(percentileGraph);

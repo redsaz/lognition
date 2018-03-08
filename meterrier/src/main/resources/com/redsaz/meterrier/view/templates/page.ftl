@@ -25,6 +25,8 @@
 
     <title>${title}</title>
 
+    <link href="${dist}/css/template.css" rel="stylesheet">
+
     <link href="${dist}/css/dygraph.css" rel="stylesheet">
 
     <#-- Bootstrap core CSS -->
