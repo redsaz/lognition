@@ -46,6 +46,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartInput;
 import org.slf4j.Logger;
@@ -66,6 +69,9 @@ public class BrowserLogsResource {
     private ImportService importSrv;
     private StatsService statsSrv;
     private Templater cfg;
+
+    private static final Parser CM_PARSER = Parser.builder().build();
+    private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
 
     public BrowserLogsResource() {
     }
@@ -145,6 +151,7 @@ public class BrowserLogsResource {
 
         Map<String, Object> root = new HashMap<>();
         root.put("brief", log);
+        root.put("notesHtml", commonMarkToHtml(log.getNotes()));
         root.put("sampleLabels", labels);
         root.put("graphs", graphs);
         root.put("aggregates", aggregates);
@@ -338,6 +345,11 @@ public class BrowserLogsResource {
         }
         outNameValPair[1] = value.toString();
         return cursor;
+    }
+
+    private static String commonMarkToHtml(String commonMarkText) {
+        Node document = CM_PARSER.parse(commonMarkText);
+        return HTML_RENDERER.render(document);
     }
 
     private static String createTimeseriesGraph(Timeseries timeseries, String label, int index) {

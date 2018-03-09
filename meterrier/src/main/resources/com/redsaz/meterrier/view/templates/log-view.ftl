@@ -17,7 +17,13 @@
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.id}</h2>
-          <p>${brief}</p>
+          <div>
+            <#noescape>${notesHtml}</#noescape>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12 col-md-12">
           <table class="table table-hover">
             <thead>
             <tr>
