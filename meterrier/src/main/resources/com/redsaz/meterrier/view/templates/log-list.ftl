@@ -23,7 +23,6 @@
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Id</th>
                   <th>Name</th>
                   <th>Notes</th>
                   <th>Action</th>
@@ -32,9 +31,8 @@
               <tbody>
                 <#list briefs as brief>
                 <tr>
-                  <td><a href="logs/${brief.id}">${brief.id}</a></td>
-                  <td>${brief.name}</td>
-                  <td>${brief.notes}</td>
+                  <td><a href="logs/${brief.id}">${brief.name}</a></td>
+                  <td><a href="logs/${brief.id}">${brief.notes}</a></td>
                   <td>
                     <form action="${base}/logs/delete" method="POST">
                       <a href="logs/${brief.id}/edit">

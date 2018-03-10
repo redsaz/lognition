@@ -218,7 +218,7 @@ public class BrowserLogsResource {
                         try {
                             notes = part.getBodyAsString();
                         } catch (IOException ex) {
-                            LOGGER.error("Error getting name.", ex);
+                            LOGGER.error("Error getting notes.", ex);
                         }
                         break;
                     default: {

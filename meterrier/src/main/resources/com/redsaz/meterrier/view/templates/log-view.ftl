@@ -16,7 +16,7 @@
 <#escape x as x?html>
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
-          <h2>${brief.id}</h2>
+          <h2>${brief.name}</h2>
           <div>
             <#noescape>${notesHtml}</#noescape>
           </div>
