@@ -23,7 +23,7 @@
     <#-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <link rel="icon" href="${base}/favicon.ico">
 
-    <title>${title}</title>
+    <title>${title} - meterrier</title>
 
     <link href="${dist}/css/template.css" rel="stylesheet">
 
