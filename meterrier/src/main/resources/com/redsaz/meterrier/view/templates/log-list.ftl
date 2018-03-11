@@ -31,8 +31,8 @@
               <tbody>
                 <#list briefs as brief>
                 <tr>
-                  <td><a href="logs/${brief.id}">${brief.name}</a></td>
-                  <td><a href="logs/${brief.id}">${brief.notes}</a></td>
+                  <td><a href="logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
+                  <td><a href="logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
                   <td>
                     <form action="${base}/logs/delete" method="POST">
                       <a href="logs/${brief.id}/edit">
