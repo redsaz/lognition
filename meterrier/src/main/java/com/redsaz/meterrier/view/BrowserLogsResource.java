@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -110,58 +111,31 @@ public class BrowserLogsResource {
     /**
      * Presents a web page for viewing a specific log brief.
      *
-     * @param httpRequest The request for the page.
+     * @param req The request for the page.
      * @param logId The id of the brief.
      * @return Brief view page.
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Path("{id}")
-    public Response getLogBrief(@Context HttpServletRequest httpRequest, @PathParam("id") long logId) {
-        String base = httpRequest.getContextPath();
-        String dist = base + "/dist";
-        Log log = logsSrv.get(logId);
-        if (log == null) {
-            throw new NotFoundException("Could not find logId=" + logId);
-        }
+    public Response getLogBriefById(@Context HttpServletRequest req, @PathParam("id") long logId) {
+        return getLogBrief(req, logId, null);
+    }
 
-        List<String> labels = statsSrv.getSampleLabels(logId);
-        List<String> graphs = new ArrayList<>(labels.size());
-        List<Stats> aggregates = new ArrayList<>(labels.size());
-        List<String> histogramGraphs = new ArrayList<>(labels.size());
-        List<String> percentileGraphs = new ArrayList<>(labels.size());
-        for (int i = 0; i < labels.size(); ++i) {
-            String label = labels.get(i);
-
-            Timeseries timeseries = statsSrv.getTimeseries(logId, i);
-            String dygraph = createTimeseriesGraph(timeseries, label, i);
-            graphs.add(dygraph);
-
-            Stats aggregate = statsSrv.getAggregate(logId, i);
-            aggregates.add(aggregate);
-
-            Histogram histogram = statsSrv.getHistogram(logId, i);
-            String histogramGraph = createHistogramGraph(histogram, label, i);
-            histogramGraphs.add(histogramGraph);
-
-            Percentiles percentile = statsSrv.getPercentiles(logId, i);
-            String percentileGraph = createPercentileGraph(percentile, label, i);
-            percentileGraphs.add(percentileGraph);
-        }
-
-        Map<String, Object> root = new HashMap<>();
-        root.put("brief", log);
-        root.put("notesHtml", commonMarkToHtml(log.getNotes()));
-        root.put("sampleLabels", labels);
-        root.put("graphs", graphs);
-        root.put("aggregates", aggregates);
-        root.put("histogramGraphs", histogramGraphs);
-        root.put("percentileGraphs", percentileGraphs);
-        root.put("base", base);
-        root.put("dist", dist);
-        root.put("title", log.getName());
-        root.put("content", "log-view.ftl");
-        return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    /**
+     * Presents a web page for viewing a specific log brief.
+     *
+     * @param req The request for the page.
+     * @param logId The id of the brief.
+     * @param urlName The urlName of the brief.
+     * @return Brief view page.
+     */
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("{id}/{urlName}")
+    public Response getLogBriefByIdWithName(@Context HttpServletRequest req,
+            @PathParam("id") long logId, @PathParam("urlName") String urlName) {
+        return getLogBrief(req, logId, urlName);
     }
 
     @POST
@@ -267,6 +241,70 @@ public class BrowserLogsResource {
         logsSrv.delete(id);
         Response resp = Response.seeOther(URI.create("/logs")).build();
         return resp;
+    }
+
+    /**
+     * Presents a web page for viewing a specific log brief. The actual log displayed only really
+     * depends on the log id, the URL name is optional. If the given URL name doesn't match the real
+     * URL name of the log with the id, then a redirect will happen.
+     *
+     * @param req The request for the page.
+     * @param logId The id of the brief.
+     * @param uriName The optional log URI name. May be null.
+     * @return Brief view page if the urlName matches the reall urlName for the log with the id.
+     */
+    private Response getLogBrief(HttpServletRequest req, long logId, String uriName) {
+        String base = req.getContextPath();
+        String dist = base + "/dist";
+        Log log = logsSrv.get(logId);
+        if (log == null) {
+            throw new NotFoundException("Could not find logId=" + logId);
+        } else if (!Objects.equals(uriName, log.getUriName())
+                && log.getUriName() != null
+                && !log.getUriName().isEmpty()) {
+            LOGGER.debug("logId={} provided name was \"{}\" but expected \"{}\".", logId, uriName, log.getUriName());
+            return Response.seeOther(URI.create("logs/" + logId + "/" + log.getUriName()))
+                    .status(Response.Status.MOVED_PERMANENTLY)
+                    .build();
+        }
+
+        List<String> labels = statsSrv.getSampleLabels(logId);
+        List<String> graphs = new ArrayList<>(labels.size());
+        List<Stats> aggregates = new ArrayList<>(labels.size());
+        List<String> histogramGraphs = new ArrayList<>(labels.size());
+        List<String> percentileGraphs = new ArrayList<>(labels.size());
+        for (int i = 0; i < labels.size(); ++i) {
+            String label = labels.get(i);
+
+            Timeseries timeseries = statsSrv.getTimeseries(logId, i);
+            String dygraph = createTimeseriesGraph(timeseries, label, i);
+            graphs.add(dygraph);
+
+            Stats aggregate = statsSrv.getAggregate(logId, i);
+            aggregates.add(aggregate);
+
+            Histogram histogram = statsSrv.getHistogram(logId, i);
+            String histogramGraph = createHistogramGraph(histogram, label, i);
+            histogramGraphs.add(histogramGraph);
+
+            Percentiles percentile = statsSrv.getPercentiles(logId, i);
+            String percentileGraph = createPercentileGraph(percentile, label, i);
+            percentileGraphs.add(percentileGraph);
+        }
+
+        Map<String, Object> root = new HashMap<>();
+        root.put("brief", log);
+        root.put("notesHtml", commonMarkToHtml(log.getNotes()));
+        root.put("sampleLabels", labels);
+        root.put("graphs", graphs);
+        root.put("aggregates", aggregates);
+        root.put("histogramGraphs", histogramGraphs);
+        root.put("percentileGraphs", percentileGraphs);
+        root.put("base", base);
+        root.put("dist", dist);
+        root.put("title", log.getName());
+        root.put("content", "log-view.ftl");
+        return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
