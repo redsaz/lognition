@@ -431,6 +431,7 @@ public class BrowserLogsResource {
         sb.append("legend: 'always',\n");
         sb.append("title: '").append(label).append("',\n");
         sb.append("customBars: true,\n");
+        sb.append("xlabel: 'Time',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("});");
         return sb.toString();
@@ -459,7 +460,8 @@ public class BrowserLogsResource {
         sb.append(", {\n");
         sb.append("legend: 'always',\n");
         sb.append("title: '").append(label).append(" Histogram',\n");
-        sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("xlabel: 'Response Time (ms)',\n");
+        sb.append("ylabel: 'count',\n");
         sb.append("});");
         return sb.toString();
     }
@@ -487,6 +489,7 @@ public class BrowserLogsResource {
         sb.append(", {\n");
         sb.append("legend: 'always',\n");
         sb.append("title: '").append(label).append(" Percentiles',\n");
+        sb.append("xlabel: 'Percentile',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("});");
         return sb.toString();
