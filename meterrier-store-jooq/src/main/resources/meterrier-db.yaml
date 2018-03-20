@@ -30,11 +30,12 @@ databaseChangeLog:
                   startWith: 1
                   constraints:
                     primaryKey: true
+                    deleteCascade: true
               - column:
                   name: status
                   type: int
                   constraints:
-                      nullable: false
+                    nullable: false
               - column:
                   name: uri_name
                   type: varchar(1024)
@@ -64,6 +65,7 @@ databaseChangeLog:
                     primaryKey: true
                     foreignKeyName: fk_import_info_log
                     references: log(id)
+                    deleteCascade: true
               - column:
                   name: imported_filename
                   type: varchar(1024)
@@ -84,6 +86,7 @@ databaseChangeLog:
                     foreignKeyName: fk_sample_label_log
                     references: log(id)
                     nullable: false
+                    deleteCascade: true
               - column:
                   name: label_id
                   type: bigint
@@ -163,6 +166,7 @@ databaseChangeLog:
             referencedTableName: sample_label
             referencedColumnNames: log_id, label_id
             constraintName: fk_aggregate_sample_label
+            onDelete: CASCADE
         - createTable:
             tableName: timeseries
             columns:
@@ -194,6 +198,7 @@ databaseChangeLog:
             referencedTableName: sample_label
             referencedColumnNames: log_id, label_id
             constraintName: fk_timeseries_sample_label
+            onDelete: CASCADE
         - createTable:
             tableName: histogram
             columns:
@@ -220,6 +225,7 @@ databaseChangeLog:
             referencedTableName: sample_label
             referencedColumnNames: log_id, label_id
             constraintName: fk_histogram_sample_label
+            onDelete: CASCADE
         - createTable:
             tableName: percentile
             columns:
@@ -246,3 +252,4 @@ databaseChangeLog:
             referencedTableName: sample_label
             referencedColumnNames: log_id, label_id
             constraintName: fk_percentile_sample_label
+            onDelete: CASCADE
