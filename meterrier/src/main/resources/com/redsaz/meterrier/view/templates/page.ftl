@@ -56,6 +56,13 @@
           </button>
           <a class="navbar-brand" href="${base}/logs">meterrier</a>
         </div>
+        <#if brief??>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <li><a href="${base}/logs/${brief.id}/edit">Edit</a></li>
+          </ul>
+        </div>
+        </#if>
       </div>
     </nav>
 

@@ -235,6 +235,86 @@ public class BrowserLogsResource {
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
     }
 
+    /**
+     * Presents a web page for editing log.
+     *
+     * @param httpRequest The request for the page.
+     * @return log edit page.
+     */
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("{id}/edit")
+    public Response editLog(@Context HttpServletRequest httpRequest, @PathParam("id") long logId) {
+        String base = httpRequest.getContextPath();
+        String dist = base + "/dist";
+
+        Map<String, Object> root = new HashMap<>();
+        Log log = logsSrv.get(logId);
+        if (log == null) {
+            throw new NotFoundException("Could not find logId=" + logId);
+        }
+        LOGGER.info("Editing log={}", log);
+
+        root.put("brief", log);
+        root.put("base", base);
+        root.put("dist", dist);
+        root.put("title", "Edit Log");
+        root.put("content", "log-edit.ftl");
+        return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    }
+
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces(MediaType.TEXT_HTML)
+    @Path("{id}")
+    public Response finishEditLog(MultipartInput input, @PathParam("id") long logId) {
+        LOGGER.info("Submitting log {} edits...", logId);
+        try {
+            String name = null;
+            String notes = null;
+            ContentDispositionSubParts subParts = new ContentDispositionSubParts();
+            for (InputPart part : input.getParts()) {
+                subParts.clear();
+                String partContentDisposition = part.getHeaders().getFirst("Content-Disposition");
+                parseContentDispositionHeader(partContentDisposition, subParts);
+                switch (subParts.getName()) {
+                    case "name":
+                        try {
+                            name = part.getBodyAsString();
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting name.", ex);
+                        }
+                        break;
+                    case "notes":
+                        try {
+                            notes = part.getBodyAsString();
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting notes.", ex);
+                        }
+                        break;
+                    default: {
+                        // Skip it, we don't use it.
+                        LOGGER.info("Skipped part={}", subParts.getName());
+                    }
+                    break;
+                }
+            }
+            Log sourceLog = new Log(logId, null, null, name, null, notes);
+            logsSrv.update(sourceLog);
+
+            Response resp = Response.seeOther(URI.create("logs/" + logId)).build();
+            LOGGER.info("Finished updating log {}.", logId);
+            return resp;
+        } catch (RuntimeException ex) {
+            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
+            throw ex;
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+    }
+
     @POST
     @Path("delete")
     public Response deleteLog(@FormParam("id") long id) {

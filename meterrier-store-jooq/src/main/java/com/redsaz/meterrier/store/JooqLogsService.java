@@ -30,6 +30,7 @@ import org.jooq.DSLContext;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
 import org.jooq.SQLDialect;
+import org.jooq.UpdateQuery;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,27 +153,35 @@ public class JooqLogsService implements LogsService {
     public Log update(Log source) {
         if (source == null) {
             throw new NullPointerException("No log information was specified.");
-        } else if (source.getStatus() == null) {
-            throw new NullPointerException("Log status must not be null.");
-        } else if (source.getNotes() == null) {
-            throw new NullPointerException("Log notes must not be null.");
-        } else if (source.getName() == null) {
-            throw new NullPointerException("Log title must not be null.");
-        } else if (source.getUriName() == null) {
-            throw new NullPointerException("Log uriName must not be null.");
         }
 
         LOGGER.info("Updating entry in DB...");
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
 
-            LogRecord result = context.update(LOG)
-                    .set(LOG.STATUS, source.getStatus().ordinal())
-                    .set(LOG.URI_NAME, source.getUriName())
-                    .set(LOG.NAME, source.getName())
-                    .set(LOG.NOTES, source.getNotes())
-                    .where(LOG.ID.eq(source.getId()))
-                    .returning().fetchOne();
+            UpdateQuery<LogRecord> uq = context.updateQuery(LOG);
+            if (source.getStatus() != null) {
+                uq.addValue(LOG.STATUS, source.getStatus().ordinal());
+            }
+            if (source.getUriName() != null) {
+                uq.addValue(LOG.URI_NAME, source.getUriName());
+            }
+            if (source.getDataFile() != null) {
+                uq.addValue(LOG.DATA_FILE, source.getDataFile());
+            }
+            if (source.getNotes() != null) {
+                uq.addValue(LOG.NOTES, source.getNotes());
+            }
+            if (source.getName() != null) {
+                uq.addValue(LOG.NAME, source.getName());
+            }
+            if (source.getNotes() != null) {
+                uq.addValue(LOG.NOTES, source.getNotes());
+            }
+            uq.addConditions(LOG.ID.eq(source.getId()));
+            uq.setReturning();
+            uq.execute();
+            LogRecord result = uq.getReturnedRecord();
             LOGGER.info("...Updated entry in DB.");
             return R2L.map(result);
         } catch (SQLException ex) {
