@@ -1,0 +1,14 @@
+{"namespace": "com.redsaz.lognition.convert.model",
+  "type": "record",
+  "name": "HttpSample",
+    "fields": [
+        {"name": "millisOffset", "type": "long", "default": 0},
+        {"name": "millisElapsed", "type": "long", "default": -1},
+        {"name": "labelRef", "type": "int", "default": 0},
+        {"name": "threadNameRef", "type": "int", "default": 0},
+        {"name": "responseCodeRef", "type": "int", "default": 0},
+        {"name": "success", "type": "boolean", "default": true},
+        {"name": "responseBytes", "type": "long", "default": -1},
+        {"name": "totalThreads", "type": "int", "default": 0}
+    ]
+}

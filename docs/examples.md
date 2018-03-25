@@ -12,13 +12,13 @@ curl -v http://localhost:8080/logs
 Get single log brief
 --------------------
 
-url -v -H "Accept: application/x-meterrier-v1-logbrief+json" http://localhost:8080/logs/0
+url -v -H "Accept: application/x-lognition-v1-logbrief+json" http://localhost:8080/logs/0
 
 
 Upload single log
 -----------------
 
-curl -v -H "Accept: application/x-meterrier-v1-logbrief+json" -H "Content-Type: application/octet-stream" -X POST --data-binary @'example.jtl' http://localhost:8080/logs
+curl -v -H "Accept: application/x-lognition-v1-logbrief+json" -H "Content-Type: application/octet-stream" -X POST --data-binary @'example.jtl' http://localhost:8080/logs
 
 
 Delete single log
