@@ -16,7 +16,7 @@
 <#escape x as x?html>
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
-          <h1 class="page-header">Logs</h1>
+          <h1 class="page-header">Lognition</h1>
 
           <div class="table-responsive">
             <a href="logs/import" class="btn btn-default">Import</a>

@@ -20,6 +20,13 @@
           <div>
             <#noescape>${notesHtml}</#noescape>
           </div>
+          <div class="row">
+            <div class="col-sm-12 col-md-12">
+            <#list labels as l>
+              <span>${l}</span>
+            </#list>
+            </div>
+          </div>
         </div>
       </div>
       <div class="row">

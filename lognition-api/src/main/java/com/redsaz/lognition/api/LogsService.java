@@ -15,8 +15,10 @@
  */
 package com.redsaz.lognition.api;
 
+import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,4 +42,7 @@ public interface LogsService {
 
     public void delete(long id);
 
+    public List<Label> setLabels(long logId, Collection<Label> labels);
+
+    public List<Label> getLabels(long logId);
 }

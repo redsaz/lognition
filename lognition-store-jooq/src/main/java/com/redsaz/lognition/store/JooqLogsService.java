@@ -17,16 +17,28 @@ package com.redsaz.lognition.store;
 
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.exceptions.AppServerException;
+import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Log.Status;
+import static com.redsaz.lognition.model.tables.Label.LABEL;
 import static com.redsaz.lognition.model.tables.Log.LOG;
+import com.redsaz.lognition.model.tables.records.LabelRecord;
 import com.redsaz.lognition.model.tables.records.LogRecord;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jooq.DSLContext;
+import org.jooq.InsertValuesStep3;
+import org.jooq.Record;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
 import org.jooq.SQLDialect;
@@ -45,6 +57,7 @@ public class JooqLogsService implements LogsService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JooqLogsService.class);
 
     private static final RecordToLogMapper R2L = new RecordToLogMapper();
+    private static final RecordToLabelMapper R2LABEL = new RecordToLabelMapper();
 
     private final ConnectionPool pool;
     private final SQLDialect dialect;
@@ -130,8 +143,8 @@ public class JooqLogsService implements LogsService {
     public List<Log> list() {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
-            RecordsToListHandler r2lHandler = new RecordsToListHandler();
-            return context.selectFrom(LOG).fetchInto(r2lHandler).getLogs();
+            RecordsToListHandler<LogRecord, Log> r2lHandler = new RecordsToListHandler<>(R2L);
+            return context.selectFrom(LOG).fetchInto(r2lHandler).getValues();
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get logs list");
         }
@@ -206,6 +219,93 @@ public class JooqLogsService implements LogsService {
         }
     }
 
+    @Override
+    public List<Label> setLabels(long logId, Collection<Label> labels) {
+        if (labels == null) {
+            throw new NullPointerException("No labels were specified.");
+        } else if (logId < 1L) {
+            throw new IllegalArgumentException("Bad log id.");
+        }
+
+        LOGGER.info("Creating/Updating/Deleting labels in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            List<Label> toAdds = new ArrayList<>();
+            List<Label> toChanges = new ArrayList<>();
+
+            Map<String, Label> plannedLabels = labels.stream()
+                    .collect(Collectors.toMap(Label::getKey, Function.identity()));
+            Map<String, String> existingLabels = context.selectFrom(LABEL)
+                    .where(LABEL.LOG_ID.eq(logId)).stream()
+                    .collect(Collectors.toMap(LabelRecord::getKey, LabelRecord::getValue));
+
+            plannedLabels.forEach((k, v) -> {
+                String existingValue = existingLabels.get(k);
+                if (existingValue == null) {
+                    // If we don't have the label, we need to add it.
+                    toAdds.add(v);
+                } else if (!Objects.equals(v.getValue(), existingValue)) {
+                    // If we have the label key, but value is different, change it.
+                    toChanges.add(v);
+                }
+                // Otherwise, if we have the key, and the value is the same, don't change it.
+            });
+
+            // If the existing keys do not exist in the planned keys, then delete them.
+            Set<String> toDeletes = existingLabels.keySet().stream()
+                    .filter(k -> !plannedLabels.containsKey(k))
+                    .collect(Collectors.toSet());
+
+            // Insert new labels
+            if (!toAdds.isEmpty()) {
+                LOGGER.info("Inserting logId={} labels=\"{}\"", toAdds);
+                InsertValuesStep3<LabelRecord, Long, String, String> insert = context.insertInto(LABEL)
+                        .columns(LABEL.LOG_ID, LABEL.KEY, LABEL.VALUE);
+                for (Label toAdd : toAdds) {
+                    insert = insert.values(logId, toAdd.getKey(), toAdd.getValue());
+                }
+                insert.execute();
+            }
+
+            // Update changed labels
+            if (!toChanges.isEmpty()) {
+                LOGGER.info("Updating logId={} labels=\"{}\"", toChanges);
+                toChanges.forEach((toChange) -> {
+                    context.update(LABEL)
+                            .set(LABEL.VALUE, toChange.getValue())
+                            .where(LABEL.LOG_ID.eq(logId).and(LABEL.KEY.eq(toChange.getKey())))
+                            .execute();
+                });
+            }
+
+            // Delete removed labels
+            if (!toDeletes.isEmpty()) {
+                LOGGER.info("Deleting logId={} labels=\"{}\"", toDeletes);
+                context.deleteFrom(LABEL)
+                        .where(LABEL.LOG_ID.eq(logId).and(LABEL.KEY.in(toDeletes)))
+                        .execute();
+
+            }
+            LOGGER.info("...Created/Updated/Deleted labels in DB.");
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to create timeseries: " + ex.getMessage(), ex);
+        }
+        return getLabels(logId);
+    }
+
+    @Override
+    public List<Label> getLabels(long logId) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            RecordsToListHandler<LabelRecord, Label> r2lHandler = new RecordsToListHandler<>(R2LABEL);
+            List<Label> labels = context.selectFrom(LABEL).where(LABEL.LOG_ID.eq(logId)).fetchInto(r2lHandler).getValues();
+            Collections.sort(labels);
+            return labels;
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to load labels for logId=" + logId, ex);
+        }
+    }
+
     private static class RecordToLogMapper implements RecordMapper<LogRecord, Log> {
 
         @Override
@@ -223,17 +323,33 @@ public class JooqLogsService implements LogsService {
         }
     }
 
-    private static class RecordsToListHandler implements RecordHandler<LogRecord> {
-
-        private final List<Log> logs = new ArrayList<>();
+    private static class RecordToLabelMapper implements RecordMapper<LabelRecord, Label> {
 
         @Override
-        public void next(LogRecord record) {
-            logs.add(R2L.map(record));
+        public Label map(LabelRecord record) {
+            if (record == null) {
+                return null;
+            }
+            return new Label(record.getKey(), record.getValue());
+        }
+    }
+
+    private static class RecordsToListHandler<R extends Record, E extends Object> implements RecordHandler<R> {
+
+        private final List<E> values = new ArrayList<>();
+        private final RecordMapper<R, E> mapper;
+
+        public RecordsToListHandler(RecordMapper<R, E> mapper) {
+            this.mapper = mapper;
         }
 
-        public List<Log> getLogs() {
-            return logs;
+        @Override
+        public void next(R record) {
+            values.add(mapper.map(record));
+        }
+
+        public List<E> getValues() {
+            return values;
         }
     }
 

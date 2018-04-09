@@ -17,13 +17,20 @@ package com.redsaz.lognition.services;
 
 import com.github.slugify.Slugify;
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Log.Status;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,6 +125,16 @@ public class SanitizerLogsService implements LogsService {
     @Override
     public void updateStatus(long id, Status newStatus) {
         srv.updateStatus(id, newStatus);
+    }
+
+    @Override
+    public List<Label> setLabels(long logId, Collection<Label> labels) {
+        return srv.setLabels(logId, sanitizeLabels(labels));
+    }
+
+    @Override
+    public List<Label> getLabels(long logId) {
+        return srv.getLabels(logId);
     }
 
 //    /**
@@ -229,4 +246,65 @@ public class SanitizerLogsService implements LogsService {
         return new Slugify();
     }
 
+    private static List<Label> sanitizeLabels(Collection<Label> labels) {
+        if (labels == null) {
+            return Collections.emptyList();
+        }
+        Map<String, Label> sanitized = new TreeMap<String, Label>();
+        for (Label label : labels) {
+            label = sanitizeLabel(label);
+            if (label == null) {
+                continue;
+            }
+            sanitized.putIfAbsent(label.getKey(), label);
+        }
+        return new ArrayList<Label>(sanitized.values());
+    }
+
+    public static void main(String[] args) {
+        System.out.println(sanitizeLabel(null));
+        System.out.println(sanitizeLabel(new Label(null, null)));
+        System.out.println(sanitizeLabel(new Label(" ", null)));
+        System.out.println(sanitizeLabel(new Label("a", null)));
+        System.out.println(sanitizeLabel(new Label("a.", null)));
+        System.out.println(sanitizeLabel(new Label("a.b", null)));
+        System.out.println(sanitizeLabel(new Label("a-", null)));
+        System.out.println(sanitizeLabel(new Label("a-b", null)));
+        System.out.println(sanitizeLabel(new Label("a H", null)));
+        System.out.println(sanitizeLabel(new Label("1", null)));
+        System.out.println(sanitizeLabel(new Label("a", "")));
+        System.out.println(sanitizeLabel(new Label("a", " ")));
+        System.out.println(sanitizeLabel(new Label("a", "a")));
+        System.out.println(sanitizeLabel(new Label("a", "a.")));
+        System.out.println(sanitizeLabel(new Label("a", "a.b")));
+        System.out.println(sanitizeLabel(new Label("a", "a-")));
+        System.out.println(sanitizeLabel(new Label("a", "a-b")));
+        System.out.println(sanitizeLabel(new Label("a", "a H")));
+        System.out.println(sanitizeLabel(new Label("a", "1")));
+        System.out.println(sanitizeLabel(new Label("abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabc", null)));
+        System.out.println(sanitizeLabel(new Label("a", "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabc")));
+        System.out.println(sanitizeLabel(new Label("abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcd", null)));
+        System.out.println(sanitizeLabel(new Label("a", "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcd")));
+    }
+    private static final Pattern labelPattern = Pattern.compile("[a-zA-Z0-9][a-zA-Z0-9.\\-]*");
+    private static final Pattern labelEndPattern = Pattern.compile(".*[a-zA-Z0-9]$");
+
+    private static Label sanitizeLabel(Label label) {
+        if (label == null || label.getKey() == null) {
+            return null;
+        }
+        if (labelPattern.matcher(label.getKey()).matches()
+                && labelEndPattern.matcher(label.getKey()).matches()
+                && label.getKey().length() < 64) {
+            if (label.getValue() == null) {
+                return new Label(label.getKey(), "");
+            } else if (label.getValue().isEmpty()
+                    || (labelPattern.matcher(label.getValue()).matches()
+                    && labelEndPattern.matcher(label.getValue()).matches()
+                    && label.getValue().length() < 64)) {
+                return label;
+            }
+        }
+        return null;
+    }
 }

@@ -18,7 +18,8 @@
         <div class="col-sm-12 col-md-12 main">
           <form action="${base}/logs/${brief.id}" method="POST" enctype="multipart/form-data">
             <input type="text" class="form-control" name="name" placeholder="Name" value="${brief.name!}"/><br/>
-            <textarea class="form-control" rows="20" name="notes">${brief.notes!}</textarea>
+            <textarea class="form-control" rows="10" name="notes">${brief.notes!}</textarea>
+            <input type="text" class="form-control" name="labels" placeholder="Labels, space separated (ex: key1=value1 key2=value2)" value="${labelsText!}"/>
             <button type="submit" class="btn btn-primary">Save</button>
           </form>
         </div>

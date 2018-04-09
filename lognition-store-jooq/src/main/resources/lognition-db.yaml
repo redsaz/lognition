@@ -253,3 +253,39 @@ databaseChangeLog:
             referencedColumnNames: log_id, label_id
             constraintName: fk_percentile_sample_label
             onDelete: CASCADE
+        - createTable:
+            tableName: label
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_label_log
+                    references: log(id)
+              - column:
+                  name: key
+                  type: varchar(63)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: varchar(63)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: label
+            columnNames: log_id, key
+            constraintName: pk_label_log_key
+        - createIndex:
+            tableName: label
+            indexName: idx_label_log
+            columns:
+            - column:
+                name: log_id
+        - createIndex:
+            tableName: label
+            indexName: idx_label_key
+            columns:
+            - column:
+                name: key

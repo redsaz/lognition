@@ -21,6 +21,7 @@ import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.ImportInfo;
+import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.LogBrief;
 import com.redsaz.lognition.api.model.Percentiles;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +150,7 @@ public class BrowserLogsResource {
             String name = null;
             String filename = null;
             String notes = null;
+            List<Label> labels = Collections.emptyList();
             long updateMillis = System.currentTimeMillis();
             ContentDispositionSubParts subParts = new ContentDispositionSubParts();
             for (InputPart part : input.getParts()) {
@@ -165,6 +168,9 @@ public class BrowserLogsResource {
                             try {
                                 Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
                                 resultLog = logsSrv.create(sourceLog);
+                                if (labels != null) {
+                                    logsSrv.setLabels(resultLog.getId(), labels);
+                                }
 
                                 content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
                                 LOGGER.info("Uploaded content from {}.", filename);
@@ -195,6 +201,12 @@ public class BrowserLogsResource {
                             LOGGER.error("Error getting notes.", ex);
                         }
                         break;
+                    case "labels":
+                        try {
+                            labels = toLabelsList(part.getBodyAsString());
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting labels.", ex);
+                        }
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -253,9 +265,18 @@ public class BrowserLogsResource {
         if (log == null) {
             throw new NotFoundException("Could not find logId=" + logId);
         }
+        List<Label> labels = logsSrv.getLabels(logId);
+        StringBuilder labelsText = new StringBuilder();
+        labels.stream().forEach(l -> labelsText.append(l.toString()).append(' '));
+        // If there's at least one label, trim off the last space.
+        if (labelsText.length() > 0) {
+            labelsText.setLength(labelsText.length() - 1);
+        }
+
         LOGGER.info("Editing log={}", log);
 
         root.put("brief", log);
+        root.put("labelsText", labelsText);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", "Edit Log");
@@ -272,6 +293,7 @@ public class BrowserLogsResource {
         try {
             String name = null;
             String notes = null;
+            List<Label> labels = Collections.emptyList();
             ContentDispositionSubParts subParts = new ContentDispositionSubParts();
             for (InputPart part : input.getParts()) {
                 subParts.clear();
@@ -292,6 +314,12 @@ public class BrowserLogsResource {
                             LOGGER.error("Error getting notes.", ex);
                         }
                         break;
+                    case "labels":
+                        try {
+                            labels = toLabelsList(part.getBodyAsString());
+                        } catch (IOException ex) {
+                            LOGGER.error("Error getting labels.", ex);
+                        }
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -301,6 +329,10 @@ public class BrowserLogsResource {
             }
             Log sourceLog = new Log(logId, null, null, name, null, notes);
             logsSrv.update(sourceLog);
+
+            if (labels != null) {
+                logsSrv.setLabels(logId, labels);
+            }
 
             Response resp = Response.seeOther(URI.create("logs/" + logId)).build();
             LOGGER.info("Finished updating log {}.", logId);
@@ -348,13 +380,13 @@ public class BrowserLogsResource {
                     .build();
         }
 
-        List<String> labels = statsSrv.getSampleLabels(logId);
-        List<String> graphs = new ArrayList<>(labels.size());
-        List<Stats> aggregates = new ArrayList<>(labels.size());
-        List<String> histogramGraphs = new ArrayList<>(labels.size());
-        List<String> percentileGraphs = new ArrayList<>(labels.size());
-        for (int i = 0; i < labels.size(); ++i) {
-            String label = labels.get(i);
+        List<String> sampleLabels = statsSrv.getSampleLabels(logId);
+        List<String> graphs = new ArrayList<>(sampleLabels.size());
+        List<Stats> aggregates = new ArrayList<>(sampleLabels.size());
+        List<String> histogramGraphs = new ArrayList<>(sampleLabels.size());
+        List<String> percentileGraphs = new ArrayList<>(sampleLabels.size());
+        for (int i = 0; i < sampleLabels.size(); ++i) {
+            String label = sampleLabels.get(i);
 
             Timeseries timeseries = statsSrv.getTimeseries(logId, i);
             String dygraph = createTimeseriesGraph(timeseries, label, i);
@@ -371,11 +403,13 @@ public class BrowserLogsResource {
             String percentileGraph = createPercentileGraph(percentile, label, i);
             percentileGraphs.add(percentileGraph);
         }
+        List<Label> labels = logsSrv.getLabels(logId);
 
         Map<String, Object> root = new HashMap<>();
         root.put("brief", log);
+        root.put("labels", labels);
         root.put("notesHtml", commonMarkToHtml(log.getNotes()));
-        root.put("sampleLabels", labels);
+        root.put("sampleLabels", sampleLabels);
         root.put("graphs", graphs);
         root.put("aggregates", aggregates);
         root.put("histogramGraphs", histogramGraphs);
@@ -573,6 +607,31 @@ public class BrowserLogsResource {
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("});");
         return sb.toString();
+    }
+
+    private static List<Label> toLabelsList(String labelsText) {
+        LOGGER.info("Labelizing labels=\"{}\"", labelsText);
+        if (labelsText == null || labelsText.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String[] pairs = labelsText.split("\\s+");
+        List<Label> labels = new ArrayList<>(pairs.length);
+        for (String pair : pairs) {
+            Label label = toLabel(pair);
+            labels.add(label);
+        }
+
+        LOGGER.info("Labelized labels: {}", labels);
+        return labels;
+    }
+
+    private static Label toLabel(String labelText) {
+        String[] keyval = labelText.split("=", 2);
+        if (keyval.length != 2) {
+            return new Label(keyval[0], "");
+        }
+        return new Label(keyval[0], keyval[1]);
     }
 
     private static interface NameValueListener {
