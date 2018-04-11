@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.hsqldb>2.3.4</version.hsqldb>
         <version.sqlite>3.19.3</version.sqlite>
-        <version.jooq>3.8.4</version.jooq>
+        <version.jooq>3.10.6</version.jooq>
     </properties>
     <dependencyManagement>
         <dependencies>
