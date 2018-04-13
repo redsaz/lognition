@@ -54,7 +54,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="${base}/logs">lognition</a>
+          <a class="navbar-brand" href="/">lognition</a>
         </div>
         <#if brief??>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
