@@ -38,6 +38,7 @@ public class LognitionApplication extends Application {
         classes.add(LognitionResource.class);
         classes.add(LogsResource.class);
         classes.add(BrowserLogsResource.class);
+        classes.add(BrowserReviewsResource.class);
         classes.add(JacksonJsonProvider.class);
         classes.add(ServiceProducers.class);
         classes.add(StaticContentFilter.class);

@@ -17,10 +17,12 @@ package com.redsaz.lognition.services;
 
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.store.ConnectionPool;
 import com.redsaz.lognition.store.JooqImportService;
 import com.redsaz.lognition.store.JooqLogsService;
+import com.redsaz.lognition.store.JooqReviewsService;
 import com.redsaz.lognition.store.JooqStatsService;
 import com.redsaz.lognition.view.Processor;
 import com.redsaz.lognition.view.Sanitizer;
@@ -43,6 +45,7 @@ public class ServiceProducers {
     private static final String LOGS_DIR = "./lognition-data/logs";
     private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
     private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR));
+    private static final ReviewsService SANITIZER_REVIEWS_SERVICE = new SanitizerReviewsService(new JooqReviewsService(POOL, SQLDialect.HSQLDB));
     private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
     private static final StatsService STATS_SERVICE = new JooqStatsService(POOL, SQLDialect.HSQLDB);
     private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
@@ -54,6 +57,13 @@ public class ServiceProducers {
     @Sanitizer
     public LogsService createSanitizerLogsService() {
         return SANITIZER_LOGS_SERVICE;
+    }
+
+    @Produces
+    @ApplicationScoped
+    @Sanitizer
+    public ReviewsService createSanitizerReviewsService() {
+        return SANITIZER_REVIEWS_SERVICE;
     }
 
     @Produces

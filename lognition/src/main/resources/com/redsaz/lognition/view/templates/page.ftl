@@ -56,13 +56,21 @@
           </button>
           <a class="navbar-brand" href="/">lognition</a>
         </div>
-        <#if brief??>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
           <ul class="nav navbar-nav">
-            <li><a href="${base}/logs/${brief.id}/edit">Edit</a></li>
+            <li><a href="${base}/logs">Logs</a></li>
+            <li><a href="${base}/reviews">Reviews</a></li>
+            <#if brief??><li><a href="${base}/logs/${brief.id}/edit">Edit</a></li></#if>
           </ul>
         </div>
-        </#if>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+          </ul>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+          </ul>
+        </div>
       </div>
     </nav>
 

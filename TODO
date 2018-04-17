@@ -17,6 +17,76 @@ Besides individual log stats, there needs to be a way to tie these run logs into
 - a line (or area) graph with two lines: percent success and percent fail.
 - If these were to be stair-stepped line or area graphs, then that would avoid the optical illusion created by slopes (the brain doesn't perceive the points as important with area graphs, but the spaces between as important, so sloped areas look "smaller")
 
+Label selectors:
+example labels for a log: project=tezad version=1.2.3 environment=qa nocache
+example selector: project=tezad, version in (1.2.1, 1.2.2, 1.2.3), environment notin (dev, stage), nocache
+    means: select all logs with a project label with value = tezad, and has a version label with any three values 1.2.1, 1.2.2, or 1.2.3, and has an environment label without values dev or stage, and there exists a nocache label (value is ignored).
+look at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more.
+
+Review body example:
+{
+  "title": "Tezad 1.2.1 vs 1.3.0",
+  "notes": "This is a review of Tezad 1.2.1 (baseline) versus Tezad 1.3.0. There are some notable new features in the latest Tezad version, including...",
+  "baseLogLabelSelector": "project=tezad, version in (1.2.1, 1.3.0)",
+  "panels": [
+    {
+      "type": "jmeterDiffPanel",
+      "title": "HTTP API Response Times",
+      "notes": "Blah Blah Blah",
+      "logLabelSelector": "source=jtl",
+      "logDisplayOrder": "10 !12 !14 16 !18 !20",
+      "resolution": "1m",
+    }, {
+      "type": "jmeterPanel",
+      "title": "HTTP API Response Times",
+      "logLabelSelector": "source=jtl",
+      "logDisplayOrder": "10 !12 !14 16 !18 !20",
+      "resolution": "1m",
+      "charts": [
+        {
+          "type": "timeseries-minmidmax",
+          "name": "GET status Response Times",
+          "samples": {
+            "type": "include",
+            "filter": ["name: GET status", "success: true"],
+            "field": "Response Time"
+          },
+          "statsDisplayed": "p25 p50 p75"
+        }, {
+          "type": "timeseries-minmidmax",
+          "name": "GET game/{gameid} Response Times",
+          "samples": {
+            "type": "include",
+            "filter": ["name: GET game/{gameid}", "success: true"],
+            "field": "Response Time"
+          },
+          "statsDisplayed": "p25 p50 p75"
+        }, {
+          "type": "aggregate-table"
+        }
+      ]
+    }, {
+      "type": "csvPanel",
+      "title": "Async Job Times",
+      "logLabelSelector": "source=asynccsv",
+      "logDisplayOrder": "11 !13 !15 17 !19 !21",
+      "resolution": "individual",
+      "charts": [
+         {
+          "type": "aggregate",
+          "name": "Game verification job times",
+          "samples": {
+            "type": "include",
+            "filter": ["name:GameVerification"],
+            "field": "start2finish"
+          },
+          "statsDisplayed": "p25 p50 p75 p90 p95 p99 avg"
+        }
+      ]
+
+    }
+  ]
+}
 
 
 Change millisOffset to offset
