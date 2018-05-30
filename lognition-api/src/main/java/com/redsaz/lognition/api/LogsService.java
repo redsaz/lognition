@@ -15,6 +15,7 @@
  */
 package com.redsaz.lognition.api;
 
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import java.io.OutputStream;
@@ -36,6 +37,8 @@ public interface LogsService {
 
     public List<Log> list();
 
+    public List<Long> listIdsBySelector(LabelSelectorExpression labelSelector);
+
     public Log update(Log source);
 
     public void updateStatus(long id, Log.Status newStatus);
@@ -45,4 +48,5 @@ public interface LogsService {
     public List<Label> setLabels(long logId, Collection<Label> labels);
 
     public List<Label> getLabels(long logId);
+
 }

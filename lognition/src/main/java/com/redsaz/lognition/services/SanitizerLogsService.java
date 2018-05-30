@@ -17,6 +17,7 @@ package com.redsaz.lognition.services;
 
 import com.github.slugify.Slugify;
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Log.Status;
@@ -114,6 +115,11 @@ public class SanitizerLogsService implements LogsService {
     @Override
     public List<Log> list() {
         return srv.list();
+    }
+
+    @Override
+    public List<Long> listIdsBySelector(LabelSelectorExpression labelSelector) {
+        return srv.listIdsBySelector(labelSelector);
     }
 
     @Override

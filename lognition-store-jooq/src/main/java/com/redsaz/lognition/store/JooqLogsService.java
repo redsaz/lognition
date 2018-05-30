@@ -16,7 +16,11 @@
 package com.redsaz.lognition.store;
 
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.exceptions.AppServerException;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpressionListener;
+import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Log.Status;
@@ -36,12 +40,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep3;
 import org.jooq.Record;
+import org.jooq.Record1;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
 import org.jooq.SQLDialect;
+import org.jooq.Select;
 import org.jooq.UpdateQuery;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
@@ -145,6 +152,24 @@ public class JooqLogsService implements LogsService {
             DSLContext context = DSL.using(c, dialect);
             RecordsToListHandler<LogRecord, Log> r2lHandler = new RecordsToListHandler<>(R2L);
             return context.selectFrom(LOG).fetchInto(r2lHandler).getValues();
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get logs list");
+        }
+    }
+
+    @Override
+    public List<Long> listIdsBySelector(LabelSelectorExpression labelSelector) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            LabelSelectorToSelect ls2s = new LabelSelectorToSelect(context);
+            labelSelector.consume(ls2s);
+            Select<Record1<Long>> select = ls2s.getSelect();
+            if (select == null) {
+                return Collections.emptyList();
+            }
+            return select.fetch(LOG.ID);
+        } catch (LabelSelectorSyntaxException ex) {
+            throw new AppClientException("Label selector is invalid.", ex);
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get logs list");
         }
@@ -353,4 +378,100 @@ public class JooqLogsService implements LogsService {
         }
     }
 
+    private static class LabelSelectorToSelect implements LabelSelectorExpressionListener {
+
+        private final List<Condition> conditions = new ArrayList<>();
+
+        private final DSLContext context;
+
+        public LabelSelectorToSelect(DSLContext inContext) {
+            context = inContext;
+        }
+
+        @Override
+        public void in(String labelName, List<String> labelValues) {
+            Condition inCondition;
+            if ("id".equals(labelName)) {
+                Condition condition = LOG.ID.in(labelValues);
+                inCondition = LOG.ID.in(context.selectDistinct(LOG.ID).from(LOG).where(condition));
+            } else {
+                Condition condition = LABEL.KEY.eq(labelName).and(LABEL.VALUE.in(labelValues));
+                inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition));
+            }
+            conditions.add(inCondition);
+        }
+
+        @Override
+        public void notIn(String labelName, List<String> labelValues) {
+            Condition inCondition;
+            if ("id".equals(labelName)) {
+                Condition condition = LOG.ID.notIn(labelValues);
+                inCondition = LOG.ID.in(context.selectDistinct(LOG.ID).from(LOG).where(condition));
+            } else {
+                Condition condition = LABEL.KEY.eq(labelName).and(LABEL.VALUE.notIn(labelValues));
+                inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition));
+            }
+            conditions.add(inCondition);
+        }
+
+        @Override
+        public void exists(String labelName) {
+            if ("id".equals(labelName)) {
+                // Do nothing. By definition, ALL logs have ids, so this is meaningless. We don't
+                // really want to include all logs.
+                return;
+            }
+            Condition condition = LABEL.KEY.eq(labelName);
+            Condition inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition));
+            conditions.add(inCondition);
+        }
+
+        @Override
+        public void notExists(String labelName) {
+            if ("id".equals(labelName)) {
+                // Do nothing. By definition, ALL logs have ids, so this is meaningless. We don't
+                // really want to exclude all logs.
+                return;
+            }
+            Condition condition = LABEL.KEY.eq(labelName);
+            Condition inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).whereNotExists(
+                    context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition)
+            ));
+            conditions.add(inCondition);
+        }
+
+        @Override
+        public void equals(String labelName, String labelValue) {
+            Condition inCondition;
+            if ("id".equals(labelName)) {
+                Condition condition = LOG.ID.eq(Long.valueOf(labelValue));
+                inCondition = LOG.ID.in(context.selectDistinct(LOG.ID).from(LOG).where(condition));
+            } else {
+                Condition condition = LABEL.KEY.eq(labelName).and(LABEL.VALUE.eq(labelValue));
+                inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition));
+            }
+            conditions.add(inCondition);
+        }
+
+        @Override
+        public void notEquals(String labelName, String labelValue) {
+            Condition inCondition;
+            if ("id".equals(labelName)) {
+                Condition condition = LOG.ID.ne(Long.valueOf(labelValue));
+                inCondition = LOG.ID.in(context.selectDistinct(LOG.ID).from(LOG).where(condition));
+            } else {
+                Condition condition = LABEL.KEY.eq(labelName).and(LABEL.VALUE.ne(labelValue));
+                inCondition = LOG.ID.in(context.selectDistinct(LABEL.LOG_ID).from(LABEL).where(condition));
+            }
+            conditions.add(inCondition);
+        }
+
+        private Select<Record1<Long>> getSelect() {
+            if (conditions.isEmpty()) {
+                return null;
+            }
+            return context.selectDistinct(LOG.ID).from(LOG).where(conditions);
+        }
+
+    }
 }

@@ -20,6 +20,25 @@
           <div>
             <#noescape>${descriptionHtml}</#noescape>
           </div>
+          <h3>Applicable Logs</h3>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <#list briefs as brief>
+                <tr>
+                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
+                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
+                </tr>
+                </#list>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       <div class="row">

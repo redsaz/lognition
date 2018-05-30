@@ -53,6 +53,7 @@ public class JooqReviewsService implements ReviewsService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JooqReviewsService.class);
 
     private static final RecordToReviewMapper R2R = new RecordToReviewMapper();
+    private static final LogRecordToLogMapper LR2L = new LogRecordToLogMapper();
     private static final RecordToLogMapper R2L = new RecordToLogMapper();
 
     private final ConnectionPool pool;
@@ -172,11 +173,11 @@ public class JooqReviewsService implements ReviewsService {
                 uq.addValue(REVIEW.BODY, source.getBody());
             }
             uq.addConditions(REVIEW.ID.eq(source.getId()));
-            uq.setReturning();
             uq.execute();
-            ReviewRecord result = uq.getReturnedRecord();
             LOGGER.info("...Updated entry in DB.");
-            return R2R.map(result);
+            return context.selectFrom(REVIEW)
+                    .where(REVIEW.ID.eq(source.getId()))
+                    .fetchOne(R2R);
         } catch (SQLException ex) {
             throw new AppServerException("Failed to update review: " + ex.getMessage(), ex);
         }
@@ -237,8 +238,8 @@ public class JooqReviewsService implements ReviewsService {
     public List<Log> getReviewLogs(long reviewId) {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
-            RecordsToListHandler<LogRecord, Log> r2lHandler = new RecordsToListHandler<>(R2L);
-            List<Log> logs = context.selectFrom(LOG).where(REVIEW_LOG.REVIEW_ID.eq(reviewId)).fetchInto(r2lHandler).getValues();
+            RecordsToListHandler<Record, Log> r2lHandler = new RecordsToListHandler<>(R2L);
+            List<Log> logs = context.select(LOG.fields()).from(LOG).join(REVIEW_LOG).on(REVIEW_LOG.LOG_ID.eq(LOG.ID)).where(REVIEW_LOG.REVIEW_ID.eq(reviewId)).fetchInto(r2lHandler).getValues();
             return logs;
         } catch (SQLException ex) {
             throw new AppServerException("Failed to load labels for reviewId=" + reviewId, ex);
@@ -263,7 +264,7 @@ public class JooqReviewsService implements ReviewsService {
         }
     }
 
-    private static class RecordToLogMapper implements RecordMapper<LogRecord, Log> {
+    private static class LogRecordToLogMapper implements RecordMapper<LogRecord, Log> {
 
         @Override
         public Log map(LogRecord record) {
@@ -277,6 +278,18 @@ public class JooqReviewsService implements ReviewsService {
                     record.getDataFile(),
                     record.getNotes()
             );
+        }
+    }
+
+    private static class RecordToLogMapper implements RecordMapper<Record, Log> {
+
+        @Override
+        public Log map(Record record) {
+            if (record == null) {
+                return null;
+            }
+            LogRecord lr = record.into(LOG);
+            return LR2L.map(lr);
         }
     }
 

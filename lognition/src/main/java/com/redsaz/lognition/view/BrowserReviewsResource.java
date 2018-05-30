@@ -15,8 +15,12 @@
  */
 package com.redsaz.lognition.view;
 
+import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
+import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
+import com.redsaz.lognition.services.LabelSelectorParser;
 import java.io.IOException;
 import java.net.URI;
 import java.time.ZoneOffset;
@@ -58,6 +62,7 @@ public class BrowserReviewsResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(BrowserReviewsResource.class);
 
     private ReviewsService reviewsSrv;
+    private LogsService logsSrv;
     private Templater cfg;
 
     private static final Parser CM_PARSER = Parser.builder().build();
@@ -67,7 +72,9 @@ public class BrowserReviewsResource {
     }
 
     @Inject
-    public BrowserReviewsResource(@Sanitizer ReviewsService reviewsService, Templater config) {
+    public BrowserReviewsResource(@Sanitizer ReviewsService reviewsService,
+            @Sanitizer LogsService logsService, Templater config) {
+        logsSrv = logsService;
         reviewsSrv = reviewsService;
         cfg = config;
     }
@@ -171,6 +178,7 @@ public class BrowserReviewsResource {
             Review review = new Review(0, null, name, description,
                     ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(), null, body);
             Review result = reviewsSrv.create(review);
+            calculateReviewLogs(result);
             Response resp = Response.seeOther(URI.create("reviews")).build();
             LOGGER.info("Finished creating review {}", result);
             return resp;
@@ -280,7 +288,8 @@ public class BrowserReviewsResource {
             }
             Review review = new Review(reviewId, null, name, description,
                     ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(), null, body);
-            reviewsSrv.update(review);
+            Review result = reviewsSrv.update(review);
+            calculateReviewLogs(result);
             Response resp = Response.seeOther(URI.create("reviews/" + reviewId)).build();
             LOGGER.info("Finished updating review {}.", reviewId);
             return resp;
@@ -326,9 +335,11 @@ public class BrowserReviewsResource {
                     .status(Response.Status.MOVED_PERMANENTLY)
                     .build();
         }
+        List<Log> briefs = reviewsSrv.getReviewLogs(reviewId);
 
         Map<String, Object> root = new HashMap<>();
         root.put("review", review);
+        root.put("briefs", briefs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", review.getName());
@@ -413,6 +424,14 @@ public class BrowserReviewsResource {
         }
         outNameValPair[1] = value.toString();
         return cursor;
+    }
+
+    private void calculateReviewLogs(Review review) {
+        String body = review.getBody();
+        LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+        List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+
+        reviewsSrv.setReviewLogs(review.getId(), logIds);
     }
 
     private static String commonMarkToHtml(String commonMarkText) {
