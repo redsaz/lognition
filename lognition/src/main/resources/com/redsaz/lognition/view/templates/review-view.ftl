@@ -41,8 +41,20 @@
           </div>
         </div>
       </div>
+      <#list reviewGraphs as g>
       <div class="row">
         <div class="col-sm-12 col-md-12">
+          <div class="graph">
+            <div class="ct-chart ct-square" id="graphdiv${g?index}" style="width: 100%"></div>
+          </div>
         </div>
       </div>
+      </#list>
+      <script src="${dist}/js/chartist.min.js"></script>
+      <script src="${dist}/js/chartist-plugin-tooltip.min.js"></script>
+      <#list reviewGraphs as g>
+        <script>
+          <#noescape>${g}</#noescape>
+        </script>
+      </#list>
 </#escape>

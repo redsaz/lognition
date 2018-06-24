@@ -17,18 +17,24 @@ package com.redsaz.lognition.view;
 
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
+import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
+import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.services.LabelSelectorParser;
 import java.io.IOException;
 import java.net.URI;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.TreeMap;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -63,6 +69,7 @@ public class BrowserReviewsResource {
 
     private ReviewsService reviewsSrv;
     private LogsService logsSrv;
+    private StatsService statsSrv;
     private Templater cfg;
 
     private static final Parser CM_PARSER = Parser.builder().build();
@@ -73,9 +80,10 @@ public class BrowserReviewsResource {
 
     @Inject
     public BrowserReviewsResource(@Sanitizer ReviewsService reviewsService,
-            @Sanitizer LogsService logsService, Templater config) {
+            @Sanitizer LogsService logsService, StatsService statsService, Templater config) {
         logsSrv = logsService;
         reviewsSrv = reviewsService;
+        statsSrv = statsService;
         cfg = config;
     }
 
@@ -337,6 +345,15 @@ public class BrowserReviewsResource {
         }
         List<Log> briefs = reviewsSrv.getReviewLogs(reviewId);
 
+        List<String> reviewGraphs = createReviewGraphs(briefs);
+
+//        List<String> categoryNames = Arrays.asList("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
+//        SortedMap<String, List<Long>> seriesCategoriesValues = new TreeMap<>();
+//        seriesCategoriesValues.put("Series1", Arrays.asList(10L, 7L, 5L, 3L, 4L, 13L, 11L));
+//        seriesCategoriesValues.put("Series2", Arrays.asList(8L, 9L, 4L, 2L, 7L, 11L, 10L));
+//        seriesCategoriesValues.put("Series3", Arrays.asList(6L, 10L, 5L, 4L, 6L, 11L, 9L));
+//
+//        List<String> barGraphs = Arrays.asList(createBarGraph(categoryNames, seriesCategoriesValues, 0));
         Map<String, Object> root = new HashMap<>();
         root.put("review", review);
         root.put("briefs", briefs);
@@ -345,6 +362,7 @@ public class BrowserReviewsResource {
         root.put("title", review.getName());
         root.put("descriptionHtml", commonMarkToHtml(review.getDescription()));
         root.put("content", "review-view.ftl");
+        root.put("reviewGraphs", reviewGraphs);
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
     }
 
@@ -426,6 +444,110 @@ public class BrowserReviewsResource {
         return cursor;
     }
 
+    private static final Long EMPTY_STAT = 0L;
+
+    private List<String> createReviewGraphs(List<Log> briefs) {
+        Map<String, List<Long>> avgStats = new TreeMap<>();
+        int iBrief = 0;
+        for (Log brief : briefs) {
+            List<String> labels = statsSrv.getSampleLabels(brief.getId());
+            int iLabel = 0;
+            for (String label : labels) {
+                Stats stats = statsSrv.getAggregate(brief.getId(), iLabel);
+                List<Long> labelStats = avgStats.get(label);
+                if (labelStats == null) {
+                    labelStats = new ArrayList<>(briefs.size());
+                    avgStats.put(label, labelStats);
+                }
+                // All logs must maintain the same index in each label's list.
+                if (labelStats.size() < iBrief) {
+                    for (int i = 0; i < iBrief; ++i) {
+                        labelStats.add(EMPTY_STAT);
+                    }
+                }
+                labelStats.add(stats.getAvg());
+                ++iLabel;
+            }
+            ++iBrief;
+        }
+        // Make sure each list is the same length.
+        for (List<Long> labelStats : avgStats.values()) {
+            for (int i = labelStats.size(); i < briefs.size(); ++i) {
+                labelStats.add(EMPTY_STAT);
+            }
+        }
+
+        // Now, we have a map of key=categoryName, value=ordered list of values per log.
+        // But, what we need is a map of key=logName, value=ordered list of values per category.
+        List<String> categoryNames = new ArrayList<>(avgStats.size());
+        List<String> seriesNames = new ArrayList<>(briefs.size());
+        List<List<Long>> seriesCategoriesStats = new ArrayList<>(briefs.size());
+        for (Log brief : briefs) {
+            seriesNames.add(brief.getName());
+            List<Long> logValues = new ArrayList<>(avgStats.size());
+            seriesCategoriesStats.add(logValues);
+        }
+        for (Entry<String, List<Long>> avgStatEntry : avgStats.entrySet()) {
+            categoryNames.add(avgStatEntry.getKey());
+            for (int i = 0; i < briefs.size(); ++i) {
+                List<Long> logValues = seriesCategoriesStats.get(i);
+                logValues.add(avgStatEntry.getValue().get(i));
+            }
+        }
+        return Arrays.asList(createBarGraph(categoryNames, seriesNames, seriesCategoriesStats, 0));
+    }
+
+    private static String createBarGraph(List<String> categoryNames, List<String> seriesNames,
+            List<List<Long>> seriesCategoriesValues, int index) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Chartist.Bar('#graphdiv").append(index).append("', {\n");
+        sb.append("  labels: [");
+        for (String categoryName : categoryNames) {
+            sb.append("'").append(categoryName).append("',");
+        }
+        if (!categoryNames.isEmpty()) {
+            // If we have at least one category listed, then take off the last comma
+            sb.setLength(sb.length() - 1);
+        }
+        sb.append("],\n");
+        sb.append("  series: [\n");
+        for (int i = 0; i < seriesCategoriesValues.size(); ++i) {
+            List<Long> categoryValues = seriesCategoriesValues.get(i);
+            sb.append("    [");
+            for (int j = 0; j < categoryValues.size(); ++j) {
+                sb.append(categoryValues.get(j)).append(",");
+            }
+            if (!categoryValues.isEmpty()) {
+                // If we have at least one item in the series, then take off the last comma
+                sb.setLength(sb.length() - 1);
+            }
+            sb.append("],\n");
+        }
+
+        if (!seriesCategoriesValues.isEmpty()) {
+            // If there is at least one series in the map, then remove last comma.
+            sb.setLength(sb.length() - 2);
+            sb.append("\n");
+        }
+
+        sb.append("  ]\n");
+        sb.append("}, {\n");
+        sb.append("  seriesBarDistance: 10,\n");
+        sb.append("  horizontalBars: true,\n");
+        sb.append("  reverseDate: true,\n");
+        sb.append("  axisY: {\n");
+        sb.append("    offset: 70\n");
+        sb.append("  },\n");
+        sb.append("  plugins: [\n");
+        sb.append("    Chartist.plugins.tooltip({\n");
+        sb.append("      anchorToPoint: true\n");
+        sb.append("    })\n");
+        sb.append("  ]\n");
+        sb.append("});\n");
+
+        return sb.toString();
+    }
+
     private void calculateReviewLogs(Review review) {
         String body = review.getBody();
         LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
@@ -437,6 +559,7 @@ public class BrowserReviewsResource {
     private static String commonMarkToHtml(String commonMarkText) {
         Node document = CM_PARSER.parse(commonMarkText);
         return HTML_RENDERER.render(document);
+
     }
 
     private static interface NameValueListener {

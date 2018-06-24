@@ -1,5 +1,5 @@
 <#--
- Copyright 2016 Redsaz <redsaz@gmail.com>.
+ Copyright 2018 Redsaz <redsaz@gmail.com>.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@
     <link href="${dist}/css/template.css" rel="stylesheet">
 
     <link href="${dist}/css/dygraph.css" rel="stylesheet">
+    <link href="${dist}/css/chartist.min.css" rel="stylesheet">
+    <link href="${dist}/css/chartist-plugin-tooltip.css" rel="stylesheet">
 
     <#-- Bootstrap core CSS -->
     <link href="${dist}/css/bootstrap.min.css" rel="stylesheet">
