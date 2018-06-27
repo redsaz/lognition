@@ -263,6 +263,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_label_log
                     references: log(id)
+                    deleteCascade: true
               - column:
                   name: key
                   type: varchar(63)
@@ -340,6 +341,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_review_log_review
                     references: review(id)
+                    deleteCascade: true
               - column:
                   name: log_id
                   type: bigint
@@ -347,6 +349,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_review_log_log
                     references: log(id)
+                    deleteCascade: true
         - addPrimaryKey:
             tableName: review_log
             columnNames: review_id, log_id
