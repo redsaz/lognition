@@ -41,20 +41,30 @@
           </div>
         </div>
       </div>
-      <#list reviewGraphs as g>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
-            <div class="ct-chart ct-square" id="graphdiv${g?index}" style="width: 100%"></div>
+          <ul class="nav nav-tabs" role="tablist">
+          <#list reviewGraphs as g>
+            <li role="presentation"<#if g?is_first> class="active"</#if>><a href="#${g.urlName}" aria-controls="${g.name}" role="tab" data-toggle="tab">${g.name}</a></li>
+          </#list>
+          </ul>
+          <div class="tab-content" style="width: 100%">
+          <#list reviewGraphs as g>
+            <div role="tabpanel" class="tab-pane <#if g?is_first>active</#if>" id="${g.urlName}" style="width: 100%">
+              <h2>${g.name}</h2>
+              <div class="graph" style="width: 100%">
+                <div class="ct-chart ct-square" id="graphdiv${g?index}" style="width: 100%"></div>
+              </div>
+            </div>
+          </#list>
           </div>
         </div>
       </div>
-      </#list>
       <script src="${dist}/js/chartist.min.js"></script>
       <script src="${dist}/js/chartist-plugin-tooltip.min.js"></script>
       <#list reviewGraphs as g>
         <script>
-          <#noescape>${g}</#noescape>
+          <#noescape>${g.chartHtml}</#noescape>
         </script>
       </#list>
 </#escape>

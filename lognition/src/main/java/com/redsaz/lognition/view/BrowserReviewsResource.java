@@ -23,6 +23,7 @@ import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.services.LabelSelectorParser;
+import com.redsaz.lognition.view.model.Chart;
 import java.io.IOException;
 import java.net.URI;
 import java.time.ZoneOffset;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.Function;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -345,7 +347,7 @@ public class BrowserReviewsResource {
         }
         List<Log> briefs = reviewsSrv.getReviewLogs(reviewId);
 
-        List<String> reviewGraphs = createReviewGraphs(briefs);
+        List<Chart> reviewGraphs = createReviewCharts(briefs);
 
 //        List<String> categoryNames = Arrays.asList("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
 //        SortedMap<String, List<Long>> seriesCategoriesValues = new TreeMap<>();
@@ -444,20 +446,21 @@ public class BrowserReviewsResource {
         return cursor;
     }
 
-    private static final Long EMPTY_STAT = 0L;
+//    private static final Stats EMPTY_STAT = new Stats(0L, null, null, null, null, null, null, null, null, null, 0L, 0L, 0L);
+    private static final Stats EMPTY_STAT = new Stats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
 
-    private List<String> createReviewGraphs(List<Log> briefs) {
-        Map<String, List<Long>> avgStats = new TreeMap<>();
+    private List<Chart> createReviewCharts(List<Log> briefs) {
+        Map<String, List<Stats>> statsMap = new TreeMap<>();
         int iBrief = 0;
         for (Log brief : briefs) {
             List<String> labels = statsSrv.getSampleLabels(brief.getId());
             int iLabel = 0;
             for (String label : labels) {
                 Stats stats = statsSrv.getAggregate(brief.getId(), iLabel);
-                List<Long> labelStats = avgStats.get(label);
+                List<Stats> labelStats = statsMap.get(label);
                 if (labelStats == null) {
                     labelStats = new ArrayList<>(briefs.size());
-                    avgStats.put(label, labelStats);
+                    statsMap.put(label, labelStats);
                 }
                 // All logs must maintain the same index in each label's list.
                 if (labelStats.size() < iBrief) {
@@ -465,13 +468,13 @@ public class BrowserReviewsResource {
                         labelStats.add(EMPTY_STAT);
                     }
                 }
-                labelStats.add(stats.getAvg());
+                labelStats.add(stats);
                 ++iLabel;
             }
             ++iBrief;
         }
         // Make sure each list is the same length.
-        for (List<Long> labelStats : avgStats.values()) {
+        for (List<Stats> labelStats : statsMap.values()) {
             for (int i = labelStats.size(); i < briefs.size(); ++i) {
                 labelStats.add(EMPTY_STAT);
             }
@@ -479,25 +482,44 @@ public class BrowserReviewsResource {
 
         // Now, we have a map of key=categoryName, value=ordered list of values per log.
         // But, what we need is a map of key=logName, value=ordered list of values per category.
-        List<String> categoryNames = new ArrayList<>(avgStats.size());
+        List<String> categoryNames = new ArrayList<>(statsMap.size());
         List<String> seriesNames = new ArrayList<>(briefs.size());
-        List<List<Long>> seriesCategoriesStats = new ArrayList<>(briefs.size());
+        List<List<Stats>> seriesCategoriesStats = new ArrayList<>(briefs.size());
         for (Log brief : briefs) {
             seriesNames.add(brief.getName());
-            List<Long> logValues = new ArrayList<>(avgStats.size());
+            List<Stats> logValues = new ArrayList<>(statsMap.size());
             seriesCategoriesStats.add(logValues);
         }
-        for (Entry<String, List<Long>> avgStatEntry : avgStats.entrySet()) {
+        for (Entry<String, List<Stats>> avgStatEntry : statsMap.entrySet()) {
             categoryNames.add(avgStatEntry.getKey());
             for (int i = 0; i < briefs.size(); ++i) {
-                List<Long> logValues = seriesCategoriesStats.get(i);
+                List<Stats> logValues = seriesCategoriesStats.get(i);
                 logValues.add(avgStatEntry.getValue().get(i));
             }
         }
-        return Arrays.asList(createBarGraph(categoryNames, seriesNames, seriesCategoriesStats, 0));
+
+        Chart avgBarGraph = createStatBarChart("Average", "avg", categoryNames, seriesNames, seriesCategoriesStats, Stats::getAvg, 0);
+        Chart p50BarGraph = createStatBarChart("Median", "p50", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP50, 1);
+        Chart p90BarGraph = createStatBarChart("90th Percentile", "p90", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP90, 2);
+        Chart p95BarGraph = createStatBarChart("95th Percentile", "p95", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP95, 3);
+        Chart p99BarGraph = createStatBarChart("99th Percentile", "p99", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP99, 4);
+
+        return Arrays.asList(avgBarGraph, p50BarGraph, p90BarGraph, p95BarGraph, p99BarGraph);
     }
 
-    private static String createBarGraph(List<String> categoryNames, List<String> seriesNames,
+    private Chart createStatBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames, List<List<Stats>> seriesCategoriesStats, Function<Stats, Long> statPart, int index) {
+        List<List<Long>> results = new ArrayList<>(seriesCategoriesStats.size());
+        for (List<Stats> listStats : seriesCategoriesStats) {
+            List<Long> category = new ArrayList<>(listStats.size());
+            for (Stats stats : listStats) {
+                category.add(statPart.apply(stats));
+            }
+            results.add(category);
+        }
+        return createBarChart(name, urlName, categoryNames, seriesNames, results, index);
+    }
+
+    private static Chart createBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames,
             List<List<Long>> seriesCategoriesValues, int index) {
         StringBuilder sb = new StringBuilder();
         sb.append("new Chartist.Bar('#graphdiv").append(index).append("', {\n");
@@ -545,7 +567,7 @@ public class BrowserReviewsResource {
         sb.append("  ]\n");
         sb.append("});\n");
 
-        return sb.toString();
+        return new Chart(name, urlName, sb.toString());
     }
 
     private void calculateReviewLogs(Review review) {

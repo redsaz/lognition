@@ -83,6 +83,11 @@
     <script src="${dist}/js/jquery.min.js"></script>
     <script src="${dist}/js/bootstrap.min.js"></script>
     <script src="${dist}/js/ie10-viewport-bug-workaround.js"></script>
+    <script>
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        window.dispatchEvent(new Event('resize'));
+      });
+    </script>
   </body>
 </html>
 </#escape>
