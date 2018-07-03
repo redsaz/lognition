@@ -17,16 +17,20 @@ package com.redsaz.lognition.view;
 
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.exceptions.AppClientException;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.LogBrief;
 import com.redsaz.lognition.api.model.Percentiles;
+import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.api.model.Timeseries;
+import com.redsaz.lognition.services.LabelSelectorParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -36,6 +40,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -68,6 +74,7 @@ public class BrowserLogsResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BrowserLogsResource.class);
 
+    private ReviewsService reviewsSrv;
     private LogsService logsSrv;
     private ImportService importSrv;
     private StatsService statsSrv;
@@ -75,13 +82,16 @@ public class BrowserLogsResource {
 
     private static final Parser CM_PARSER = Parser.builder().build();
     private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
+    private static final ExecutorService REVIEWS_CALC_EXEC = Executors.newSingleThreadExecutor();
 
     public BrowserLogsResource() {
     }
 
     @Inject
-    public BrowserLogsResource(@Sanitizer LogsService logsService,
-            @Processor ImportService importService, StatsService statsService, Templater config) {
+    public BrowserLogsResource(@Sanitizer ReviewsService reviewsService,
+            @Sanitizer LogsService logsService, @Processor ImportService importService,
+            StatsService statsService, Templater config) {
+        reviewsSrv = reviewsService;
         logsSrv = logsService;
         importSrv = importService;
         statsSrv = statsService;
@@ -214,6 +224,11 @@ public class BrowserLogsResource {
                     break;
                 }
             }
+
+            REVIEWS_CALC_EXEC.execute(() -> {
+                calculateAllReviewLogs();
+            });
+
             Response resp = Response.seeOther(URI.create("logs")).build();
             LOGGER.info("Finished uploading log {} for import", content);
             return resp;
@@ -334,6 +349,10 @@ public class BrowserLogsResource {
                 logsSrv.setLabels(logId, labels);
             }
 
+            REVIEWS_CALC_EXEC.execute(() -> {
+                calculateAllReviewLogs();
+            });
+
             Response resp = Response.seeOther(URI.create("logs/" + logId)).build();
             LOGGER.info("Finished updating log {}.", logId);
             return resp;
@@ -419,6 +438,16 @@ public class BrowserLogsResource {
         root.put("title", log.getName());
         root.put("content", "log-view.ftl");
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    }
+
+    private void calculateAllReviewLogs() {
+        for (Review review : reviewsSrv.list()) {
+            String body = review.getBody();
+            LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+            List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+
+            reviewsSrv.setReviewLogs(review.getId(), logIds);
+        }
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
