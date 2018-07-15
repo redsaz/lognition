@@ -62,6 +62,7 @@
       </div>
       <script src="${dist}/js/chartist.min.js"></script>
       <script src="${dist}/js/chartist-plugin-tooltip.min.js"></script>
+      <script src="${dist}/js/dygraph.min.js"></script>
       <#list reviewGraphs as g>
         <script>
           <#noescape>${g.chartHtml}</#noescape>

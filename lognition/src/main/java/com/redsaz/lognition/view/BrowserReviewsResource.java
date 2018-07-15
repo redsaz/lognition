@@ -15,11 +15,13 @@
  */
 package com.redsaz.lognition.view;
 
+import com.github.slugify.Slugify;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.model.Log;
+import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.services.LabelSelectorParser;
@@ -29,12 +31,12 @@ import java.net.URI;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -76,6 +78,7 @@ public class BrowserReviewsResource {
 
     private static final Parser CM_PARSER = Parser.builder().build();
     private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
+    private static final Slugify SLG = new Slugify();
 
     public BrowserReviewsResource() {
     }
@@ -349,13 +352,6 @@ public class BrowserReviewsResource {
 
         List<Chart> reviewGraphs = createReviewCharts(briefs);
 
-//        List<String> categoryNames = Arrays.asList("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
-//        SortedMap<String, List<Long>> seriesCategoriesValues = new TreeMap<>();
-//        seriesCategoriesValues.put("Series1", Arrays.asList(10L, 7L, 5L, 3L, 4L, 13L, 11L));
-//        seriesCategoriesValues.put("Series2", Arrays.asList(8L, 9L, 4L, 2L, 7L, 11L, 10L));
-//        seriesCategoriesValues.put("Series3", Arrays.asList(6L, 10L, 5L, 4L, 6L, 11L, 9L));
-//
-//        List<String> barGraphs = Arrays.asList(createBarGraph(categoryNames, seriesCategoriesValues, 0));
         Map<String, Object> root = new HashMap<>();
         root.put("review", review);
         root.put("briefs", briefs);
@@ -446,73 +442,177 @@ public class BrowserReviewsResource {
         return cursor;
     }
 
-//    private static final Stats EMPTY_STAT = new Stats(0L, null, null, null, null, null, null, null, null, null, 0L, 0L, 0L);
     private static final Stats EMPTY_STAT = new Stats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+    private static final Percentiles EMPTY_PERCENTILES = null;
+    private static final Metrics EMPTY_METRICS = new Metrics(EMPTY_STAT, EMPTY_PERCENTILES);
+
+    /**
+     * Combines a list of different {@link Percentiles} into a two-dimensional array of values,
+     * sorted by percentile. This is required because different series can have differently sized
+     * percentiles.
+     *
+     * @param percentiles List of percentiles to combine into 2d array
+     * @return 2d array of percentiles
+     */
+    private static SortedMap<Double, List<Long>> unifyPercentiles(List<Percentiles> percentiles) {
+        SortedMap<Double, List<Long>> unified = new TreeMap<>();
+        for (int i = 0; i < percentiles.size(); ++i) {
+            Percentiles percs = percentiles.get(i);
+            if (percs == null) {
+                continue;
+            }
+            for (int j = 0; j < percs.size(); ++j) {
+                Double perc = percs.getPercentiles().get(j);
+                List<Long> values = unified.get(perc);
+                if (values == null) {
+                    values = new ArrayList<>(percentiles.size());
+                    for (int k = 0; k < percentiles.size(); ++k) {
+                        values.add(null);
+                    }
+                    unified.put(perc, values);
+                }
+                Long value = percs.getValues().get(j);
+                values.set(i, value);
+            }
+        }
+
+        return unified;
+    }
+
+    private static Chart createPercentileChart(String name, String urlName, List<Percentiles> percentiles, List<String> seriesNames, int index) {
+        if (percentiles == null) {
+            LOGGER.debug("Percentiles list is empty.");
+            return new Chart(name, urlName, "");
+        }
+        SortedMap<Double, List<Long>> unifiedPercs = unifyPercentiles(percentiles);
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"graphdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+
+        sb.append("\"percentile,");
+        // THIS WON'T WORK WITH SERIES NAMES THAT HAVE COMMAS!
+        for (String seriesName : seriesNames) {
+            sb.append(seriesName).append(",");
+        }
+        if (!seriesNames.isEmpty()) {
+            sb.setLength(sb.length() - 1);
+        }
+        sb.append("\\n\"").append(csvRowTail);
+
+        for (Entry<Double, List<Long>> percs : unifiedPercs.entrySet()) {
+            Double perc = percs.getKey();
+            List<Long> seriesMillis = percs.getValue();
+            sb.append("\"").append(perc).append(",");
+            for (Long millis : seriesMillis) {
+                if (millis != null) {
+                    sb.append(millis);
+                }
+                sb.append(",");
+            }
+            sb.setLength(sb.length() - 1);
+            sb.append("\\n\"").append(csvRowTail);
+        }
+        if (!unifiedPercs.isEmpty()) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(name).append(" Percentiles',\n");
+        sb.append("xlabel: 'Percentile',\n");
+        sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("connectSeparatedPoints: true,\n");
+        sb.append("});");
+        return new Chart(name, urlName, sb.toString());
+    }
+
+    private Metrics getMetrics(long logId, long labelId) {
+        Stats stats = statsSrv.getAggregate(logId, labelId);
+        Percentiles percentiles = statsSrv.getPercentiles(logId, labelId);
+        return new Metrics(stats, percentiles);
+    }
 
     private List<Chart> createReviewCharts(List<Log> briefs) {
-        Map<String, List<Stats>> statsMap = new TreeMap<>();
+        Map<String, List<Metrics>> metricsMap = new TreeMap<>();
         int iBrief = 0;
         for (Log brief : briefs) {
             List<String> labels = statsSrv.getSampleLabels(brief.getId());
             int iLabel = 0;
             for (String label : labels) {
-                Stats stats = statsSrv.getAggregate(brief.getId(), iLabel);
-                List<Stats> labelStats = statsMap.get(label);
-                if (labelStats == null) {
-                    labelStats = new ArrayList<>(briefs.size());
-                    statsMap.put(label, labelStats);
+                Metrics metrics = getMetrics(brief.getId(), iLabel);
+                List<Metrics> labelMetrics = metricsMap.get(label);
+                if (labelMetrics == null) {
+                    labelMetrics = new ArrayList<>(briefs.size());
+                    metricsMap.put(label, labelMetrics);
                 }
                 // All logs must maintain the same index in each label's list.
-                if (labelStats.size() < iBrief) {
+                if (labelMetrics.size() < iBrief) {
                     for (int i = 0; i < iBrief; ++i) {
-                        labelStats.add(EMPTY_STAT);
+                        labelMetrics.add(EMPTY_METRICS);
                     }
                 }
-                labelStats.add(stats);
+                labelMetrics.add(metrics);
                 ++iLabel;
             }
             ++iBrief;
         }
         // Make sure each list is the same length.
-        for (List<Stats> labelStats : statsMap.values()) {
-            for (int i = labelStats.size(); i < briefs.size(); ++i) {
-                labelStats.add(EMPTY_STAT);
+        for (List<Metrics> labelMetrics : metricsMap.values()) {
+            for (int i = labelMetrics.size(); i < briefs.size(); ++i) {
+                labelMetrics.add(EMPTY_METRICS);
             }
         }
 
         // Now, we have a map of key=categoryName, value=ordered list of values per log.
         // But, what we need is a map of key=logName, value=ordered list of values per category.
-        List<String> categoryNames = new ArrayList<>(statsMap.size());
+        List<String> categoryNames = new ArrayList<>(metricsMap.size());
         List<String> seriesNames = new ArrayList<>(briefs.size());
-        List<List<Stats>> seriesCategoriesStats = new ArrayList<>(briefs.size());
+        List<List<Metrics>> seriesCategoriesMetrics = new ArrayList<>(briefs.size());
         for (Log brief : briefs) {
             seriesNames.add(brief.getName());
-            List<Stats> logValues = new ArrayList<>(statsMap.size());
-            seriesCategoriesStats.add(logValues);
+            List<Metrics> logValues = new ArrayList<>(metricsMap.size());
+            seriesCategoriesMetrics.add(logValues);
         }
-        for (Entry<String, List<Stats>> avgStatEntry : statsMap.entrySet()) {
-            categoryNames.add(avgStatEntry.getKey());
+        for (Entry<String, List<Metrics>> statsEntry : metricsMap.entrySet()) {
+            categoryNames.add(statsEntry.getKey());
             for (int i = 0; i < briefs.size(); ++i) {
-                List<Stats> logValues = seriesCategoriesStats.get(i);
-                logValues.add(avgStatEntry.getValue().get(i));
+                List<Metrics> logValues = seriesCategoriesMetrics.get(i);
+                logValues.add(statsEntry.getValue().get(i));
             }
         }
 
-        Chart avgBarGraph = createStatBarChart("Average", "avg", categoryNames, seriesNames, seriesCategoriesStats, Stats::getAvg, 0);
-        Chart p50BarGraph = createStatBarChart("Median", "p50", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP50, 1);
-        Chart p90BarGraph = createStatBarChart("90th Percentile", "p90", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP90, 2);
-        Chart p95BarGraph = createStatBarChart("95th Percentile", "p95", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP95, 3);
-        Chart p99BarGraph = createStatBarChart("99th Percentile", "p99", categoryNames, seriesNames, seriesCategoriesStats, Stats::getP99, 4);
+        List<Chart> charts = new ArrayList<Chart>();
+        charts.add(createStatBarChart("Average", "avg", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getAvg, 0));
+        charts.add(createStatBarChart("Median", "p50", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP50, 1));
+        charts.add(createStatBarChart("90th Percentile", "p90", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP90, 2));
+        charts.add(createStatBarChart("95th Percentile", "p95", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP95, 3));
+        charts.add(createStatBarChart("99th Percentile", "p99", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP99, 4));
+        charts.addAll(createMultiPercentileChart(categoryNames, seriesNames, seriesCategoriesMetrics, 5));
 
-        return Arrays.asList(avgBarGraph, p50BarGraph, p90BarGraph, p95BarGraph, p99BarGraph);
+        return charts;
     }
 
-    private Chart createStatBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames, List<List<Stats>> seriesCategoriesStats, Function<Stats, Long> statPart, int index) {
-        List<List<Long>> results = new ArrayList<>(seriesCategoriesStats.size());
-        for (List<Stats> listStats : seriesCategoriesStats) {
-            List<Long> category = new ArrayList<>(listStats.size());
-            for (Stats stats : listStats) {
-                category.add(statPart.apply(stats));
+    private List<Chart> createMultiPercentileChart(List<String> categoryNames, List<String> seriesNames, List<List<Metrics>> seriesCategoriesMetrics, int index) {
+        List<Chart> percentiles = new ArrayList<>(seriesNames.size() * categoryNames.size());
+        for (int chartI = 0; chartI < categoryNames.size(); ++chartI) {
+            List<Percentiles> seriesCategory = new ArrayList<>();
+            for (List<Metrics> categories : seriesCategoriesMetrics) {
+                seriesCategory.add(categories.get(chartI).percentiles());
+            }
+            String categoryName = categoryNames.get(chartI);
+            String name = categoryName + " - Percentiles";
+            String urlName = SLG.slugify(name);
+            Chart chart = createPercentileChart(name, urlName, seriesCategory, seriesNames, index + chartI);
+            percentiles.add(chart);
+        }
+        return percentiles;
+    }
+
+    private Chart createStatBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames, List<List<Metrics>> seriesCategoriesMetrics, Function<Stats, Long> statPart, int index) {
+        List<List<Long>> results = new ArrayList<>(seriesCategoriesMetrics.size());
+        for (List<Metrics> listMetrics : seriesCategoriesMetrics) {
+            List<Long> category = new ArrayList<>(listMetrics.size());
+            for (Metrics metrics : listMetrics) {
+                category.add(statPart.apply(metrics.stats()));
             }
             results.add(category);
         }
@@ -636,5 +736,24 @@ public class BrowserReviewsResource {
             // Good.
         }
 
+    }
+
+    private static class Metrics {
+
+        private final Stats stats;
+        private final Percentiles percentiles;
+
+        public Metrics(Stats inStats, Percentiles inPercentiles) {
+            stats = inStats;
+            percentiles = inPercentiles;
+        }
+
+        public Stats stats() {
+            return stats;
+        }
+
+        public Percentiles percentiles() {
+            return percentiles;
+        }
     }
 }
