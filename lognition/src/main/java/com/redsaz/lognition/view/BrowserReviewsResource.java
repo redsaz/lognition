@@ -52,6 +52,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -446,6 +449,21 @@ public class BrowserReviewsResource {
     private static final Percentiles EMPTY_PERCENTILES = null;
     private static final Metrics EMPTY_METRICS = new Metrics(EMPTY_STAT, EMPTY_PERCENTILES);
 
+    private static final UnivariateInterpolator INTERP = new LinearInterpolator();
+    private static final double[] PERCENTILE_POINTS = new double[]{
+        0d, 1d, 2d, 3d, 4d, 5d, 6d, 7d, 8d, 9d,
+        10d, 11d, 12d, 13d, 14d, 15d, 16d, 17d, 18d, 19d,
+        20d, 21d, 22d, 23d, 24d, 25d, 26d, 27d, 28d, 29d,
+        30d, 31d, 32d, 33d, 34d, 35d, 36d, 37d, 38d, 39d,
+        40d, 41d, 42d, 43d, 44d, 45d, 46d, 47d, 48d, 49d,
+        50d, 51d, 52d, 53d, 54d, 55d, 56d, 57d, 58d, 59d,
+        60d, 61d, 62d, 63d, 64d, 65d, 66d, 67d, 68d, 69d,
+        70d, 71d, 72d, 73d, 74d, 75d, 76d, 77d, 78d, 79d,
+        80d, 81d, 82d, 83d, 84d, 85d, 86d, 87d, 88d, 89d,
+        90d, 91d, 92d, 93d, 94d, 95d, 96d, 97d, 97.5d, 98d, 98.25d, 98.5d, 98.75d, 99d,
+        99.125d, 99.25d, 99.375d, 99.5d, 99.625d, 99.75d, 99.875d, 99.9d, 99.99d, 99.999, 99.9999d,
+        100d};
+
     /**
      * Combines a list of different {@link Percentiles} into a two-dimensional array of values,
      * sorted by percentile. This is required because different series can have differently sized
@@ -461,8 +479,40 @@ public class BrowserReviewsResource {
             if (percs == null) {
                 continue;
             }
-            for (int j = 0; j < percs.size(); ++j) {
-                Double perc = percs.getPercentiles().get(j);
+            List<Double> originalPercs = percs.getPercentiles();
+            List<Long> originalMillis = percs.getValues();
+            List<Double> savedPercs = new ArrayList<>();
+            List<Long> savedMillis = new ArrayList<>();
+            Double prevPerc = null;
+            for (int j = 1; j < originalPercs.size(); ++j) {
+                Double perc = originalPercs.get(j);
+                if (!perc.equals(prevPerc)) {
+                    savedPercs.add(perc);
+                    savedMillis.add(originalMillis.get(j));
+                }
+                prevPerc = perc;
+            }
+            double[] xvals = new double[savedPercs.size()];
+            double[] yvals = new double[savedMillis.size()];
+            for (int j = 0; j < savedPercs.size(); ++j) {
+                xvals[j] = savedPercs.get(j);
+                yvals[j] = savedMillis.get(j);
+            }
+            UnivariateFunction interp = INTERP.interpolate(xvals, yvals);
+            double minX = xvals[0];
+            double maxX = xvals[xvals.length - 1];
+            for (int j = 0; j < PERCENTILE_POINTS.length; ++j) {
+                double x = PERCENTILE_POINTS[j];
+                double y;
+                if (x < minX) {
+                    y = yvals[0];
+                } else if (x > maxX) {
+                    y = yvals[yvals.length - 1];
+                } else {
+                    y = interp.value(x);
+                }
+                Double perc = x;
+                Long millis = Math.round(y);
                 List<Long> values = unified.get(perc);
                 if (values == null) {
                     values = new ArrayList<>(percentiles.size());
@@ -471,8 +521,7 @@ public class BrowserReviewsResource {
                     }
                     unified.put(perc, values);
                 }
-                Long value = percs.getValues().get(j);
-                values.set(i, value);
+                values.set(i, millis);
             }
         }
 
@@ -517,7 +566,6 @@ public class BrowserReviewsResource {
         }
         sb.append(", {\n");
         sb.append("legend: 'always',\n");
-        sb.append("title: '").append(name).append(" Percentiles',\n");
         sb.append("xlabel: 'Percentile',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("connectSeparatedPoints: true,\n");
