@@ -30,6 +30,7 @@
     <link href="${dist}/css/dygraph.css" rel="stylesheet">
     <link href="${dist}/css/chartist.min.css" rel="stylesheet">
     <link href="${dist}/css/chartist-plugin-tooltip.css" rel="stylesheet">
+    <link href="${dist}/css/chartist-plugin-legend.css" rel="stylesheet">
 
     <#-- Bootstrap core CSS -->
     <link href="${dist}/css/bootstrap.min.css" rel="stylesheet">

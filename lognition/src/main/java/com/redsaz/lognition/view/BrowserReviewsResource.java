@@ -683,7 +683,10 @@ public class BrowserReviewsResource {
         sb.append("  series: [\n");
         for (int i = 0; i < seriesCategoriesValues.size(); ++i) {
             List<Long> categoryValues = seriesCategoriesValues.get(i);
-            sb.append("    [");
+            String seriesName = seriesNames.get(i);
+            sb.append("    {\"name\": \"")
+                    .append(seriesName)
+                    .append("\", \"data\": [");
             for (int j = 0; j < categoryValues.size(); ++j) {
                 sb.append(categoryValues.get(j)).append(",");
             }
@@ -691,7 +694,7 @@ public class BrowserReviewsResource {
                 // If we have at least one item in the series, then take off the last comma
                 sb.setLength(sb.length() - 1);
             }
-            sb.append("],\n");
+            sb.append("]},\n");
         }
 
         if (!seriesCategoriesValues.isEmpty()) {
@@ -711,6 +714,9 @@ public class BrowserReviewsResource {
         sb.append("  plugins: [\n");
         sb.append("    Chartist.plugins.tooltip({\n");
         sb.append("      anchorToPoint: true\n");
+        sb.append("    }),\n");
+        sb.append("    Chartist.plugins.legend({\n");
+        sb.append("      position: 'bottom'\n");
         sb.append("    })\n");
         sb.append("  ]\n");
         sb.append("});\n");
