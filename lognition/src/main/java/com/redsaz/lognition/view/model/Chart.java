@@ -25,11 +25,13 @@ public class Chart {
     private final String name;
     private final String urlName;
     private final String chartHtml;
+    private final String height;
 
-    public Chart(String inName, String inUrlName, String inChartHtml) {
+    public Chart(String inName, String inUrlName, String inChartHtml, String inHeight) {
         name = inName;
         urlName = inUrlName;
         chartHtml = inChartHtml;
+        height = inHeight;
     }
 
     public String getName() {
@@ -42,5 +44,9 @@ public class Chart {
 
     public String getChartHtml() {
         return chartHtml;
+    }
+
+    public String getHeight() {
+        return height;
     }
 }

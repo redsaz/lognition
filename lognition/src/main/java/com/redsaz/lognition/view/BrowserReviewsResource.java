@@ -531,7 +531,7 @@ public class BrowserReviewsResource {
     private static Chart createPercentileChart(String name, String urlName, List<Percentiles> percentiles, List<String> seriesNames, int index) {
         if (percentiles == null) {
             LOGGER.debug("Percentiles list is empty.");
-            return new Chart(name, urlName, "");
+            return new Chart(name, urlName, "", null);
         }
         SortedMap<Double, List<Long>> unifiedPercs = unifyPercentiles(percentiles);
         StringBuilder sb = new StringBuilder();
@@ -570,7 +570,7 @@ public class BrowserReviewsResource {
         sb.append("ylabel: 'Response Time (ms)',\n");
         sb.append("connectSeparatedPoints: true,\n");
         sb.append("});");
-        return new Chart(name, urlName, sb.toString());
+        return new Chart(name, urlName, sb.toString(), null);
     }
 
     private Metrics getMetrics(long logId, long labelId) {
@@ -716,12 +716,18 @@ public class BrowserReviewsResource {
         sb.append("      anchorToPoint: true\n");
         sb.append("    }),\n");
         sb.append("    Chartist.plugins.legend({\n");
-        sb.append("      position: 'bottom'\n");
+        sb.append("      position: 'top'\n");
         sb.append("    })\n");
         sb.append("  ]\n");
         sb.append("});\n");
 
-        return new Chart(name, urlName, sb.toString());
+        // Height calculation is based on number of series * number of categories, rather than
+        // using the ct-square (or other sizes) since that causes the legend to disappear.
+        int height = categoryNames.size() * seriesNames.size();
+        height = Math.max(height, 10);
+        String heightText = height + "em";
+
+        return new Chart(name, urlName, sb.toString(), heightText);
     }
 
     private void calculateReviewLogs(Review review) {

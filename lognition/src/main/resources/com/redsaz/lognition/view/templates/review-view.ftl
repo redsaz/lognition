@@ -53,7 +53,7 @@
             <div role="tabpanel" class="tab-pane <#if g?is_first>active</#if>" id="${g.urlName}" style="width: 100%">
               <h2>${g.name}</h2>
               <div class="graph" style="width: 100%">
-                <div class="ct-chart" id="graphdiv${g?index}" style="width: 100%"></div>
+                <div class="ct-chart" id="graphdiv${g?index}" style="width: 100%;<#if g.height??> height: ${g.height}</#if>"></div>
               </div>
             </div>
           </#list>
