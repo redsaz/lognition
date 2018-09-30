@@ -16,10 +16,14 @@
 package com.redsaz.lognition.view;
 
 import com.redsaz.lognition.api.ImportService;
-import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.LognitionMediaType;
+import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,8 +33,12 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An endpoint for accessing log. Many of the REST endpoints and browser endpoints are identical
@@ -40,6 +48,8 @@ import javax.ws.rs.core.Response.Status;
  */
 @Path("/logs")
 public class LogsResource {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogsResource.class);
 
     private LogsService logsSrv;
     private ImportService importSrv;
@@ -59,7 +69,7 @@ public class LogsResource {
      * @return Logs, by URI and title.
      */
     @GET
-    @Produces(LognitionMediaType.LOGBRIEFS_V1_JSON)
+    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
     public Response listLogBriefs() {
         return Response.ok(logsSrv.list()).build();
     }
@@ -71,7 +81,7 @@ public class LogsResource {
      * @return Note.
      */
     @GET
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON})
+    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
     @Path("{id}")
     public Response getLogBrief(@PathParam("id") long id) {
         Log brief = logsSrv.get(id);
@@ -82,13 +92,25 @@ public class LogsResource {
     }
 
     @POST
-    @Consumes("application/octet-stream")
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON})
-    public Response importLog(InputStream source) {
-        Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, "uploaded", null, null);
-        Log resultLog = logsSrv.create(sourceLog);
+    @Consumes({MediaType.APPLICATION_OCTET_STREAM, "text/csv", MediaType.TEXT_PLAIN,
+        MediaType.TEXT_XML, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON,
+        "application/zip"})
+    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+    public Response importLog(InputStream source,
+            @QueryParam("name") String name, @QueryParam("notes") String notes,
+            @QueryParam("labels") String labelsText) {
+        if (name == null) {
+            name = "uploaded";
+        }
+        List<Label> labels = toLabelsList(labelsText);
 
-        return Response.status(Status.CREATED).entity(importSrv.upload(source, resultLog, "uploaded", System.currentTimeMillis())).build();
+        Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+        Log resultLog = logsSrv.create(sourceLog);
+        if (!labels.isEmpty()) {
+            logsSrv.setLabels(resultLog.getId(), labels);
+        }
+
+        return Response.status(Status.CREATED).entity(importSrv.upload(source, resultLog, name, System.currentTimeMillis())).build();
     }
 
     @DELETE
@@ -96,6 +118,31 @@ public class LogsResource {
     public Response deleteLog(@PathParam("id") long id) {
         logsSrv.delete(id);
         return Response.status(Status.NO_CONTENT).build();
+    }
+
+    private static List<Label> toLabelsList(String labelsText) {
+        LOGGER.info("Labelizing labels=\"{}\"", labelsText);
+        if (labelsText == null || labelsText.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String[] pairs = labelsText.split("(?:,|\\s)+");
+        List<Label> labels = new ArrayList<>(pairs.length);
+        for (String pair : pairs) {
+            Label label = toLabel(pair);
+            labels.add(label);
+        }
+
+        LOGGER.info("Labelized labels: {}", labels);
+        return labels;
+    }
+
+    private static Label toLabel(String labelText) {
+        String[] keyval = labelText.split("=", 2);
+        if (keyval.length != 2) {
+            return new Label(keyval[0], "");
+        }
+        return new Label(keyval[0], keyval[1]);
     }
 
 }

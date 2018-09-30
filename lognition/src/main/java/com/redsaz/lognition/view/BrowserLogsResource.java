@@ -161,6 +161,8 @@ public class BrowserLogsResource {
             String filename = null;
             String notes = null;
             List<Label> labels = Collections.emptyList();
+            Log sourceLog = null;
+            Log resultLog = null;
             long updateMillis = System.currentTimeMillis();
             ContentDispositionSubParts subParts = new ContentDispositionSubParts();
             for (InputPart part : input.getParts()) {
@@ -174,13 +176,9 @@ public class BrowserLogsResource {
                             filename = subParts.getFilename();
                             LOGGER.info("Uploading content from filename={}...", filename);
 
-                            Log resultLog = null;
                             try {
-                                Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+                                sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
                                 resultLog = logsSrv.create(sourceLog);
-                                if (labels != null) {
-                                    logsSrv.setLabels(resultLog.getId(), labels);
-                                }
 
                                 content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
                                 LOGGER.info("Uploaded content from {}.", filename);
@@ -223,6 +221,18 @@ public class BrowserLogsResource {
                     }
                     break;
                 }
+            }
+
+            if (labels != null) {
+                logsSrv.setLabels(resultLog.getId(), labels);
+            }
+
+            // If the name or notes came in AFTER the content was uploaded and the log created, then
+            // update the log's name and notes.
+            if (!Objects.equals(name, sourceLog.getName())
+                    || !Objects.equals(notes, sourceLog.getNotes())) {
+                Log updatedLog = new Log(resultLog.getId(), null, name, name, resultLog.getDataFile(), notes);
+                resultLog = logsSrv.update(updatedLog);
             }
 
             REVIEWS_CALC_EXEC.execute(() -> {
@@ -644,7 +654,7 @@ public class BrowserLogsResource {
             return Collections.emptyList();
         }
 
-        String[] pairs = labelsText.split("\\s+");
+        String[] pairs = labelsText.split("(?:,|\\s)+");
         List<Label> labels = new ArrayList<>(pairs.length);
         for (String pair : pairs) {
             Label label = toLabel(pair);
