@@ -90,9 +90,8 @@
                         <password>${temporaryBuildDbPass}</password>
                     </jdbc>
                     <generator>
-                        <name>org.jooq.util.DefaultGenerator</name>
                         <database>
-                            <name>org.jooq.util.hsqldb.HSQLDBDatabase</name>
+                            <name>org.jooq.meta.hsqldb.HSQLDBDatabase</name>
                             <includes>.*</includes>
                             <excludes></excludes>
                             <inputSchema>PUBLIC</inputSchema>
@@ -146,6 +145,10 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
