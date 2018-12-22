@@ -26,11 +26,11 @@ import java.util.List;
  */
 public class Expressions {
 
-    private static final LabelSelectorExpression EMPTY_EXPRESSION = new EmptyExpression();
+    private static final LabelSelectorExpression FINISH_EXPRESSION = new FinishExpression();
     private static final LabelSelectorExpression AND_EXPRESSION = new AndExpression();
 
     public static LabelSelectorExpression empty() {
-        return EMPTY_EXPRESSION;
+        return FINISH_EXPRESSION;
     }
 
     public static LabelSelectorExpression and() {
@@ -59,6 +59,10 @@ public class Expressions {
 
     public static LabelSelectorExpression notIn(String labelName, List<String> labelValues) {
         return new NotInExpression(labelName, labelValues);
+    }
+
+    public static LabelSelectorExpression finish() {
+        return FINISH_EXPRESSION;
     }
 
     private static class ExistsExpression implements LabelSelectorExpression {
@@ -157,7 +161,7 @@ public class Expressions {
         }
     }
 
-    private static class EmptyExpression implements LabelSelectorExpression {
+    private static class FinishExpression implements LabelSelectorExpression {
 
         @Override
         public void consume(LabelSelectorExpressionListener listener) {
@@ -172,4 +176,5 @@ public class Expressions {
             listener.and();
         }
     }
+
 }

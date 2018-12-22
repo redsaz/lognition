@@ -18,7 +18,6 @@ package com.redsaz.lognition.services;
 import com.redsaz.lognition.api.labelselector.ComposibleLabelSelectorExpression;
 import com.redsaz.lognition.api.labelselector.Expressions;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
-import com.redsaz.lognition.api.labelselector.LabelSelectorExpressionListener;
 import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,56 +38,18 @@ public class LabelSelectorParser {
     private LabelSelectorParser() {
     }
 
-    public static void main(String[] args) {
-        String body = "fred!=value, 1j2e3b4=honda, ge.or.ge in (hol_lyw-ood, mike), 1234 notin (mixins),!marty     ,marvin";
-        List<Token> tokens = tokenize(body);
-        LabelSelectorExpression expression = parsize(tokens);
-        expression.consume(new LabelSelectorExpressionListener() {
-            @Override
-            public void and() {
-                System.out.print(", ");
-            }
-
-            @Override
-            public void exists(String labelName) {
-                System.out.print(labelName);
-            }
-
-            @Override
-            public void notExists(String labelName) {
-                System.out.print("!" + labelName);
-            }
-
-            @Override
-            public void equals(String labelName, String labelValue) {
-                System.out.print(labelName + " = " + labelValue);
-            }
-
-            @Override
-            public void notEquals(String labelName, String labelValue) {
-                System.out.print(labelName + " != " + labelValue);
-            }
-
-            @Override
-            public void in(String labelName, List<String> labelValues) {
-                System.out.print(labelName + " in (" + String.join(", ", labelValues) + ")");
-            }
-
-            @Override
-            public void notIn(String labelName, List<String> labelValues) {
-                System.out.print(labelName + " notin (" + String.join(", ", labelValues) + ")");
-            }
-
-            @Override
-            public void finish() {
-                System.out.println();
-            }
-        });
-    }
     private static final Pattern LABEL_SELECTOR_PATTERN = Pattern.compile("(!=|[,()=!]|in|notin)|([-._a-zA-Z0-9]+)|(\\S)", Pattern.CASE_INSENSITIVE);
 
     private static final Map<String, Token> OP_LOOKUP = initOpLookup();
 
+    /**
+     * Parses a label selector string into an expression.
+     *
+     * @param labelSelector the string to parse
+     * @return The expression
+     * @throws LabelSelectorSyntaxException if an illegal character is encountered or the expression
+     * is not correctly formed.
+     */
     public static LabelSelectorExpression parse(String labelSelector) {
         return parsize(tokenize(labelSelector));
     }
@@ -259,13 +220,19 @@ public class LabelSelectorParser {
         public String value() {
             return value;
         }
+
+        @Override
+        public String toString() {
+            return value();
+        }
+
     }
 
     private static enum Tokens implements Token {
         END {
             @Override
             public String value() {
-                return "";
+                return "end-of-line";
             }
         },
         EQUALS {
@@ -283,13 +250,13 @@ public class LabelSelectorParser {
         IN {
             @Override
             public String value() {
-                return "=";
+                return "in";
             }
         },
         NOT_IN {
             @Override
             public String value() {
-                return "!=";
+                return "notin";
             }
         },
         NOT_EXISTS {
@@ -317,6 +284,11 @@ public class LabelSelectorParser {
             }
         };
 
+        @Override
+        public String toString() {
+            return value();
+        }
+
     }
 
     /**
@@ -340,13 +312,16 @@ public class LabelSelectorParser {
                 state = new VectorOpState(this, token);
             } else if (token == Tokens.AND) {
                 expression.addExpression(Expressions.exists(name.value()));
-                state = States.CHAINABLE;
+                state = States.CHAINABLE.expressionize(expression, token);
             } else if (token == Tokens.END) {
                 expression.addExpression(Expressions.exists(name.value()));
+                expression.addExpression(Expressions.finish());
                 state = States.FINISH;
             } else {
-                throw new LabelSelectorSyntaxException("Label Selector syntax error. Expected "
-                        + Tokens.NOT_EXISTS + " or label key but got " + token + " instead.");
+                throw new LabelSelectorSyntaxException("Label Selector syntax error. Expected one of: [\""
+                        + Tokens.AND + "\", \"" + Tokens.EQUALS + "\", \"" + Tokens.NOT_EQUALS
+                        + "\", \"" + Tokens.IN + "\", \"" + Tokens.NOT_IN
+                        + "\", end-of-line] but got: " + token + " instead.");
             }
 
             return state;
@@ -463,7 +438,7 @@ public class LabelSelectorParser {
                     return States.CHAINABLE;
                 }
                 throw new LabelSelectorSyntaxException("Label Selector syntax error. Expected "
-                        + " label value but got " + token + " instead.");
+                        + "label key but got " + token + " instead.");
             }
         },
         LIST_START {
@@ -499,10 +474,11 @@ public class LabelSelectorParser {
                     expression.addExpression(Expressions.and());
                     return States.START;
                 } else if (token == Tokens.END) {
+                    expression.addExpression(Expressions.finish());
                     return States.FINISH;
                 }
                 throw new LabelSelectorSyntaxException("Label Selector syntax error. Expected "
-                        + Tokens.AND + " or end of line but got "
+                        + Tokens.AND + " or end-of-line but got "
                         + token + " instead.");
             }
         };
