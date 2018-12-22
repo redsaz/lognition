@@ -27,7 +27,7 @@
         <module>lognition</module>
     </modules>
     <properties>
-        <version.wildfly-swarm>2017.8.1</version.wildfly-swarm>
+        <version.thorntail>2.2.1.Final</version.thorntail>
         <version.jackson>2.8.2</version.jackson>
         <version.snakeyaml>1.17</version.snakeyaml>
         <version.logback>1.1.7</version.logback>
@@ -131,11 +131,11 @@
                 <version>4.12</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly.swarm</groupId>
+                <groupId>io.thorntail</groupId>
                 <artifactId>bom</artifactId>
-                <version>${version.wildfly-swarm}</version>
+                <version>${version.thorntail}</version>
                 <scope>import</scope>
-                <type>pom</type>
+                <type>pom</type>            
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -228,19 +228,19 @@
     </build>
     <profiles>
         <profile>
-            <id>swarm</id>
+            <id>thorntail</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
         </profile>
         <!-- Some IDE's (like Netbeans) will not succeed a
-        "mvn package" when wildfly-swarm-plugin is active because
+        "mvn package" when thorntail-maven-plugin is active because
         of some aether-impl conflict. If so, then in Netbeans
         go to File -> Project Properties -> Configuration and
         activate the war profile. In other IDEs it is similar. -->
         <!-- Use for creating a war intended for JBoss WildFly -->
         <profile>
-            <id>war-wildfly</id>
+            <id>war-thorntail</id>
         </profile>
         <!-- Use for creating a war intended for Tomcat and others -->
         <profile>

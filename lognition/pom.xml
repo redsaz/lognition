@@ -92,35 +92,31 @@
             <artifactId>jackson-jaxrs-json-provider</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>cdi-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>transactions</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>undertow</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>jaxrs</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>jaxrs-cdi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>jaxrs-validator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.swarm</groupId>
+            <groupId>io.thorntail</groupId>
             <artifactId>jaxrs-multipart</artifactId>
         </dependency>
         <dependency>
@@ -171,28 +167,10 @@
             <version>6.9.10</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>jaxrs-test</artifactId>
-            <version>1.0.2.Final</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>cdi-test</artifactId>
-            <version>1.0.2.Final</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.swarm</groupId>
-            <artifactId>undertow-test</artifactId>
-            <version>1.0.2.Final</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <profiles>
         <profile>
-            <id>swarm</id>
+            <id>thorntail</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -201,12 +179,12 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.wildfly.swarm</groupId>
-                        <artifactId>wildfly-swarm-plugin</artifactId>
-                        <version>${version.wildfly-swarm}</version>
-                        <configuration>
+                        <groupId>io.thorntail</groupId>
+                        <artifactId>thorntail-maven-plugin</artifactId>
+                        <version>${version.thorntail}</version>
+<!--                        <configuration>
                             <bundleDependencies>true</bundleDependencies>
-                        </configuration>
+                        </configuration>-->
                         <executions>
                             <execution>
                                 <goals>
@@ -221,13 +199,13 @@
             </build>
         </profile>
         <!-- Some IDE's (like Netbeans) will not succeed a
-        "mvn package" when wildfly-swarm-plugin is active because
+        "mvn package" when thorntail-maven-plugin is active because
         of some aether-impl conflict. If so, then in Netbeans
         go to File -> Project Properties -> Configuration and
         activate the war profile. In other IDEs it is similar. -->
         <!-- Use for creating a war intended for JBoss WildFly -->
         <profile>
-            <id>war-wildfly</id>
+            <id>war-thorntail</id>
         </profile>
         <!-- Use for creating a war intended for Tomcat and others -->
         <profile>
@@ -238,7 +216,7 @@
                     <artifactId>weld-servlet-core</artifactId>
                 </dependency>
                 <dependency>
-                    <groupId>org.wildfly.swarm</groupId>
+                    <groupId>io.thorntail</groupId>
                     <artifactId>jaxrs-multipart</artifactId>
                 </dependency>
             </dependencies>
