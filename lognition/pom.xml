@@ -20,12 +20,12 @@
 
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>war</packaging>
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>0.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
