@@ -55,6 +55,8 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -449,7 +451,8 @@ public class BrowserReviewsResource {
     private static final Percentiles EMPTY_PERCENTILES = null;
     private static final Metrics EMPTY_METRICS = new Metrics(EMPTY_STAT, EMPTY_PERCENTILES);
 
-    private static final UnivariateInterpolator INTERP = new LinearInterpolator();
+    private static final UnivariateInterpolator INTERP = new ConstantOrLinearInterpolator();
+
     private static final double[] PERCENTILE_POINTS = new double[]{
         0d, 1d, 2d, 3d, 4d, 5d, 6d, 7d, 8d, 9d,
         10d, 11d, 12d, 13d, 14d, 15d, 16d, 17d, 18d, 19d,
@@ -816,4 +819,34 @@ public class BrowserReviewsResource {
             return percentiles;
         }
     }
+
+    private static class ConstantOrLinearInterpolator implements UnivariateInterpolator {
+
+        private static final UnivariateInterpolator LINEINTERP = new LinearInterpolator();
+
+        @Override
+        public UnivariateFunction interpolate(double[] xvals, double[] yvals) throws MathIllegalArgumentException, DimensionMismatchException {
+            if (xvals.length == 1 && yvals.length == 1) {
+                // If we only have one value, then return it along the entire x-axis.
+                return new ConstantFunction(yvals[0]);
+            } else {
+                return LINEINTERP.interpolate(xvals, yvals);
+            }
+        }
+    }
+
+    private static class ConstantFunction implements UnivariateFunction {
+
+        private final double yval;
+
+        public ConstantFunction(double inYval) {
+            yval = inYval;
+        }
+
+        @Override
+        public double value(double d) {
+            return yval;
+        }
+    }
+
 }
