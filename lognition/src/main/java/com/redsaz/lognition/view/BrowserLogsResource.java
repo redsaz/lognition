@@ -414,6 +414,8 @@ public class BrowserLogsResource {
         List<Stats> aggregates = new ArrayList<>(sampleLabels.size());
         List<String> histogramGraphs = new ArrayList<>(sampleLabels.size());
         List<String> percentileGraphs = new ArrayList<>(sampleLabels.size());
+        List<String> errorTimeseriesGraphs = new ArrayList<>(sampleLabels.size());
+        List<String> errorPercentTimeseriesGraphs = new ArrayList<>(sampleLabels.size());
         for (int i = 0; i < sampleLabels.size(); ++i) {
             String label = sampleLabels.get(i);
 
@@ -431,6 +433,12 @@ public class BrowserLogsResource {
             Percentiles percentile = statsSrv.getPercentiles(logId, i);
             String percentileGraph = createPercentileGraph(percentile, label, i);
             percentileGraphs.add(percentileGraph);
+
+            String errorGraph = createTimeseriesErrorGraph(timeseries, label, i);
+            errorTimeseriesGraphs.add(errorGraph);
+
+            String errorPercentGraph = createTimeseriesErrorPercentGraph(timeseries, label, i);
+            errorPercentTimeseriesGraphs.add(errorPercentGraph);
         }
         List<Label> labels = logsSrv.getLabels(logId);
 
@@ -443,6 +451,8 @@ public class BrowserLogsResource {
         root.put("aggregates", aggregates);
         root.put("histogramGraphs", histogramGraphs);
         root.put("percentileGraphs", percentileGraphs);
+        root.put("errorTimeseriesGraphs", errorTimeseriesGraphs);
+        root.put("errorPercentTimeseriesGraphs", errorPercentTimeseriesGraphs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getName());
@@ -644,6 +654,75 @@ public class BrowserLogsResource {
         sb.append("title: '").append(label).append(" Percentiles',\n");
         sb.append("xlabel: 'Percentile',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("});");
+        return sb.toString();
+    }
+
+    private static String createTimeseriesErrorGraph(Timeseries timeseries, String label, int index) {
+        if (timeseries == null) {
+            LOGGER.debug("Timeseries is empty.");
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"errorTimeseriesdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"offsetMillis,numErrors\\n\"").append(csvRowTail);
+        List<Stats> statsList = timeseries.getStatsList();
+        for (Stats stats : statsList) {
+            sb.append("\"")
+                    .append(stats.getOffsetMillis())
+                    .append(",")
+                    .append(stats.getNumErrors())
+                    .append("\\n\"")
+                    .append(csvRowTail);
+        }
+        if (!statsList.isEmpty()) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(label).append("',\n");
+        sb.append("xlabel: 'Time',\n");
+        sb.append("ylabel: 'Error count',\n");
+        sb.append("});");
+        return sb.toString();
+    }
+
+    private static String createTimeseriesErrorPercentGraph(Timeseries timeseries, String label, int index) {
+        if (timeseries == null) {
+            LOGGER.debug("Timeseries is empty.");
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"errorPercentTimeseriesdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"offsetMillis,errorPercent\\n\"").append(csvRowTail);
+        List<Stats> statsList = timeseries.getStatsList();
+        for (Stats stats : statsList) {
+            double total = stats.getNumSamples();
+            double errors = stats.getNumErrors();
+            double perc;
+            if (total > 0d) {
+                perc = errors * 100d / total;
+            } else {
+                perc = 0d;
+            }
+            sb.append("\"")
+                    .append(stats.getOffsetMillis())
+                    .append(",")
+                    .append(perc)
+                    .append("\\n\"")
+                    .append(csvRowTail);
+        }
+        if (!statsList.isEmpty()) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("valueRange: [0, 100],\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(label).append("',\n");
+        sb.append("xlabel: 'Time',\n");
+        sb.append("ylabel: 'Error %',\n");
         sb.append("});");
         return sb.toString();
     }

@@ -98,6 +98,24 @@
         </div>
       </div>
       </#list>
+      <#list errorTimeseriesGraphs as etg>
+      <div class="row">
+        <div class="col-sm-12 col-md-12">
+          <div class="graph">
+            <div id="errorTimeseriesdiv${etg?index}" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+      </#list>
+      <#list errorPercentTimeseriesGraphs as eptg>
+      <div class="row">
+        <div class="col-sm-12 col-md-12">
+          <div class="graph">
+            <div id="errorPercentTimeseriesdiv${eptg?index}" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+      </#list>
 
       <script src="${dist}/js/dygraph.min.js"></script>
       <#list histogramGraphs as h>
@@ -113,6 +131,16 @@
       <#list graphs as graph>
         <script>
           <#noescape>${graph}</#noescape>
+        </script>
+      </#list>
+      <#list errorTimeseriesGraphs as etg>
+        <script>
+          <#noescape>${etg}</#noescape>
+        </script>
+      </#list>
+      <#list errorPercentTimeseriesGraphs as eptg>
+        <script>
+          <#noescape>${eptg}</#noescape>
         </script>
       </#list>
 </#escape>

@@ -28,6 +28,8 @@ import com.redsaz.lognition.services.LabelSelectorParser;
 import com.redsaz.lognition.view.model.Chart;
 import java.io.IOException;
 import java.net.URI;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -84,6 +86,13 @@ public class BrowserReviewsResource {
     private static final Parser CM_PARSER = Parser.builder().build();
     private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
     private static final Slugify SLG = new Slugify();
+
+    private static final ThreadLocal<NumberFormat> PERC_FORMAT = new ThreadLocal<NumberFormat>() {
+        @Override
+        protected NumberFormat initialValue() {
+            return new DecimalFormat("0.00");
+        }
+    };
 
     public BrowserReviewsResource() {
     }
@@ -632,12 +641,19 @@ public class BrowserReviewsResource {
         }
 
         List<Chart> charts = new ArrayList<Chart>();
-        charts.add(createStatBarChart("Average", "avg", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getAvg, 0));
-        charts.add(createStatBarChart("Median", "p50", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP50, 1));
-        charts.add(createStatBarChart("90th Percentile", "p90", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP90, 2));
-        charts.add(createStatBarChart("95th Percentile", "p95", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP95, 3));
-        charts.add(createStatBarChart("99th Percentile", "p99", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP99, 4));
-        charts.addAll(createMultiPercentileChart(categoryNames, seriesNames, seriesCategoriesMetrics, 5));
+        charts.add(createStatBarChart("Average", "avg", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getAvg, false, 0));
+        charts.add(createStatBarChart("Median", "p50", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP50, false, 1));
+        charts.add(createStatBarChart("90th Percentile", "p90", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP90, false, 2));
+        charts.add(createStatBarChart("95th Percentile", "p95", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP95, false, 3));
+        charts.add(createStatBarChart("99th Percentile", "p99", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getP99, false, 4));
+        charts.add(createStatBarChart("Error Count", "numErrors", categoryNames, seriesNames, seriesCategoriesMetrics, Stats::getNumErrors, false, 5));
+        charts.add(createStatBarChart("Error %", "percErrors", categoryNames, seriesNames, seriesCategoriesMetrics, (t) -> {
+            if (t == null || t.getNumSamples() == 0) {
+                return "0";
+            }
+            return PERC_FORMAT.get().format(((double) t.getNumErrors() * 100d) / ((double) t.getNumSamples()));
+        }, true, 6));
+        charts.addAll(createMultiPercentileChart(categoryNames, seriesNames, seriesCategoriesMetrics, 7));
 
         return charts;
     }
@@ -658,20 +674,20 @@ public class BrowserReviewsResource {
         return percentiles;
     }
 
-    private Chart createStatBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames, List<List<Metrics>> seriesCategoriesMetrics, Function<Stats, Long> statPart, int index) {
-        List<List<Long>> results = new ArrayList<>(seriesCategoriesMetrics.size());
+    private Chart createStatBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames, List<List<Metrics>> seriesCategoriesMetrics, Function<Stats, ?> statPart, boolean isPercentage, int index) {
+        List<List<?>> results = new ArrayList<>(seriesCategoriesMetrics.size());
         for (List<Metrics> listMetrics : seriesCategoriesMetrics) {
-            List<Long> category = new ArrayList<>(listMetrics.size());
+            List<Object> category = new ArrayList<>(listMetrics.size());
             for (Metrics metrics : listMetrics) {
                 category.add(statPart.apply(metrics.stats()));
             }
             results.add(category);
         }
-        return createBarChart(name, urlName, categoryNames, seriesNames, results, index);
+        return createBarChart(name, urlName, categoryNames, seriesNames, results, isPercentage, index);
     }
 
     private static Chart createBarChart(String name, String urlName, List<String> categoryNames, List<String> seriesNames,
-            List<List<Long>> seriesCategoriesValues, int index) {
+            List<List<?>> seriesCategoriesValues, boolean isPercentage, int index) {
         StringBuilder sb = new StringBuilder();
         sb.append("new Chartist.Bar('#graphdiv").append(index).append("', {\n");
         sb.append("  labels: [");
@@ -685,7 +701,7 @@ public class BrowserReviewsResource {
         sb.append("],\n");
         sb.append("  series: [\n");
         for (int i = 0; i < seriesCategoriesValues.size(); ++i) {
-            List<Long> categoryValues = seriesCategoriesValues.get(i);
+            List<?> categoryValues = seriesCategoriesValues.get(i);
             String seriesName = seriesNames.get(i);
             sb.append("    {\"name\": \"")
                     .append(seriesName)
@@ -714,9 +730,25 @@ public class BrowserReviewsResource {
         sb.append("  axisY: {\n");
         sb.append("    offset: 70\n");
         sb.append("  },\n");
+        if (isPercentage) {
+            sb.append("  axisX: {\n");
+            sb.append("    type: Chartist.FixedScaleAxis,\n");
+            sb.append("    ticks: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],\n");
+            sb.append("    low: 0,\n");
+            sb.append("    high: 100,\n");
+            sb.append("    labelInterpolationFnc: function(value) {\n");
+            sb.append("      return value + '%';\n");
+            sb.append("    },\n");
+            sb.append("  },\n");
+        }
         sb.append("  plugins: [\n");
         sb.append("    Chartist.plugins.tooltip({\n");
-        sb.append("      anchorToPoint: true\n");
+        if (isPercentage) {
+            sb.append("    transformTooltipTextFnc: function(value) {\n");
+            sb.append("      return value + '%';\n");
+            sb.append("    },\n");
+        }
+        sb.append("      anchorToPoint: false\n");
         sb.append("    }),\n");
         sb.append("    Chartist.plugins.legend({\n");
         sb.append("      position: 'top'\n");
