@@ -21,6 +21,7 @@ import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
+import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Label;
@@ -215,6 +216,7 @@ public class BrowserLogsResource {
                         } catch (IOException ex) {
                             LOGGER.error("Error getting labels.", ex);
                         }
+                        break;
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -345,6 +347,7 @@ public class BrowserLogsResource {
                         } catch (IOException ex) {
                             LOGGER.error("Error getting labels.", ex);
                         }
+                        break;
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -462,11 +465,17 @@ public class BrowserLogsResource {
 
     private void calculateAllReviewLogs() {
         for (Review review : reviewsSrv.list()) {
-            String body = review.getBody();
-            LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
-            List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+            try {
+                String body = review.getBody();
+                LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+                List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
 
-            reviewsSrv.setReviewLogs(review.getId(), logIds);
+                reviewsSrv.setReviewLogs(review.getId(), logIds);
+            } catch (LabelSelectorSyntaxException ex) {
+                LOGGER.error("Review_id={} has a syntax error with it's label selector. No more logs will be added to the review until fixed.", review.getId());
+            } catch (RuntimeException ex) {
+                LOGGER.error("Exception when using label selector from review_id={}.", ex);
+            }
         }
     }
 

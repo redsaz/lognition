@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.1.2] - 2019-01-07
+## Fixed
+- [Issue #2](https://github.com/redsaz/lognition/issues/2) which prevented
+  reviews recalculating logs when a review had a bad label selector.
+
 ## [0.1.1] - 2018-12-29
 ### Added
 - Fix [Issue #5](https://github.com/redsaz/lognition/issues/5): Add error

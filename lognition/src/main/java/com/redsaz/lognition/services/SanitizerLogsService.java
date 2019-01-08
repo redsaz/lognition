@@ -124,7 +124,17 @@ public class SanitizerLogsService implements LogsService {
 
     @Override
     public Log update(Log source) {
-        source = sanitize(source);
+        // Don't use sanitize, as update CAN contain null fields. It means those weren't updated.
+        if (source == null) {
+            return null;
+        }
+        String uriName = source.getUriName();
+        if (uriName != null) {
+            uriName = SLG.slugify(uriName);
+        }
+
+        source = new Log(source.getId(), source.getStatus(), uriName, source.getName(), source.getDataFile(), source.getNotes());
+
         return srv.update(source);
     }
 
@@ -143,63 +153,6 @@ public class SanitizerLogsService implements LogsService {
         return srv.getLabels(logId);
     }
 
-//    /**
-//     * Sanitizes a group of logs according to the
-//     * {@link #sanitize(com.redsaz.lognition.api.model.Note)} method.
-//     *
-//     * @param logs The logs to sanitize
-//     * @return A List of new note instances with sanitized data.
-//     */
-//    private static List<LogBrief> sanitizeAll(List<LogBrief> briefs) {
-//        List<LogBrief> sanitizeds = new ArrayList<>(briefs.size());
-//        for (LogBrief brief : briefs) {
-//            sanitizeds.add(sanitize(brief));
-//        }
-//        return sanitizeds;
-//    }
-//
-//    /**
-//     * A brief must have at least a uri and a title. If neither are present, nor
-//     * filename or lgos, then it cannot be sanitized. The ID will remain
-//     * unchanged.
-//     *
-//     * @param brief The brief to sanitize
-//     * @return A new brief instance with sanitized data.
-//     */
-//    private static LogBrief sanitize(LogBrief brief) {
-//        String uriName = brief.getUriName();
-//        if (uriName == null || uriName.isEmpty()) {
-//            uriName = brief.getTitle();
-//            if (uriName == null || uriName.isEmpty()) {
-//                uriName = shortened(brief.getFilename());
-//                if (uriName == null || uriName.isEmpty()) {
-//                    uriName = shortened(brief.getNotes());
-//                    if (uriName == null || uriName.isEmpty()) {
-//                        throw new AppClientException("Brief must have at least a uri, title, filename, or notes.");
-//                    }
-//                }
-//            }
-//        }
-//        uriName = SLG.slugify(uriName);
-//
-//        String title = brief.getTitle();
-//        if (title == null) {
-//            title = shortened(brief.getNotes());
-//            if (title == null) {
-//                title = "";
-//            }
-//        }
-//        String notes = brief.getNotes();
-//        if (notes == null) {
-//            notes = "";
-//        }
-//        String filename = brief.getFilename();
-//        if (filename == null) {
-//            filename = "";
-//        }
-//
-//        return new LogBrief(brief.getId(), uriName, title, notes, filename, brief.getUploadedTimestampMillis(), brief.getContentId());
-//    }
     /**
      * Ensures nothing is null. The ID will remain unchanged.
      *

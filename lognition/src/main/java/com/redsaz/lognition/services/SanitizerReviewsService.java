@@ -72,7 +72,17 @@ public class SanitizerReviewsService implements ReviewsService {
 
     @Override
     public Review update(Review source) {
-        source = sanitize(source);
+        // Don't use sanitize, as update CAN contain null fields. It means those weren't updated.
+        if (source == null) {
+            return null;
+        }
+        String uriName = source.getUriName();
+        if (uriName != null) {
+            uriName = SLG.slugify(uriName);
+        }
+
+        source = new Review(source.getId(), uriName, source.getName(), source.getDescription(),
+                source.getCreatedMillis(), source.getLastUpdatedMillis(), source.getBody());
         return srv.update(source);
     }
 

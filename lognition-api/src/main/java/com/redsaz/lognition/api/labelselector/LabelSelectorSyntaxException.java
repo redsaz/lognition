@@ -15,12 +15,14 @@
  */
 package com.redsaz.lognition.api.labelselector;
 
+import com.redsaz.lognition.api.exceptions.AppException;
+
 /**
  * Indicates an error with parsing a label selector.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class LabelSelectorSyntaxException extends RuntimeException {
+public class LabelSelectorSyntaxException extends AppException {
 
     public LabelSelectorSyntaxException() {
         super();

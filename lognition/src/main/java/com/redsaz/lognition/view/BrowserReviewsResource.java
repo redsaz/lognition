@@ -20,6 +20,8 @@ import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpressionFormatter;
+import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Review;
@@ -191,8 +193,12 @@ public class BrowserReviewsResource {
                     case "body":
                         try {
                             body = part.getBodyAsString();
+                            body = LabelSelectorExpressionFormatter.format(LabelSelectorParser.parse(body));
                         } catch (IOException ex) {
                             LOGGER.error("Error getting body.", ex);
+                        } catch (LabelSelectorSyntaxException ex) {
+                            LOGGER.error("Label selector syntax error. The label selector will not be used.");
+                            body = null;
                         }
                         break;
                     default: {
@@ -302,8 +308,12 @@ public class BrowserReviewsResource {
                     case "body":
                         try {
                             body = part.getBodyAsString();
+                            body = LabelSelectorExpressionFormatter.format(LabelSelectorParser.parse(body));
                         } catch (IOException ex) {
                             LOGGER.error("Error getting body.", ex);
+                        } catch (LabelSelectorSyntaxException ex) {
+                            LOGGER.error("Label selector syntax error. The label selector will not be used.");
+                            body = null;
                         }
                         break;
                     default: {
@@ -766,11 +776,15 @@ public class BrowserReviewsResource {
     }
 
     private void calculateReviewLogs(Review review) {
-        String body = review.getBody();
-        LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
-        List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+        try {
+            String body = review.getBody();
+            LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+            List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
 
-        reviewsSrv.setReviewLogs(review.getId(), logIds);
+            reviewsSrv.setReviewLogs(review.getId(), logIds);
+        } catch (LabelSelectorSyntaxException ex) {
+            LOGGER.error("Could not find logs for review due to Syntax error in label selector for review_id={}", review.getId());
+        }
     }
 
     private static String commonMarkToHtml(String commonMarkText) {

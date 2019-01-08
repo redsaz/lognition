@@ -18,12 +18,19 @@ package com.redsaz.lognition.view;
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LognitionMediaType;
 import com.redsaz.lognition.api.LogsService;
+import com.redsaz.lognition.api.ReviewsService;
+import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
+import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
+import com.redsaz.lognition.api.model.Review;
+import com.redsaz.lognition.services.LabelSelectorParser;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -51,14 +58,18 @@ public class LogsResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LogsResource.class);
 
+    private ReviewsService reviewsSrv;
     private LogsService logsSrv;
     private ImportService importSrv;
+    private static final ExecutorService REVIEWS_CALC_EXEC = Executors.newSingleThreadExecutor();
 
     public LogsResource() {
     }
 
     @Inject
-    public LogsResource(@Sanitizer LogsService logsService, @Processor ImportService importService) {
+    public LogsResource(@Sanitizer ReviewsService reviewsService,
+            @Sanitizer LogsService logsService, @Processor ImportService importService) {
+        reviewsSrv = reviewsService;
         logsSrv = logsService;
         importSrv = importService;
     }
@@ -110,6 +121,10 @@ public class LogsResource {
             logsSrv.setLabels(resultLog.getId(), labels);
         }
 
+        REVIEWS_CALC_EXEC.execute(() -> {
+            calculateAllReviewLogs();
+        });
+
         return Response.status(Status.CREATED).entity(importSrv.upload(source, resultLog, name, System.currentTimeMillis())).build();
     }
 
@@ -118,6 +133,22 @@ public class LogsResource {
     public Response deleteLog(@PathParam("id") long id) {
         logsSrv.delete(id);
         return Response.status(Status.NO_CONTENT).build();
+    }
+
+    private void calculateAllReviewLogs() {
+        for (Review review : reviewsSrv.list()) {
+            try {
+                String body = review.getBody();
+                LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+                List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+
+                reviewsSrv.setReviewLogs(review.getId(), logIds);
+            } catch (LabelSelectorSyntaxException ex) {
+                LOGGER.error("Review_id={} has a syntax error with it's label selector. No more logs will be added to the review until fixed.", review.getId());
+            } catch (RuntimeException ex) {
+                LOGGER.error("Exception when using label selector from review_id={}.", ex);
+            }
+        }
     }
 
     private static List<Label> toLabelsList(String labelsText) {
