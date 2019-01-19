@@ -68,25 +68,65 @@
            display: block;
            margin: 0;
        }
-       .ct-legend .ct-series-0:before {
+       .ct-legend .ct-series-a:before {
            background-color: #d70206;
            border-color: #d70206;
        }
-       .ct-legend .ct-series-1:before {
+       .ct-legend .ct-series-b:before {
            background-color: #f05b4f;
            border-color: #f05b4f;
        }
-       .ct-legend .ct-series-2:before {
+       .ct-legend .ct-series-c:before {
            background-color: #f4c63d;
            border-color: #f4c63d;
        }
-       .ct-legend .ct-series-3:before {
+       .ct-legend .ct-series-d:before {
            background-color: #d17905;
            border-color: #d17905;
        }
-       .ct-legend .ct-series-4:before {
+       .ct-legend .ct-series-e:before {
            background-color: #453d3f;
            border-color: #453d3f;
+       }
+       .ct-legend .ct-series-f:before {
+           background-color: #59922b;
+           border-color: #59922b;
+       }
+      .ct-legend .ct-series-g:before {
+           background-color: #0544d3;
+           border-color: #0544d3;
+       }
+      .ct-legend .ct-series-h:before {
+           background-color: #6b0392;
+           border-color: #6b0392;
+       }
+      .ct-legend .ct-series-i:before {
+           background-color: #f05b4f;
+           border-color: #f05b4f;
+       }
+      .ct-legend .ct-series-j:before {
+           background-color: #dda458;
+           border-color: #dda458;
+       }
+      .ct-legend .ct-series-k:before {
+           background-color: #eacf7d;
+           border-color: #eacf7d;
+       }
+      .ct-legend .ct-series-l:before {
+           background-color: #86797d;
+           border-color: #86797d;
+       }
+      .ct-legend .ct-series-m:before {
+           background-color: #b2c326;
+           border-color: #b2c326;
+       }
+      .ct-legend .ct-series-n:before {
+           background-color: #6188e2;
+           border-color: #6188e2;
+       }
+      .ct-legend .ct-series-o:before {
+           background-color: #a748ca;
+           border-color: #a748ca;
        }
 
        .ct-chart-line-multipleseries .ct-legend .ct-series-0:before {
