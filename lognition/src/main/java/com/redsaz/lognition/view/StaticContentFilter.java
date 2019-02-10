@@ -25,9 +25,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Allows for static content and REST endpoints to be served without needing to
- * put the REST endpoints in a sub-directory. As seen in
- * http://stackoverflow.com/a/3593513
+ * Allows for static content and REST endpoints to be served without needing to put the REST
+ * endpoints in a sub-directory. As seen in http://stackoverflow.com/a/3593513
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -42,7 +41,12 @@ public class StaticContentFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         String path = req.getRequestURI().substring(req.getContextPath().length());
 
-        if (path.startsWith("/dist") || path.endsWith("index.html") || path.endsWith("favicon.ico")) {
+        if (path.startsWith("/dist")
+                || path.endsWith("index.html")
+                || path.endsWith(".ico")
+                || path.endsWith(".png")
+                || path.endsWith("site.webmanifest")
+                || path.endsWith(".svg")) {
             // Use the default servlet, which knows how to handle static content.
             request.getServletContext().getNamedDispatcher("default").forward(request, response);
         } else {
