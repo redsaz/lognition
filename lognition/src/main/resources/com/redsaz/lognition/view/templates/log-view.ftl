@@ -74,7 +74,7 @@
       <#list histogramGraphs as h>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
+          <div class="graph loggraph">
             <div id="histogramgraphdiv${h?index}" style="width: 100%"></div>
           </div>
         </div>
@@ -83,7 +83,7 @@
       <#list percentileGraphs as p>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
+          <div class="graph loggraph">
             <div id="percentilegraphdiv${p?index}" style="width: 100%"></div>
           </div>
         </div>
@@ -92,7 +92,7 @@
       <#list graphs as graph>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
+          <div class="graph loggraph">
             <div id="graphdiv${graph?index}" style="width: 100%"></div>
           </div>
         </div>
@@ -101,7 +101,7 @@
       <#list errorTimeseriesGraphs as etg>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
+          <div class="graph loggraph">
             <div id="errorTimeseriesdiv${etg?index}" style="width: 100%"></div>
           </div>
         </div>
@@ -110,7 +110,7 @@
       <#list errorPercentTimeseriesGraphs as eptg>
       <div class="row">
         <div class="col-sm-12 col-md-12">
-          <div class="graph">
+          <div class="graph loggraph">
             <div id="errorPercentTimeseriesdiv${eptg?index}" style="width: 100%"></div>
           </div>
         </div>
