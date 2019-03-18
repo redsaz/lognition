@@ -151,7 +151,7 @@ public class JooqLogsService implements LogsService {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
             RecordsToListHandler<LogRecord, Log> r2lHandler = new RecordsToListHandler<>(R2L);
-            return context.selectFrom(LOG).fetchInto(r2lHandler).getValues();
+            return context.selectFrom(LOG).orderBy(LOG.ID.desc()).fetchInto(r2lHandler).getValues();
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get logs list");
         }

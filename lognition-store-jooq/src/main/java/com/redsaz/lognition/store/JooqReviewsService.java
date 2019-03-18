@@ -127,7 +127,7 @@ public class JooqReviewsService implements ReviewsService {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
             RecordsToListHandler<ReviewRecord, Review> r2lHandler = new RecordsToListHandler<>(R2R);
-            return context.selectFrom(REVIEW).fetchInto(r2lHandler).getValues();
+            return context.selectFrom(REVIEW).orderBy(REVIEW.LAST_UPDATED_MILLIS.desc()).fetchInto(r2lHandler).getValues();
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get reviews list");
         }
