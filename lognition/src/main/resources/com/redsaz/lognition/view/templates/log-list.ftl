@@ -14,40 +14,56 @@
  limitations under the License.
 -->
 <#escape x as x?html>
+      <script>
+        function deleteLog(logId) {
+            var xhr = new XMLHttpRequest();
+            var url = '${base}/logs/' + logId;
+            xhr.open('DELETE', url, true);
+            xhr.addEventListener('load', function() {
+                window.location.href = "${base}/logs";
+            });
+            xhr.addEventListener('error', function() {
+                console.error("Could not delete logId=" + logId);
+            });
+            xhr.send();
+        }
+        function editLog(logId) {
+            window.location.href='${base}/logs/' + logId + '/edit';
+        }
+      </script>
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
-          <h1 class="page-header">Logs</h1>
-
-          <div class="table-responsive">
+          <h1>Logs</h1>
+          <div>
             <a href="logs/import" class="btn btn-default">Import</a>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Notes</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <#list briefs as brief>
-                <tr>
-                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
-                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
-                  <td>
-                    <form action="${base}/logs/delete" method="POST">
-                      <a href="${base}/logs/${brief.id}/edit">
-                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                        <span class="sr-only">Edit</span>
-                      </a>
-                      <input type="hidden" name="id" value="${brief.id}"/>
-                      <button type="submit" class="btn btn-link glyphicon glyphicon-trash"><span class="sr-only">Trash</span></button>
-                    </form>
-                  </td>
-                </tr>
-                </#list>
-              </tbody>
-            </table>
+            <div class="fcm">
+              <#list briefs as brief>
+              <div class="fcm-parent">
+                <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
+                  <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
+                </a>
+                <span class="fcm-child-actions">
+                  <ul style="display: flex;">
+                    <li class="glyphicon glyphicon-pencil" onclick="editLog(${brief.id})"></li>
+                    <li class="glyphicon glyphicon-trash" onclick="deleteLog(${brief.id})"></li>
+                  </ul>
+                </span>
+              </div>
+              </#list>
+            </div>
           </div>
         </div>
       </div>
+<script>
+  Array.prototype.slice.call( document.getElementsByClassName("fcm-parent")).forEach(
+    function(fcmparent) {
+      fcmparent.addEventListener("mouseenter", function( event ) {
+        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "flex";
+      }, false);
+      fcmparent.addEventListener("mouseleave", function( event ) {
+        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "none";
+      }, false);
+    }
+  );
+</script>
 </#escape>

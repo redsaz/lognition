@@ -5,6 +5,7 @@
 /* Move down content because we have a fixed navbar that is 50px tall */
 body {
   padding-top: 50px;
+  font-family: Roboto,RobotoDraft,"Helvetica Neue",Helvetica,Arial,sans-serif
 }
 
 
@@ -23,6 +24,8 @@ body {
  */
 .navbar-fixed-top {
   border: 0;
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
 /*
@@ -71,39 +74,77 @@ body {
  * Main content
  */
 
-.main {
-  padding: 20px;
-}
-@media (min-width: 768px) {
-  .main {
-    padding-right: 40px;
-    padding-left: 40px;
-  }
-}
-.main .page-header {
-  margin-top: 0;
-}
-
-
-/*
- * Placeholder dashboard ideas
- */
-
-.placeholders {
-  margin-bottom: 30px;
-  text-align: center;
-}
-.placeholders h4 {
-  margin-bottom: 0;
-}
-.placeholder {
-  margin-bottom: 20px;
-}
-.placeholder img {
-  display: inline-block;
-  border-radius: 50%;
-}
-
 .loggraph {
   padding-top: 10rem;
+}
+
+/*
+.main {
+    padding: 0 0 0 0;
+}
+.container-fluid {
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+}
+.row {
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+}
+*/
+.graph {
+    width: 100%;
+}
+.fcm {
+    border-bottom: 1px solid #eee;
+}
+.fcm-parent {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    border-top: 1px solid #eee;
+    border-left: 1px solid #0000;
+}
+.fcm-parent:hover {
+    box-shadow: 0 0 0.33rem -0.05rem #000;
+    border-left: 1px solid gray;
+}
+.fcm-child-item {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0.4rem 0rem 0.4rem 0.5rem;
+}
+.fcm-child-item-title {
+    font-weight: bold;
+}
+.fcm-child-actions {
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 0.4rem 0rem 0.4rem 0.5rem;
+    display: none;
+}
+.fcm-child-actions ul {
+    display: flex;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+}
+.fcm-child-actions li {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    color: gray;
+}
+.fcm-child-actions li:hover {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    color: black;
+}
+.fcm a {
+    text-decoration: none !important;
+    color: black !important;
 }

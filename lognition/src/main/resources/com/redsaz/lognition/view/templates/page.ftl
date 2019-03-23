@@ -33,8 +33,6 @@
 
     <title>${title} - lognition</title>
 
-    <link href="${dist}/css/template.css" rel="stylesheet">
-
     <link href="${dist}/css/dygraph.css" rel="stylesheet">
     <link href="${dist}/css/chartist.min.css" rel="stylesheet">
     <link href="${dist}/css/chartist-plugin-tooltip.css" rel="stylesheet">

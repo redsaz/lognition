@@ -14,40 +14,56 @@
  limitations under the License.
 -->
 <#escape x as x?html>
+      <script>
+        function deleteReview(reviewId) {
+            var xhr = new XMLHttpRequest();
+            var url = '${base}/reviews/' + reviewId;
+            xhr.open('DELETE', url, true);
+            xhr.addEventListener('load', function() {
+                window.location.href = "${base}/reviews";
+            });
+            xhr.addEventListener('error', function() {
+                console.error("Could not delete reviewId=" + reviewId);
+            });
+            xhr.send();
+        }
+        function editReview(reviewId) {
+            window.location.href='${base}/reviews/' + reviewId + '/edit';
+        }
+      </script>
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
-          <h1 class="page-header">Reviews</h1>
-
-          <div class="table-responsive">
+          <h1>Reviews</h1>
+          <div>
             <a href="reviews/create" class="btn btn-default">Create</a>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <#list reviews as review>
-                <tr>
-                  <td><a href="${base}/reviews/${review.id}/${review.uriName}">${review.name}</a></td>
-                  <td><a href="${base}/reviews/${review.id}/${review.uriName}">${review.description}</a></td>
-                  <td>
-                    <form action="${base}/reviews/delete" method="POST">
-                      <a href="${base}/reviews/${review.id}/edit">
-                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
-                        <span class="sr-only">Edit</span>
-                      </a>
-                      <input type="hidden" name="id" value="${review.id}"/>
-                      <button type="submit" class="btn btn-link glyphicon glyphicon-trash"><span class="sr-only">Trash</span></button>
-                    </form>
-                  </td>
-                </tr>
-                </#list>
-              </tbody>
-            </table>
+            <div class="fcm">
+              <#list reviews as review>
+              <div class="fcm-parent">
+                <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
+                  <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
+                </a>
+                <span class="fcm-child-actions">
+                  <ul style="display: flex;">
+                    <li class="glyphicon glyphicon-pencil" onclick="editReview(${review.id})"></li>
+                    <li class="glyphicon glyphicon-trash" onclick="deleteReview(${review.id})"></li>
+                  </ul>
+                </span>
+              </div>
+              </#list>
+            </div>
           </div>
         </div>
       </div>
+<script>
+  Array.prototype.slice.call( document.getElementsByClassName("fcm-parent")).forEach(
+    function(fcmparent) {
+      fcmparent.addEventListener("mouseenter", function( event ) {
+        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "flex";
+      }, false);
+      fcmparent.addEventListener("mouseleave", function( event ) {
+        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "none";
+      }, false);
+    }
+  );
+</script>
 </#escape>
