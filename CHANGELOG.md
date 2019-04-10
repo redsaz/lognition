@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.1.4] - 2019-08-11
+### Changed
+- The menus to select logs or reviews is updated to be more compact.
+- Use Bootstrap 4.3.
+
 ## [0.1.2] - 2019-01-07
-## Fixed
+### Fixed
 - [Issue #2](https://github.com/redsaz/lognition/issues/2) which prevented
   reviews recalculating logs when a review had a bad label selector.
 
