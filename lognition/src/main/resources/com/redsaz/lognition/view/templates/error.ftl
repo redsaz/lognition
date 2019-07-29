@@ -14,15 +14,13 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <h1>${title}</h1>
-          <p>
-            ${message}
-          </p>
-          <p>
-            <#noescape>${action}</#noescape>
-          </p>
-        </div>
+      <div class="container">
+        <h1>${title}</h1>
+        <p>
+          ${message}
+        </p>
+        <p>
+          <#noescape>${action}</#noescape>
+        </p>
       </div>
 </#escape>

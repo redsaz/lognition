@@ -31,26 +31,24 @@
             window.location.href='${base}/reviews/' + reviewId + '/edit';
         }
       </script>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <h1>Reviews</h1>
-          <div>
-            <a href="reviews/create" class="btn btn-default">Create</a>
-            <div class="fcm">
-              <#list reviews as review>
-              <div class="fcm-parent">
-                <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
-                  <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
-                </a>
-                <span class="fcm-child-actions">
-                  <ul style="display: flex;">
-                    <li class="glyphicon glyphicon-pencil" onclick="editReview(${review.id})"></li>
-                    <li class="glyphicon glyphicon-trash" onclick="deleteReview(${review.id})"></li>
-                  </ul>
-                </span>
-              </div>
-              </#list>
+      <div class="container">
+        <h1>Reviews</h1>
+        <div>
+          <a href="reviews/create" class="btn btn-outline-dark">Create</a>
+          <div class="fcm">
+            <#list reviews as review>
+            <div class="fcm-parent">
+              <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
+                <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
+              </a>
+              <span class="fcm-child-actions">
+                <ul style="display: flex;">
+                  <li onclick="editReview(${review.id})"><span data-feather="edit"></span></li>
+                  <li onclick="deleteReview(${review.id})"><span data-feather="trash"></span></li>
+                </ul>
+              </span>
             </div>
+            </#list>
           </div>
         </div>
       </div>

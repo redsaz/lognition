@@ -14,15 +14,13 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <form action="${base}/logs" method="POST" enctype="multipart/form-data">
-            <input type="text" class="form-control" name="name" placeholder="Name"/><br/>
-            <textarea class="form-control" rows="10" name="notes"></textarea>
-            <input type="text" class="form-control" name="labels" placeholder="Labels, space separated (ex: key1=value1 key2=value2)"/>
-            <input type="file" name="content">
-            <button type="submit" class="btn btn-primary">Create</button>
-          </form>
-        </div>
+      <div class="container">
+        <form action="${base}/logs" method="POST" enctype="multipart/form-data">
+          <input type="text" class="form-control" name="name" placeholder="Name"/><br/>
+          <textarea class="form-control" rows="10" name="notes"></textarea>
+          <input type="text" class="form-control" name="labels" placeholder="Labels, space separated (ex: key1=value1 key2=value2)"/>
+          <input type="file" name="content">
+          <button type="submit" class="btn btn-primary">Create</button>
+        </form>
       </div>
 </#escape>

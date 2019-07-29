@@ -14,14 +14,12 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <form action="${base}/reviews/${review.id}" method="POST" enctype="multipart/form-data">
-            <input type="text" class="form-control" name="name" placeholder="Name" value="${review.name!}"/><br/>
-            <textarea class="form-control" rows="10" name="description">${review.description!}</textarea>
-            <input type="text" class="form-control" name="body" placeholder="Label Selector (ex: key1 in (value1, value2)" value="${review.body!}"/>
-            <button type="submit" class="btn btn-primary">Save</button>
-          </form>
-        </div>
+      <div class="container">
+        <form action="${base}/reviews/${review.id}" method="POST" enctype="multipart/form-data">
+          <input type="text" class="form-control" name="name" placeholder="Name" value="${review.name!}"/><br/>
+          <textarea class="form-control" rows="10" name="description">${review.description!}</textarea>
+          <input type="text" class="form-control" name="body" placeholder="Label Selector (ex: key1 in (value1, value2)" value="${review.body!}"/>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
       </div>
 </#escape>

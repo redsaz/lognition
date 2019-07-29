@@ -31,29 +31,27 @@
             window.location.href='${base}/logs/' + logId + '/edit';
         }
       </script>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <h1 class="page-header">Lognition</h1>
-          <div>
-            <a href="logs/import" class="btn btn-default">Import</a>
-            <div class="fcm">
-              <#list briefs as brief>
-              <div class="fcm-parent">
-                <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
-                  <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
-                </a>
-                <span class="fcm-child-actions">
-                  <ul style="display: flex;">
-                    <li class="glyphicon glyphicon-pencil" onclick="editLog(${brief.id})"></li>
-                    <li class="glyphicon glyphicon-trash" onclick="deleteLog(${brief.id})"></li>
-                  </ul>
-                </span>
-              </div>
-              </#list>
+      <div class="container">
+        <h1 class="page-header">Lognition</h1>
+        <div>
+          <a href="logs/import" class="btn btn-outline-dark">Import</a>
+          <div class="fcm">
+            <#list briefs as brief>
+            <div class="fcm-parent">
+              <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
+                <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
+              </a>
+              <span class="fcm-child-actions">
+                <ul style="display: flex;">
+                  <li onclick="editLog(${brief.id})"><span data-feather="edit"></span></li>
+                  <li onclick="deleteLog(${brief.id})"><span data-feather="trash"></span></li>
+                </ul>
+              </span>
             </div>
+            </#list>
           </div>
         </div>
-      </div>
+    </div>
 <script>
   Array.prototype.slice.call( document.getElementsByClassName("fcm-parent")).forEach(
     function(fcmparent) {

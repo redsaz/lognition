@@ -14,50 +14,46 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="row">
-        <div class="col-sm-12 col-md-12 main">
-          <h2>${review.name}</h2>
-          <div>
-            <#noescape>${descriptionHtml}</#noescape>
-          </div>
-          <h3>Applicable Logs</h3>
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <#list briefs as brief>
-                <tr>
-                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
-                  <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
-                </tr>
-                </#list>
-              </tbody>
-            </table>
-          </div>
+      <div class="container">
+        <h2>${review.name}</h2>
+        <div>
+          <#noescape>${descriptionHtml}</#noescape>
+        </div>
+        <h3>Applicable Logs</h3>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <#list briefs as brief>
+              <tr>
+                <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
+                <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
+              </tr>
+              </#list>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="row">
-        <div class="col-sm-12 col-md-12">
-          <ul class="nav nav-tabs" role="tablist">
-          <#list reviewGraphs as g>
-            <li role="presentation"<#if g?is_first> class="active"</#if>><a href="#${g.urlName}" aria-controls="${g.name}" role="tab" data-toggle="tab">${g.name}</a></li>
-          </#list>
-          </ul>
-          <div class="tab-content" style="width: 100%">
-          <#list reviewGraphs as g>
-            <div role="tabpanel" class="tab-pane <#if g?is_first>active</#if>" id="${g.urlName}" style="width: 100%">
-              <h2>${g.name}</h2>
-              <div class="graph" style="width: 100%">
-                <div class="ct-chart" id="graphdiv${g?index}" style="width: 100%;<#if g.height??> height: ${g.height}</#if>"></div>
-              </div>
+      <div class="container">
+        <ul class="nav nav-tabs" role="tablist">
+        <#list reviewGraphs as g>
+          <li role="presentation" class="nav-item"><a class="graph-nav nav-link<#if g?is_first> active</#if>" href="#${g.urlName}" aria-controls="${g.name}" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">${g.name}</a></li>
+        </#list>
+        </ul>
+        <div class="tab-content" style="width: 100%">
+        <#list reviewGraphs as g>
+          <div role="tabpanel" class="tab-pane <#if g?is_first>active</#if>" id="${g.urlName}" style="width: 100%">
+            <h2>${g.name}</h2>
+            <div class="graph" style="width: 100%">
+              <div class="ct-chart" id="graphdiv${g?index}" style="width: 100%;<#if g.height??> height: ${g.height}</#if>"></div>
             </div>
-          </#list>
           </div>
+        </#list>
         </div>
       </div>
       <script src="${dist}/js/chartist.min.js"></script>

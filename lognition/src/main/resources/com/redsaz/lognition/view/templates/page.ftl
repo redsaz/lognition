@@ -52,49 +52,35 @@
   </head>
 
   <body>
+    <header>
+      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <a class="navbar-brand p-2" href="/">lognition</a>
+        <a class="p-2 text-light nav-link" href="${base}/logs">Logs</a>
+        <a class="p-2 text-light nav-link" href="${base}/reviews">Reviews</a>
+        <#if brief??><a class="p-2 text-light nav-link" href="${base}/logs/${brief.id}/edit">Edit</a></#if>
+      </nav>
+    </header>
 
-    <div class="container-fluid">
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container-fluid">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">lognition</a>
-        </div>
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-          <ul class="nav navbar-nav">
-            <li><a href="${base}/logs">Logs</a></li>
-            <li><a href="${base}/reviews">Reviews</a></li>
-            <#if brief??><li><a href="${base}/logs/${brief.id}/edit">Edit</a></li></#if>
-          </ul>
-        </div>
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-          <ul class="nav navbar-nav">
-          </ul>
-        </div>
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-          <ul class="nav navbar-nav">
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <main role="main" class="flex-shrink-0">
 
-    <div class="container-fluid">
 <#include content>
-    </div>
+
+    </main>
 
     <script src="${dist}/js/jquery.min.js"></script>
     <script src="${dist}/js/bootstrap.min.js"></script>
-    <script src="${dist}/js/ie10-viewport-bug-workaround.js"></script>
+
+    <script src="${dist}/js/feather.min.js"></script>
     <script>
+      feather.replace();
+
       $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         window.dispatchEvent(new Event('resize'));
       });
     </script>
+
+    <script src="${dist}/js/Chart.min.js"></script>
+    <script src="${dist}/js/dashboard.js"></script>
   </body>
 </html>
 </#escape>
