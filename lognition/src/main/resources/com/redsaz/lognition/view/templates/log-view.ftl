@@ -14,6 +14,8 @@
  limitations under the License.
 -->
 <#escape x as x?html>
+<div class="container">
+
       <div class="row">
         <div class="col-sm-12 col-md-12 main">
           <h2>${brief.name}</h2>
@@ -29,6 +31,34 @@
           </div>
         </div>
       </div>
+
+      <div class="row">
+      <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="summary-tab" data-toggle="tab" href="#summary" role="tab" aria-controls="summary" aria-selected="true">Summary</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="responses-tab" data-toggle="tab" href="#responses" role="tab" aria-controls="responses" aria-selected="false">Responses</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="histograms-tab" data-toggle="tab" href="#histograms" role="tab" aria-controls="histograms" aria-selected="false">Histograms</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="percentiles-tab" data-toggle="tab" href="#percentiles" role="tab" aria-controls="percentiles" aria-selected="false">Percentiles</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="timeseries-tab" data-toggle="tab" href="#timeseries" role="tab" aria-controls="timeseries" aria-selected="false">Timeseries</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="error-timeseries-tab" data-toggle="tab" href="#error-timeseries" role="tab" aria-controls="error-timeseries" aria-selected="false">Error Timeseries</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="error-percent-timeseries-tab" data-toggle="tab" href="#error-percent-timeseries" role="tab" aria-controls="error-percent-timeseries" aria-selected="false">Error% Timeseries</a>
+        </li>
+      </ul>
+      </div>
+  <div class="tab-content">
+    <div class="tab-pane active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
       <div class="container">
         <table class="table table-hover">
           <thead>
@@ -69,6 +99,11 @@
           </tbody>
         </table>
       </div>
+    </div>
+    <div class="tab-pane" id="responses" role="tabpanel" aria-labelledby="responses-tab">
+      Responses Placeholder
+    </div>
+    <div class="tab-pane" id="histograms" role="tabpanel" aria-labelledby="histograms-tab">
       <#list histogramGraphs as h>
       <div class="row">
         <div class="col-sm-12 col-md-12">
@@ -78,6 +113,8 @@
         </div>
       </div>
       </#list>
+    </div>
+    <div class="tab-pane" id="percentiles" role="tabpanel" aria-labelledby="percentiles-tab">
       <#list percentileGraphs as p>
       <div class="row">
         <div class="col-sm-12 col-md-12">
@@ -87,6 +124,8 @@
         </div>
       </div>
       </#list>
+    </div>
+    <div class="tab-pane" id="timeseries" role="tabpanel" aria-labelledby="timeseries-tab">
       <#list graphs as graph>
       <div class="row">
         <div class="col-sm-12 col-md-12">
@@ -96,6 +135,8 @@
         </div>
       </div>
       </#list>
+    </div>
+    <div class="tab-pane" id="error-timeseries" role="tabpanel" aria-labelledby="error-timeseries-tab">
       <#list errorTimeseriesGraphs as etg>
       <div class="row">
         <div class="col-sm-12 col-md-12">
@@ -105,6 +146,8 @@
         </div>
       </div>
       </#list>
+    </div>
+    <div class="tab-pane" id="error-percent-timeseries" role="tabpanel" aria-labelledby="error-percent-timeseries-tab">
       <#list errorPercentTimeseriesGraphs as eptg>
       <div class="row">
         <div class="col-sm-12 col-md-12">
@@ -114,7 +157,9 @@
         </div>
       </div>
       </#list>
-
+    </div>
+  </div>
+</div>
       <script src="${dist}/js/dygraph.min.js"></script>
       <#list histogramGraphs as h>
         <script>
