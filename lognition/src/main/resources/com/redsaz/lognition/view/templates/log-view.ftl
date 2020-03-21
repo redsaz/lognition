@@ -100,9 +100,6 @@
         </table>
       </div>
     </div>
-    <div class="tab-pane" id="responses" role="tabpanel" aria-labelledby="responses-tab">
-      Responses Placeholder
-    </div>
     <div class="tab-pane" id="histograms" role="tabpanel" aria-labelledby="histograms-tab">
       <#list histogramGraphs as h>
       <div class="row">
