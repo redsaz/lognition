@@ -33,25 +33,26 @@ public class TestCodeCounts {
         builder.increment("200");
         builder.increment("200");
         builder.increment("404");
+        builder.commitBin();
 
         // Counts for 15000ms-29999ms
-        builder.nextBin();
         builder.increment("200");
         builder.increment("401");
         builder.increment("200");
+        builder.commitBin();
 
         // Counts for 30000ms-44999ms
-        builder.nextBin();
         builder.increment("Non-HTTP Status Code: Connection Reset Error");
         builder.increment("200");
+        builder.commitBin();
 
         // Counts for 45000ms-59999ms
-        builder.nextBin();
         // Intentionally left empty
+        builder.commitBin();
 
         // Counts for 60000ms-74999ms
-        builder.nextBin();
         builder.increment("200");
+        builder.commitBin();
 
         CodeCounts counts = builder.build();
 
@@ -71,6 +72,63 @@ public class TestCodeCounts {
                 Arrays.asList(0, 0, 0, 0), counts.getCounts().get(3));
         assertEquals("Incorrect 4th bin code count",
                 Arrays.asList(1, 0, 0, 0), counts.getCounts().get(4));
+
+        assertEquals("Incorrect spanMillis", 15000L, counts.getSpanMillis());
+    }
+
+    @Test
+    public void testBuilder_oneBin() {
+        CodeCounts.Builder builder = new CodeCounts.Builder(15000L);
+        // Counts for 0ms-14999ms
+        builder.increment("200");
+        builder.increment("200");
+        builder.increment("404");
+        builder.commitBin();
+
+        CodeCounts counts = builder.build();
+
+        // There should be 1 bin, 2 codes.
+        assertEquals("Incorrect number of bins", 1, counts.getCounts().size());
+        assertEquals("Incorrect order of codes",
+                Arrays.asList("200", "404"),
+                counts.getCodes());
+
+        assertEquals("Incorrect 0th bin code count",
+                Arrays.asList(2, 1), counts.getCounts().get(0));
+
+        assertEquals("Incorrect spanMillis", 15000L, counts.getSpanMillis());
+    }
+
+    @Test
+    public void testBuilder_zeroBins() {
+        CodeCounts.Builder builder = new CodeCounts.Builder(15000L);
+        // commitBin never called.
+
+        CodeCounts counts = builder.build();
+
+        // There should be 0 bins, 0 codes.
+        assertEquals("Incorrect number of bins", 0, counts.getCounts().size());
+        assertEquals("Incorrect number of codes", 0, counts.getCodes().size());
+
+        assertEquals("Incorrect spanMillis", 15000L, counts.getSpanMillis());
+    }
+
+    @Test
+    public void testBuilder_commitBinNotCalled_noBins() {
+        CodeCounts.Builder builder = new CodeCounts.Builder(15000L);
+
+        // If the user adds codes, but doesn't commit the bin,
+        // (Counts for 0ms-14999ms)
+        builder.increment("200");
+        builder.increment("200");
+        builder.increment("404");
+        // (commitBin not called)
+
+        CodeCounts counts = builder.build();
+
+        // Then there should be 0 bins, 0 codes, because the bin only counts if it is committed.
+        assertEquals("Incorrect number of bins", 0, counts.getCounts().size());
+        assertEquals("Incorrect number of codes", 0, counts.getCodes().size());
 
         assertEquals("Incorrect spanMillis", 15000L, counts.getSpanMillis());
     }

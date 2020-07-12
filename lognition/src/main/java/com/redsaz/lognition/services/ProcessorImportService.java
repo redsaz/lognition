@@ -18,6 +18,7 @@ package com.redsaz.lognition.services;
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.StatsService;
+import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Sample;
@@ -217,7 +218,9 @@ public class ProcessorImportService implements ImportService {
             // label, samples, average, median, p90, p95, p99, min, max, error %, throughput,
             try {
                 long logId = source.getId();
-                Timeseries overall = StatsBuilder.calcTimeSeriesStats(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
+                CodeCounts overallCodeCounts = StatsBuilder.calcAggregateCounts(sourceSamples.getSamples());
+                CodeCounts overallCodeCountsTimeseries = StatsBuilder.calcTimeseriesCounts(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
+                Timeseries overall = StatsBuilder.calcTimeseriesStats(sourceSamples.getSamples(), DEFAULT_SPAN_MILLIS);
                 Stats overallAggregate = StatsBuilder.calcAggregateStats(sourceSamples.getSamples());
                 StatsItems histAndPercs = StatsBuilder.calcHistogram(sourceSamples.getSamples());
 
@@ -228,6 +231,8 @@ public class ProcessorImportService implements ImportService {
                 labels.addAll(sourceSamples.getLabels());
                 statsSrv.createSampleLabels(logId, labels);
 
+//                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCounts);
+//                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCountsTimeseries);
                 statsSrv.createOrUpdateTimeseries(logId, OVERALL_LABEL_ID, overall);
                 statsSrv.createOrUpdateAggregate(logId, OVERALL_LABEL_ID, overallAggregate);
                 statsSrv.createOrUpdateHistogram(logId, OVERALL_LABEL_ID, histAndPercs.getHistogram());
@@ -240,10 +245,14 @@ public class ProcessorImportService implements ImportService {
                         LOGGER.warn("Encountered null logId={} labelId={} while eagerly calculating stats, which shouldn't happen! Skipping.", logId, labelId);
                         continue;
                     }
-                    Timeseries labelTimeseries = StatsBuilder.calcTimeSeriesStats(labelSamples, DEFAULT_SPAN_MILLIS);
+                    CodeCounts labelCodeCounts = StatsBuilder.calcAggregateCounts(labelSamples);
+                    CodeCounts labelCodeCountsTimeseries = StatsBuilder.calcTimeseriesCounts(labelSamples, DEFAULT_SPAN_MILLIS);
+                    Timeseries labelTimeseries = StatsBuilder.calcTimeseriesStats(labelSamples, DEFAULT_SPAN_MILLIS);
                     Stats labelAggregate = StatsBuilder.calcAggregateStats(labelSamples);
                     histAndPercs = StatsBuilder.calcHistogram(labelSamples);
 
+//                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCounts);
+//                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCountsTimeseries);
                     statsSrv.createOrUpdateTimeseries(logId, labelId, labelTimeseries);
                     statsSrv.createOrUpdateAggregate(logId, labelId, labelAggregate);
                     statsSrv.createOrUpdateHistogram(logId, labelId, histAndPercs.getHistogram());

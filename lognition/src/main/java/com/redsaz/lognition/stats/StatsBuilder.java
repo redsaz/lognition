@@ -17,6 +17,7 @@ package com.redsaz.lognition.stats;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
+import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Sample;
@@ -90,6 +91,13 @@ public class StatsBuilder {
         return label.toLowerCase().replaceAll("[^0-9a-zA-Z]+", "-").replaceAll("(^-+)|(-+$)", "");
     }
 
+    public static CodeCounts calcAggregateCounts(List<Sample> samples) {
+        CodeCounts.Builder builder = new CodeCounts.Builder(0L);
+        samples.stream().forEach((s) -> builder.increment(s.getStatusCode()));
+
+        return builder.commitBin().build();
+    }
+
     public static Stats calcAggregateStats(List<Sample> samples) {
         Collections.sort(samples, DURATION_COMPARATOR);
         Stats stats = createStats(0, samples);
@@ -147,13 +155,38 @@ public class StatsBuilder {
     }
 
     /**
+     * Calculates time series code counts on a previously sorted (by offset) list of samples.
+     *
+     * @param offsetSortedSamples list of samples, sorted in the order that they occurred
+     * @param spanMillis The time that each bucket spans
+     * @return the timeseries code counts.
+     */
+    public static CodeCounts calcTimeseriesCounts(List<Sample> offsetSortedSamples, long spanMillis) {
+        // Find sublists (bins) for each segment of time, and calculate the code counts for each.
+        double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();
+        int numBins = (int) Math.ceil((double) lastOffset / spanMillis);
+
+        CodeCounts.Builder builder = new CodeCounts.Builder(spanMillis);
+        int samplesToSkip = 0;
+        for (int i = 0; i < numBins; ++i) {
+            long endOffset = spanMillis * (i + 1);
+            // First find the samples for the timerange of the bin
+            List<Sample> binSamples = getSamplesWithinOffsets(offsetSortedSamples, samplesToSkip, endOffset);
+            samplesToSkip += binSamples.size();
+            offsetSortedSamples.stream().forEach((s) -> builder.increment(s.getStatusCode()));
+            builder.commitBin();
+        }
+        return builder.build();
+    }
+
+    /**
      * Calculates time series stats on a previously sorted (by offset) list of samples.
      *
      * @param offsetSortedSamples list of samples, sorted in the order that they occurred
      * @param spanMillis The time that each bucket spans
      * @return the timeseries.
      */
-    public static Timeseries calcTimeSeriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
+    public static Timeseries calcTimeseriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
         // Find sublists (bins) for each segment of time, and calculate the
         // stats for each.
         double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();

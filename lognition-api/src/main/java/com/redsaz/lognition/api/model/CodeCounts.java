@@ -79,7 +79,7 @@ public class CodeCounts {
         private final Set<String> codes = new HashSet<>();
         private Map<String, Integer> currentBin = new HashMap<>();
         private final List<Map<String, Integer>> binsOfCodeCounts
-                = new ArrayList<>(Collections.singleton(currentBin));
+                = new ArrayList<>();
 
         public Builder(long spanMillis) {
             spanMs = spanMillis;
@@ -90,14 +90,18 @@ public class CodeCounts {
                 throw new NullPointerException("Code cannot be null or empty.");
             }
 
-            codes.add(code);
             currentBin.merge(code, 1, (oldValue, u) -> oldValue + 1);
         }
 
-        public void nextBin() {
+        /**
+         * Commits the current bin of counts and prepares a new bin of counts.
+         */
+        public Builder commitBin() {
             codes.addAll(currentBin.keySet());
-            currentBin = new HashMap<>();
             binsOfCodeCounts.add(currentBin);
+            currentBin = new HashMap<>();
+
+            return this;
         }
 
         public CodeCounts build() {
