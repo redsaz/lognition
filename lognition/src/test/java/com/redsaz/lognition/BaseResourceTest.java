@@ -24,13 +24,11 @@ import org.jboss.resteasy.spi.HttpResponse;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 
 /**
  * @author Redsaz <redsaz@gmail.com>
  */
-public class BaseResourceTest extends Assert {
+public class BaseResourceTest {
 
     public static final String DEFAULT_DP = "mocksForNotesService";
 
@@ -70,12 +68,6 @@ public class BaseResourceTest extends Assert {
         when(mockedTemplater.buildFromTemplate(any(), any(String.class))).thenReturn("Well done.");
 
         return mockedTemplater;
-    }
-
-    @DataProvider(name = DEFAULT_DP)
-    public static Object[][] mocksForNotesService() {
-        Context context = setup();
-        return new Object[][]{new Object[]{context}};
     }
 
 }

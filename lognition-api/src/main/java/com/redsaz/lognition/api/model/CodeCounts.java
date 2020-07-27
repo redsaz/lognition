@@ -106,6 +106,7 @@ public class CodeCounts {
 
         public CodeCounts build() {
             List<String> orderedCodes = new ArrayList<>(codes);
+            Collections.sort(orderedCodes);
             Map<String, Integer> lookup = new HashMap<>();
             for (int i = 0; i < orderedCodes.size(); ++i) {
                 lookup.put(orderedCodes.get(i), i);

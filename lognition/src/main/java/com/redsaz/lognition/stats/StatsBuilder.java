@@ -173,7 +173,7 @@ public class StatsBuilder {
             // First find the samples for the timerange of the bin
             List<Sample> binSamples = getSamplesWithinOffsets(offsetSortedSamples, samplesToSkip, endOffset);
             samplesToSkip += binSamples.size();
-            offsetSortedSamples.stream().forEach((s) -> builder.increment(s.getStatusCode()));
+            binSamples.stream().forEach((s) -> builder.increment(s.getStatusCode()));
             builder.commitBin();
         }
         return builder.build();

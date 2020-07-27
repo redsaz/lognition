@@ -100,6 +100,58 @@ public class TestCodeCounts {
     }
 
     @Test
+    public void testBuilder_unorderedInput_orderedCodes() {
+        CodeCounts.Builder builder = new CodeCounts.Builder(15000L);
+        // Given codes received in a random order,
+        // (Counts for 0ms-14999ms)
+        // (The final ordering is by alphabetical order of the codes, not by the count of the codes.
+        // A unique count was needed for each code, and having them ultimately order from 1-7 was
+        // an easy way to visually see that the ordering is correct when viewed in a debugger)
+        builder.increment("204");
+        builder.increment("204");
+        builder.increment("500");
+        builder.increment("500");
+        builder.increment("500");
+        builder.increment("500");
+        builder.increment("500");
+        builder.increment("404");
+        builder.increment("404");
+        builder.increment("404");
+        builder.increment("404");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("Non-HTTP Status Code: Connection Reset Error");
+        builder.increment("401");
+        builder.increment("401");
+        builder.increment("401");
+        builder.increment("503");
+        builder.increment("503");
+        builder.increment("503");
+        builder.increment("503");
+        builder.increment("503");
+        builder.increment("503");
+        builder.increment("200");
+        builder.commitBin();
+
+        // When I build the code counts,
+        CodeCounts counts = builder.build();
+
+        // Then the code counts should be ordered alphabetically,
+        assertEquals("Incorrect order of codes",
+                Arrays.asList("200", "204", "401", "404", "500", "503",
+                        "Non-HTTP Status Code: Connection Reset Error"),
+                counts.getCodes());
+        // and should have the right counts
+        assertEquals("Incorrect order of codes",
+                Arrays.asList(1, 2, 3, 4, 5, 6, 7),
+                counts.getCounts().get(0));
+    }
+
+    @Test
     public void testBuilder_zeroBins() {
         CodeCounts.Builder builder = new CodeCounts.Builder(15000L);
         // commitBin never called.
