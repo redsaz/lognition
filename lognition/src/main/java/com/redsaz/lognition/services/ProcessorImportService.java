@@ -231,8 +231,8 @@ public class ProcessorImportService implements ImportService {
                 labels.addAll(sourceSamples.getLabels());
                 statsSrv.createSampleLabels(logId, labels);
 
-//                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCounts);
-//                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCountsTimeseries);
+                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCounts);
+                statsSrv.createOrUpdateCodeCounts(logId, OVERALL_LABEL_ID, overallCodeCountsTimeseries);
                 statsSrv.createOrUpdateTimeseries(logId, OVERALL_LABEL_ID, overall);
                 statsSrv.createOrUpdateAggregate(logId, OVERALL_LABEL_ID, overallAggregate);
                 statsSrv.createOrUpdateHistogram(logId, OVERALL_LABEL_ID, histAndPercs.getHistogram());
@@ -251,8 +251,8 @@ public class ProcessorImportService implements ImportService {
                     Stats labelAggregate = StatsBuilder.calcAggregateStats(labelSamples);
                     histAndPercs = StatsBuilder.calcHistogram(labelSamples);
 
-//                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCounts);
-//                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCountsTimeseries);
+                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCounts);
+                    statsSrv.createOrUpdateCodeCounts(logId, labelId, labelCodeCountsTimeseries);
                     statsSrv.createOrUpdateTimeseries(logId, labelId, labelTimeseries);
                     statsSrv.createOrUpdateAggregate(logId, labelId, labelAggregate);
                     statsSrv.createOrUpdateHistogram(logId, labelId, histAndPercs.getHistogram());

@@ -38,6 +38,7 @@ import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,6 +85,7 @@ public class ProcessorImportServiceTest {
         verify(statsSvc).createSampleLabels(eq(log.getId()), anyObject());
 
         for (long i = 0; i <= lastLabelId; ++i) {
+            verify(statsSvc, times(2)).createOrUpdateCodeCounts(eq(log.getId()), eq(i), anyObject());
             verify(statsSvc).createOrUpdateTimeseries(eq(log.getId()), eq(i), anyObject());
             verify(statsSvc).createOrUpdateAggregate(eq(log.getId()), eq(i), anyObject());
             verify(statsSvc).createOrUpdateHistogram(eq(log.getId()), eq(i), anyObject());

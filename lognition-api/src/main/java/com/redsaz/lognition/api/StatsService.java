@@ -15,6 +15,7 @@
  */
 package com.redsaz.lognition.api;
 
+import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Stats;
@@ -48,4 +49,5 @@ public interface StatsService {
 
     public void createOrUpdatePercentiles(long logId, long labelId, Percentiles percentiles);
 
+    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts overallCodeCounts);
 }

@@ -17,6 +17,7 @@ package com.redsaz.lognition.store;
 
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.exceptions.AppServerException;
+import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Stats;
@@ -331,6 +332,11 @@ public class JooqStatsService implements StatsService {
         } catch (SQLException ex) {
             throw new AppServerException("Failed to create percentiles: " + ex.getMessage(), ex);
         }
+    }
+
+    @Override
+    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts overallCodeCounts) {
+        // TODO: The thing it says
     }
 
     private static byte[] convertToSeriesData(Timeseries timeseries) {
