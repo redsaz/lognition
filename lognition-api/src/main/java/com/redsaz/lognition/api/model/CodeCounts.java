@@ -85,12 +85,14 @@ public class CodeCounts {
             spanMs = spanMillis;
         }
 
-        public void increment(String code) {
+        public Builder increment(String code) {
             if (Objects.requireNonNull(code).isEmpty()) {
                 throw new NullPointerException("Code cannot be null or empty.");
             }
 
             currentBin.merge(code, 1, (oldValue, u) -> oldValue + 1);
+
+            return this;
         }
 
         /**

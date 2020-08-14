@@ -49,5 +49,5 @@ public interface StatsService {
 
     public void createOrUpdatePercentiles(long logId, long labelId, Percentiles percentiles);
 
-    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts overallCodeCounts);
+    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts codeCounts);
 }

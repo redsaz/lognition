@@ -23,6 +23,7 @@ import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.api.model.Timeseries;
 import static com.redsaz.lognition.model.tables.Aggregate.AGGREGATE;
+import static com.redsaz.lognition.model.tables.CodeCount.CODE_COUNT;
 import static com.redsaz.lognition.model.tables.Histogram.HISTOGRAM;
 import static com.redsaz.lognition.model.tables.Percentile.PERCENTILE;
 import static com.redsaz.lognition.model.tables.SampleLabel.SAMPLE_LABEL;
@@ -335,8 +336,32 @@ public class JooqStatsService implements StatsService {
     }
 
     @Override
-    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts overallCodeCounts) {
-        // TODO: The thing it says
+    public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts codeCounts) {
+        if (logId < 1L) {
+            throw new IllegalArgumentException("Bad log id");
+        } else if (codeCounts == null) {
+            throw new NullPointerException("No code counts were given.");
+        }
+        byte[] countBytes = convertToCodeCountData(codeCounts);
+
+        LOGGER.info("Creating entry in DB...");
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+
+            context.mergeInto(CODE_COUNT,
+                    CODE_COUNT.LOG_ID,
+                    CODE_COUNT.LABEL_ID,
+                    CODE_COUNT.SPAN_MILLIS,
+                    CODE_COUNT.COUNT_DATA).values(
+                            logId,
+                            labelId,
+                            codeCounts.getSpanMillis(),
+                            countBytes
+                    )
+                    .execute();
+        } catch (SQLException ex) {
+            throw new AppServerException("Failed to create code counts: " + ex.getMessage(), ex);
+        }
     }
 
     private static byte[] convertToSeriesData(Timeseries timeseries) {
@@ -433,6 +458,32 @@ public class JooqStatsService implements StatsService {
                 List<Long> values = percentiles.getValues();
                 for (int i = 0; i < percs.size(); ++i) {
                     writer.writeRow(percs.get(i), counts.get(i), values.get(i));
+                }
+            } finally {
+                if (writer != null) {
+                    writer.close();
+                }
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        return baos.toByteArray();
+    }
+
+    private static byte[] convertToCodeCountData(CodeCounts codeCounts) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (Writer w = new OutputStreamWriter(baos)) {
+            CsvWriter writer = null;
+            try {
+                CsvWriterSettings settings = new CsvWriterSettings();
+                settings.setHeaders(codeCounts.getCodes().toArray(new String[codeCounts.getCodes().size()]));
+
+                writer = new CsvWriter(w, settings);
+
+                writer.writeHeaders();
+                List<List<Integer>> counts = codeCounts.getCounts();
+                for (List<Integer> row : counts) {
+                    writer.writeRow(row);
                 }
             } finally {
                 if (writer != null) {

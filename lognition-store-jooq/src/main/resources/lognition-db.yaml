@@ -360,3 +360,39 @@ databaseChangeLog:
             columns:
             - column:
                 name: review_id
+  - changeSet:
+      id: 2
+      author: redsaz
+      changes:
+        - createTable:
+            tableName: code_count
+            columns:
+              - column:
+                  name: log_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: span_millis
+                  type: bigint
+                  constraints:
+                      nullable: false
+              - column:
+                  name: count_data
+                  type: blob
+        - addPrimaryKey:
+            tableName: code_count
+            columnNames: log_id, label_id
+            constraintName: pk_code_count
+        - addForeignKeyConstraint:
+            baseTableName: code_count
+            baseColumnNames: log_id, label_id
+            referencedTableName: sample_label
+            referencedColumnNames: log_id, label_id
+            constraintName: fk_code_count_sample_label
+            onDelete: CASCADE
