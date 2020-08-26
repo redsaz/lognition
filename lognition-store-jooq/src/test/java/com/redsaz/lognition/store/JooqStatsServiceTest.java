@@ -26,6 +26,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import org.hsqldb.jdbc.JDBCPool;
 import org.jooq.SQLDialect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -55,7 +57,11 @@ public class JooqStatsServiceTest {
             // When code counts are stored,
             unit.createOrUpdateCodeCounts(log.getId(), 0, CODE_COUNTS);
 
-            // Then, uh, nothing bad happens, I hope. Whoops no getters!
+            // Then retrieving the code counts will match the source.
+            CodeCounts actual = unit.getCodeCounts(log.getId(), 0);
+            assertEquals(CODE_COUNTS.getCodes(), actual.getCodes());
+            assertEquals(CODE_COUNTS.getCounts(), actual.getCounts());
+            assertEquals(CODE_COUNTS.getSpanMillis(), actual.getSpanMillis());
         }
     }
 
@@ -84,6 +90,22 @@ public class JooqStatsServiceTest {
             unit.createOrUpdateCodeCounts(1, 0, null);
 
             // Then a null pointer exception is thrown. (Checked by test harness)
+        }
+    }
+
+    @Test
+    public void testGetCodeCounts_bogusLogId() throws IOException, SQLException {
+        try (CloseableConnectionPool cp = createConnectionPool()) {
+            JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
+
+            // Given a non-existing log ID,
+            long bogusLogId = 1;
+
+            // When attempting to retrieve code counts,
+            CodeCounts actual = unit.getCodeCounts(bogusLogId, 0);
+
+            // Then null is returned.
+            assertNull("Should be null if log id was not found.", actual);
         }
     }
 

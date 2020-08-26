@@ -29,6 +29,7 @@ import static com.redsaz.lognition.model.tables.Percentile.PERCENTILE;
 import static com.redsaz.lognition.model.tables.SampleLabel.SAMPLE_LABEL;
 import static com.redsaz.lognition.model.tables.Timeseries.TIMESERIES;
 import com.redsaz.lognition.model.tables.records.AggregateRecord;
+import com.redsaz.lognition.model.tables.records.CodeCountRecord;
 import com.redsaz.lognition.model.tables.records.HistogramRecord;
 import com.redsaz.lognition.model.tables.records.PercentileRecord;
 import com.redsaz.lognition.model.tables.records.SampleLabelRecord;
@@ -49,6 +50,8 @@ import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep3;
@@ -70,6 +73,7 @@ public class JooqStatsService implements StatsService {
     private static final RecordToTimeseriesMapper R2TIMESERIES = new RecordToTimeseriesMapper();
     private static final RecordToHistogramMapper R2HISTOGRAM = new RecordToHistogramMapper();
     private static final RecordToPercentilesMapper R2PERCENTILES = new RecordToPercentilesMapper();
+    private static final RecordToCodeCountsMapper R2CODE_COUNTS = new RecordToCodeCountsMapper();
     private static final RecordToSampleLabelMapper R2SAMPLE_LABEL = new RecordToSampleLabelMapper();
     private static final RecordToStatsMapper R2STATS = new RecordToStatsMapper();
 
@@ -183,6 +187,19 @@ public class JooqStatsService implements StatsService {
                     .fetchOne(R2PERCENTILES);
         } catch (SQLException ex) {
             throw new AppServerException("Cannot get percentiles_id=" + logId + " label_id=" + labelId + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public CodeCounts getCodeCounts(long logId, long labelId) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            return context.selectFrom(CODE_COUNT)
+                    .where(CODE_COUNT.LOG_ID.eq(logId))
+                    .and(CODE_COUNT.LABEL_ID.eq(labelId))
+                    .fetchOne(R2CODE_COUNTS);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get code_count_id=" + logId + " label_id=" + labelId + " because: " + ex.getMessage(), ex);
         }
     }
 
@@ -482,8 +499,12 @@ public class JooqStatsService implements StatsService {
 
                 writer.writeHeaders();
                 List<List<Integer>> counts = codeCounts.getCounts();
-                for (List<Integer> row : counts) {
-                    writer.writeRow(row);
+                for (Collection<?> row : counts) {
+                    // Casting in order to avoid calling overloaded method writeRow(Objects...)
+                    // which writes "[1,2]" (or whatever the counts are), but with the cast it will
+                    // call writeRow(Collection<Object>) instead, which writes "1,2" correctly.
+                    Collection<Object> rowObjs = (Collection<Object>) row;
+                    writer.writeRow(rowObjs);
                 }
             } finally {
                 if (writer != null) {
@@ -546,6 +567,41 @@ public class JooqStatsService implements StatsService {
         }
         Percentiles percentiles = new Percentiles(counts, values, percs);
         return percentiles;
+    }
+
+    private static CodeCounts convertToCodeCounts(long spanMillis, byte[] codeCountData) {
+        final List<String> codeList = new ArrayList<>();
+        List<List<Integer>> codeCounts = new ArrayList<>();
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(codeCountData)) {
+            CsvParserSettings settings = new CsvParserSettings();
+            settings.setHeaderExtractionEnabled(true);
+            settings.setProcessor(new Processor<Context>() {
+                @Override
+                public void processStarted(Context context) {
+                    codeList.addAll(Arrays.asList(context.headers()));
+                }
+
+                @Override
+                public void rowProcessed(String[] row, Context context) {
+                    List<Integer> counts = new ArrayList<>(row.length);
+                    for (int i = 0; i < row.length; ++i) {
+                        counts.add(Integer.parseInt(row[i]));
+                    }
+                    codeCounts.add(counts);
+                }
+
+                @Override
+                public void processEnded(Context context) {
+                    // Do nothing.
+                }
+
+            });
+            CsvParser parser = new CsvParser(settings);
+            parser.parse(bais, Charset.forName("UTF8"));
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not write stats data.", ex);
+        }
+        return new CodeCounts(spanMillis, codeList, codeCounts);
     }
 
     public static byte[] writeTimeseriesCsv(List<Stats> stats) {
@@ -659,6 +715,20 @@ public class JooqStatsService implements StatsService {
             }
             return convertToPercentiles(
                     record.getSeriesData()
+            );
+        }
+    }
+
+    private static class RecordToCodeCountsMapper implements RecordMapper<CodeCountRecord, CodeCounts> {
+
+        @Override
+        public CodeCounts map(CodeCountRecord record) {
+            if (record == null) {
+                return null;
+            }
+            return convertToCodeCounts(
+                    record.getSpanMillis(),
+                    record.getCountData()
             );
         }
     }

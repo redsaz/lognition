@@ -41,6 +41,8 @@ public interface StatsService {
 
     public Percentiles getPercentiles(long logId, long labelId);
 
+    public CodeCounts getCodeCounts(long logId, long labelId);
+
     public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate);
 
     public void createOrUpdateTimeseries(long logId, long labelId, Timeseries timeseries);
