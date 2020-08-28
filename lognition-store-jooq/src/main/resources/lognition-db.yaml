@@ -387,7 +387,7 @@ databaseChangeLog:
                   type: blob
         - addPrimaryKey:
             tableName: code_count
-            columnNames: log_id, label_id
+            columnNames: log_id, label_id, span_millis
             constraintName: pk_code_count
         - addForeignKeyConstraint:
             baseTableName: code_count

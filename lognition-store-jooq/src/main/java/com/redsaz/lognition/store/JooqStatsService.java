@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep3;
 import org.jooq.RecordMapper;
@@ -191,15 +192,29 @@ public class JooqStatsService implements StatsService {
     }
 
     @Override
-    public CodeCounts getCodeCounts(long logId, long labelId) {
+    public CodeCounts getCodeCounts(long logId, long labelId, long spanMillis) {
         try (Connection c = pool.getConnection()) {
             DSLContext context = DSL.using(c, dialect);
             return context.selectFrom(CODE_COUNT)
                     .where(CODE_COUNT.LOG_ID.eq(logId))
                     .and(CODE_COUNT.LABEL_ID.eq(labelId))
+                    .and(CODE_COUNT.SPAN_MILLIS.eq(spanMillis))
                     .fetchOne(R2CODE_COUNTS);
         } catch (SQLException ex) {
-            throw new AppServerException("Cannot get code_count_id=" + logId + " label_id=" + labelId + " because: " + ex.getMessage(), ex);
+            throw new AppServerException("Cannot get code_count_id=" + logId + " label_id=" + labelId + " span_millis=" + spanMillis + " because: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public Map<Long, CodeCounts> getCodeCountsForLog(long logId, long spanMillis) {
+        try (Connection c = pool.getConnection()) {
+            DSLContext context = DSL.using(c, dialect);
+            return context.selectFrom(CODE_COUNT)
+                    .where(CODE_COUNT.LOG_ID.eq(logId))
+                    .and(CODE_COUNT.SPAN_MILLIS.eq(spanMillis))
+                    .fetchMap(CODE_COUNT.LABEL_ID, R2CODE_COUNTS);
+        } catch (SQLException ex) {
+            throw new AppServerException("Cannot get code_count_id=" + logId + " span_millis=" + spanMillis + " because: " + ex.getMessage(), ex);
         }
     }
 

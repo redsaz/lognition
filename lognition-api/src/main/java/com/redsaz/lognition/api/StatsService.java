@@ -21,6 +21,7 @@ import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.api.model.Timeseries;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Stores and accesses statistics such as timeseries.
@@ -41,7 +42,25 @@ public interface StatsService {
 
     public Percentiles getPercentiles(long logId, long labelId);
 
-    public CodeCounts getCodeCounts(long logId, long labelId);
+    /**
+     * Retrieves a specific code count for a given log, label, and spansize.
+     *
+     * @param logId The log identifier
+     * @param labelId The sample label identifier
+     * @param spanMillis The spansize of the code counts
+     * @return The code counts if found, or null otherwise.
+     */
+    public CodeCounts getCodeCounts(long logId, long labelId, long spanMillis);
+
+    /**
+     * Retrieves code counts of all labels for a given log and spansize.
+     *
+     * @param logId The log identifier
+     * @param spanMillis The spansize of the code counts
+     * @return If found, a map of the code counts, with the key being the sample label id and the
+     * value being the code counts. If not found, an empty map is returned.
+     */
+    public Map<Long, CodeCounts> getCodeCountsForLog(long logId, long spanMillis);
 
     public void createOrUpdateAggregate(long logId, long labelId, Stats aggregate);
 
@@ -51,5 +70,14 @@ public interface StatsService {
 
     public void createOrUpdatePercentiles(long logId, long labelId, Percentiles percentiles);
 
+    /**
+     * Stores or updates the code counts for a given log, label, and spansize. The spansize is
+     * looked up in the given codeCounts parameter. A spansize of 0 defines the aggregate code count
+     * whereas any other positive number defines the timespan that is chunked up.
+     *
+     * @param logId The log identifier
+     * @param labelId The sample label identifier
+     * @param codeCounts The count of status codes, including spansize.
+     */
     public void createOrUpdateCodeCounts(long logId, long labelId, CodeCounts codeCounts);
 }
