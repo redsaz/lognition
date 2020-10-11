@@ -62,6 +62,68 @@ public class CodeCounts {
         return counts;
     }
 
+    /**
+     * Given a list of codes, will return a new CodeCounts that contains only those codes, in that
+     * order. Any codes that was included in the original CodeCounts but weren't listed in the
+     * codeList will be dropped. Any codes not included in the original but are listed in the
+     * codeList will be added with a count of 0.
+     * <p>
+     * Example: If CodeCounts x contains code->count of [200->3,301->4,404->5], and we call
+     * x.normalizeUsing(Arrays.of("200", "204", "404")), then a new CodeCounts is returned with:
+     * [200->3, 204->0, 404->5]. Note that the new CodeCounts is missing the "301" we had earlier,
+     * and picked up a "204" code with amount of 0.
+     *
+     * @param codeList the list of codes to normalize to
+     * @return A new CodeCounts containing the codes from the codeList, in the order of that list.
+     */
+    public CodeCounts normalizeUsing(List<String> codeList) {
+        if (codeList.equals(codes)) {
+            return this;
+        }
+        // If the new code list is empty, then return an empty CodeCounts.
+        // Or, if our CodeCounts is empty (no codes and no bins), then return an empty CodeCounts.
+        if (codeList.isEmpty() || (codes.isEmpty() && counts.isEmpty())) {
+            return new CodeCounts(this.getSpanMillis(), Collections.emptyList(), Collections.emptyList());
+        }
+
+        // Since counts are stored [bin][counts], this means we're rearranging the counts based on
+        // the new positions of the codes (it is stored in lexicographical order), and must repeat
+        // that for every bin.
+        // (If it was stored [counts][bin], then it'd be a matter of finding the index and grabbing
+        // the bin list once per code, but this is not the case here.)
+        //
+        // The algorithm is to go through every code in the current CodeCount, and find its position
+        // in the given codeList (or -1 if not in the given codeList). These are put into a list in
+        // the order of the current CodeCount.
+        // So if the original index is 0, but the new is 1, then newIdx[0] == 1. Or, if the
+        // original index was 1, but the new counts won't have that code, then newIdx[1] == -1.
+        List<Integer> newIdx = new ArrayList<>(codes.size());
+        for (String code : codes) {
+            int newPos = codeList.indexOf(code);
+
+            newIdx.add(newPos);
+        }
+
+        // Next, for each bin, we create a new 0-filled list, and copy the values from the original
+        // list for the bin into the new one.
+        int newSize = codeList.size();
+        List<List<Integer>> newCounts = new ArrayList<>(counts.size());
+        for (List<Integer> bin : counts) {
+            List<Integer> newBin = new ArrayList<>(Collections.nCopies(newSize, 0));
+
+            for (int i = 0; i < newIdx.size(); ++i) {
+                int newPos = newIdx.get(i);
+                if (newPos >= 0) {
+                    newBin.set(newPos, bin.get(i));
+                }
+            }
+
+            newCounts.add(newBin);
+        }
+
+        return new CodeCounts(spanMs, codeList, newCounts);
+    }
+
     private static List<List<Integer>> twoDCopy(List<List<Integer>> arry) {
         List<List<Integer>> result = new ArrayList<>(arry.size());
 

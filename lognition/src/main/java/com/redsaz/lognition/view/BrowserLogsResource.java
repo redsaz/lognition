@@ -22,6 +22,7 @@ import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
+import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.Histogram;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Label;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -173,50 +175,50 @@ public class BrowserLogsResource {
                 switch (subParts.getName()) {
                     case "content":
                         try (InputStream contentStream = part.getBody(InputStream.class, null)) {
-                            LOGGER.info("Retrieving filename...");
-                            filename = subParts.getFilename();
-                            LOGGER.info("Uploading content from filename={}...", filename);
+                        LOGGER.info("Retrieving filename...");
+                        filename = subParts.getFilename();
+                        LOGGER.info("Uploading content from filename={}...", filename);
 
-                            try {
-                                sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
-                                resultLog = logsSrv.create(sourceLog);
+                        try {
+                            sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+                            resultLog = logsSrv.create(sourceLog);
 
-                                content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
-                                LOGGER.info("Uploaded content from {}.", filename);
-                                LOGGER.info("Created import_id={}.", content.getId());
-                            } catch (AppClientException ex) {
-                                if (resultLog != null) {
-                                    logsSrv.delete(resultLog.getId());
-                                }
-                                throw ex;
+                            content = importSrv.upload(contentStream, resultLog, filename, updateMillis);
+                            LOGGER.info("Uploaded content from {}.", filename);
+                            LOGGER.info("Created import_id={}.", content.getId());
+                        } catch (AppClientException ex) {
+                            if (resultLog != null) {
+                                logsSrv.delete(resultLog.getId());
                             }
-                            break;
-                        } catch (IOException ex) {
-                            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
-                            Response resp = Response.serverError().entity(ex).build();
-                            return resp;
+                            throw ex;
                         }
+                        break;
+                    } catch (IOException ex) {
+                        LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
+                        Response resp = Response.serverError().entity(ex).build();
+                        return resp;
+                    }
                     case "name":
                         try {
-                            name = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting name.", ex);
-                        }
-                        break;
+                        name = part.getBodyAsString();
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting name.", ex);
+                    }
+                    break;
                     case "notes":
                         try {
-                            notes = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting notes.", ex);
-                        }
-                        break;
+                        notes = part.getBodyAsString();
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting notes.", ex);
+                    }
+                    break;
                     case "labels":
                         try {
-                            labels = toLabelsList(part.getBodyAsString());
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting labels.", ex);
-                        }
-                        break;
+                        labels = toLabelsList(part.getBodyAsString());
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting labels.", ex);
+                    }
+                    break;
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -329,25 +331,25 @@ public class BrowserLogsResource {
                 switch (subParts.getName()) {
                     case "name":
                         try {
-                            name = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting name.", ex);
-                        }
-                        break;
+                        name = part.getBodyAsString();
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting name.", ex);
+                    }
+                    break;
                     case "notes":
                         try {
-                            notes = part.getBodyAsString();
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting notes.", ex);
-                        }
-                        break;
+                        notes = part.getBodyAsString();
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting notes.", ex);
+                    }
+                    break;
                     case "labels":
                         try {
-                            labels = toLabelsList(part.getBodyAsString());
-                        } catch (IOException ex) {
-                            LOGGER.error("Error getting labels.", ex);
-                        }
-                        break;
+                        labels = toLabelsList(part.getBodyAsString());
+                    } catch (IOException ex) {
+                        LOGGER.error("Error getting labels.", ex);
+                    }
+                    break;
                     default: {
                         // Skip it, we don't use it.
                         LOGGER.info("Skipped part={}", subParts.getName());
@@ -417,6 +419,10 @@ public class BrowserLogsResource {
         List<Stats> aggregates = new ArrayList<>(sampleLabels.size());
         List<String> histogramGraphs = new ArrayList<>(sampleLabels.size());
         List<String> percentileGraphs = new ArrayList<>(sampleLabels.size());
+        List<String> timeseriesCodeCountGraphs = new ArrayList<>(sampleLabels.size());
+        List<CodeCounts> aggregateCodeCounts = normalizeCodeCounts(statsSrv.getCodeCountsForLog(logId, 0L));
+        Map<Long, CodeCounts> timeseriesCodeCounts = statsSrv.getCodeCountsForLog(logId, 60_000L);
+
         List<String> errorTimeseriesGraphs = new ArrayList<>(sampleLabels.size());
         List<String> errorPercentTimeseriesGraphs = new ArrayList<>(sampleLabels.size());
         for (int i = 0; i < sampleLabels.size(); ++i) {
@@ -437,6 +443,9 @@ public class BrowserLogsResource {
             String percentileGraph = createPercentileGraph(percentile, label, i);
             percentileGraphs.add(percentileGraph);
 
+            String codeCountsGraph = createTimeseriesCodeCountsGraph(timeseriesCodeCounts.get((long) i), label, i);
+            timeseriesCodeCountGraphs.add(codeCountsGraph);
+
             String errorGraph = createTimeseriesErrorGraph(timeseries, label, i);
             errorTimeseriesGraphs.add(errorGraph);
 
@@ -456,6 +465,9 @@ public class BrowserLogsResource {
         root.put("percentileGraphs", percentileGraphs);
         root.put("errorTimeseriesGraphs", errorTimeseriesGraphs);
         root.put("errorPercentTimeseriesGraphs", errorPercentTimeseriesGraphs);
+        root.put("aggregateCodes", aggregateCodeCounts.get(0).getCodes());
+        root.put("aggregateCodeCounts", aggregateCodeCounts);
+        root.put("timeseriesCodeCountsGraphs", timeseriesCodeCountGraphs);
         root.put("base", base);
         root.put("dist", dist);
         root.put("title", log.getName());
@@ -663,6 +675,76 @@ public class BrowserLogsResource {
         sb.append("title: '").append(label).append(" Percentiles',\n");
         sb.append("xlabel: 'Percentile',\n");
         sb.append("ylabel: 'Response Time (ms)',\n");
+        sb.append("});");
+        return sb.toString();
+    }
+
+    /**
+     * Normalizes each CodeCounts so they have the same number of codes in each.
+     * <p>
+     * For example, the map.get(0) CodeCounts (which is the "overall" CodeCounts, the sum of all
+     * counts) may have codes=>counts of "200"=>10, "404"=>4, "500"=>1, and "503"=>1. The map.get(1)
+     * CodeCounts (which is just the CdeCounts for a single label) may have "200"=>4, "404"=>3, and
+     * "500"=>1. The map.get(2) CodeCounts may have "200"=>6, "404"=>1, and "503"=>1.
+     * <p>
+     * This method will return a list where map.get(0) remains unchanged, but map.get(1) will have
+     * "200"=>4, "404"=>3, "500"=>1, and "503"=>0, and map.get(2) will have "200"=>6, "404"=>1,
+     * "500"=>0, and "503"=>1. This way all of the CodeCounts can be represented by a table, or
+     * perhaps by a stacked bar chart. The list is in the order of the keys, so 0 is first, 1 is
+     * next, etc.
+     *
+     * @param originals The codeCounts to normalize
+     * @return A list with new CodeCounts whose counts have been normalized, in the natural order of
+     * the keys.
+     */
+    private static List<CodeCounts> normalizeCodeCounts(Map<Long, CodeCounts> originals) {
+        // Since overall will by definition have ALL of the code counts, it already has the complete
+        // list of codes. Normalize all the CodeCounts to this.
+        CodeCounts overall = originals.get(0L);
+        List<String> overallCodes = overall.getCodes();
+
+        List<CodeCounts> results = new ArrayList<>(originals.size());
+        // The keys in the map are 0 (inclusive) through map.size (exclusive), no gaps.
+        results.add(overall);
+        for (int i = 1; i < originals.size(); ++i) {
+            CodeCounts normalized = originals.get(Long.valueOf(i)).normalizeUsing(overallCodes);
+            results.add(normalized);
+        }
+
+        return results;
+    }
+
+    private static String createTimeseriesCodeCountsGraph(CodeCounts codeCounts, String label, int index) {
+        if (codeCounts == null) {
+            LOGGER.debug("CodeCounts timeseries is empty.");
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("new Dygraph(document.getElementById(\"codecountsgraphdiv").append(index).append("\"),\n");
+        String csvRowTail = " +\n";
+        sb.append("\"offsetMillis,")
+                .append(String.join(",", codeCounts.getCodes()))
+                .append("\\n\"")
+                .append(csvRowTail);
+        int i = 0;
+        for (List<Integer> counts : codeCounts.getCounts()) {
+            List<String> countStrings = counts.stream().map(count -> Integer.toString(count)).collect(Collectors.toList());
+            sb.append("\"")
+                    .append(codeCounts.getSpanMillis() * i)
+                    .append(',')
+                    .append(String.join(",", countStrings))
+                    .append("\\n\"")
+                    .append(csvRowTail);
+            i++;
+        }
+        if (!codeCounts.getCounts().isEmpty()) {
+            sb.setLength(sb.length() - csvRowTail.length());
+        }
+        sb.append(", {\n");
+        sb.append("legend: 'always',\n");
+        sb.append("title: '").append(label).append("',\n");
+        sb.append("xlabel: 'Time',\n");
+        sb.append("ylabel: 'Count',\n");
         sb.append("});");
         return sb.toString();
     }

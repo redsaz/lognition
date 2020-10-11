@@ -16,8 +16,10 @@
 package com.redsaz.lognition.api.model;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import org.junit.Test;
 
 /**
@@ -256,6 +258,92 @@ public class TestCodeCounts {
         // and trying to alter the codeCounts list should result in an exception.
         // (Verified by test harness)
         counts.getCodes().set(0, "BOGUS");
+    }
+
+    /**
+     * This tests calling normalizeUsing() in the usual scenario: Each log usually has different
+     * sample labels and one "overall" label. The "overall" label will have code counts that are the
+     * sum of all the code counts of the sample labels, so it will actually have all of the codes
+     * that we care about.
+     * <p>
+     * "Normalizing" in this case means filling in the missing codes with a count of 0, so that they
+     * can be compared in a table.
+     */
+    @Test
+    public void testNormalizeUsing() {
+        // Given one CodeCounts with counts for 200 and 404,
+        CodeCounts label1 = new CodeCounts.Builder(15000L)
+                .increment("200")
+                .increment("200")
+                .increment("400")
+                .commitBin()
+                .build();
+
+        // and another with counts for 200, 301, and 404,
+        CodeCounts overall = new CodeCounts.Builder(15000L)
+                .increment("200")
+                .increment("200")
+                .increment("400")
+                .increment("301")
+                .commitBin()
+                .build();
+
+        // When I normalize the first using the codes from the second CodeCounts,
+        CodeCounts actual = label1.normalizeUsing(overall.getCodes());
+
+        // Then the result should be the same as the original, but with new code "301" with count 0.
+        assertEquals("spanMillis shouldn't change", label1.getSpanMillis(), actual.getSpanMillis());
+        assertEquals("count for 200 shouldn't change", label1.getCounts().get(0).get(0), actual.getCounts().get(0).get(0));
+        assertEquals("count for 301 should be 0", Integer.valueOf(0), actual.getCounts().get(0).get(1));
+        assertEquals("count for 400 shouldn't change", label1.getCounts().get(0).get(1), actual.getCounts().get(0).get(2));
+    }
+
+    @Test
+    public void testNormalizeUsing_emptyCodesList() {
+        // Given one CodeCounts with counts for 200 and 404,
+        CodeCounts label1 = new CodeCounts.Builder(15000L)
+                .increment("200")
+                .increment("200")
+                .increment("400")
+                .commitBin()
+                .build();
+
+        // When I normalize it with an empty codes list,
+        CodeCounts actual = label1.normalizeUsing(Collections.emptyList());
+
+        // Then the result should be an empty CodesList, without bins or codes.
+        assertEquals("Should have no codes", Collections.emptyList(), actual.getCodes());
+        assertEquals("Should have no counts", Collections.emptyList(), actual.getCounts());
+    }
+
+    @Test
+    public void testNormalizeUsing_emptyOriginal() {
+        // Given one empty CodeCounts, without bins or codes,
+        CodeCounts label1 = new CodeCounts.Builder(15000L).build();
+
+        // When I normalize it to a codes list,
+        CodeCounts actual = label1.normalizeUsing(Arrays.asList("200"));
+
+        // Then the result should be an empty CodesList, without bins or codes.
+        assertEquals("Should have no codes", Collections.emptyList(), actual.getCodes());
+        assertEquals("Should have no counts", Collections.emptyList(), actual.getCounts());
+    }
+
+    @Test
+    public void testNormalizeUsing_equalCodes() {
+        // Given one CodeCounts with counts for 200 and 404,
+        CodeCounts label1 = new CodeCounts.Builder(15000L)
+                .increment("200")
+                .increment("200")
+                .increment("400")
+                .commitBin()
+                .build();
+
+        // When I normalize it with an equal codes list,
+        CodeCounts actual = label1.normalizeUsing(Arrays.asList("200", "400"));
+
+        // Then the result should be the same instance as the original
+        assertSame("The same CodeCounts should be returned if the code lists are the same.", label1, actual);
     }
 
 }

@@ -50,6 +50,9 @@
           <a class="nav-link" id="timeseries-tab" data-toggle="tab" href="#timeseries" role="tab" aria-controls="timeseries" aria-selected="false">Timeseries</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" id="responses-timeseries-tab" data-toggle="tab" href="#responses-timeseries" role="tab" aria-controls="responses-timeseries" aria-selected="false">Responses Timeseries</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" id="error-timeseries-tab" data-toggle="tab" href="#error-timeseries" role="tab" aria-controls="error-timeseries" aria-selected="false">Error Timeseries</a>
         </li>
         <li class="nav-item">
@@ -100,6 +103,30 @@
         </table>
       </div>
     </div>
+    <div class="tab-pane" id="responses" role="tabpanel" aria-labelledby="responses-tab">
+      <div class="container">
+        <table class="table table-hover">
+          <thead>
+          <tr>
+            <th>Label</th>
+<#list aggregateCodes as code>
+            <th>${code}</th>
+</#list>
+          </tr>
+          </thead>
+          <tbody>
+<#list aggregateCodeCounts as a>
+          <tr>
+            <th>${sampleLabels[a?index]}</th>
+<#list a.getCounts()[0] as codeCount>
+            <td>${codeCount}</td>
+</#list>
+          </tr>
+</#list>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <div class="tab-pane" id="histograms" role="tabpanel" aria-labelledby="histograms-tab">
       <#list histogramGraphs as h>
       <div class="row">
@@ -128,6 +155,17 @@
         <div class="col-sm-12 col-md-12">
           <div class="graph loggraph">
             <div id="graphdiv${graph?index}" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+      </#list>
+    </div>
+    <div class="tab-pane" id="responses-timeseries" role="tabpanel" aria-labelledby="responses-timeseries-tab">
+      <#list timeseriesCodeCountsGraphs as graph>
+      <div class="row">
+        <div class="col-sm-12 col-md-12">
+          <div class="graph loggraph">
+            <div id="codecountsgraphdiv${graph?index}" style="width: 100%"></div>
           </div>
         </div>
       </div>
@@ -169,6 +207,11 @@
         </script>
       </#list>
       <#list graphs as graph>
+        <script>
+          <#noescape>${graph}</#noescape>
+        </script>
+      </#list>
+      <#list timeseriesCodeCountsGraphs as graph>
         <script>
           <#noescape>${graph}</#noescape>
         </script>
