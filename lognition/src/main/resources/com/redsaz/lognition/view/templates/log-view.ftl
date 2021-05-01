@@ -35,28 +35,28 @@
       <div class="row">
       <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
-          <a class="nav-link active" id="summary-tab" data-toggle="tab" href="#summary" role="tab" aria-controls="summary" aria-selected="true">Summary</a>
+          <a class="nav-link active" id="summary-tab" data-toggle="tab" href="#summary" role="tab" aria-controls="summary" aria-selected="true" onclick="switchActiveNav('nav-link', this)">Summary</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="responses-tab" data-toggle="tab" href="#responses" role="tab" aria-controls="responses" aria-selected="false">Responses</a>
+          <a class="nav-link" id="responses-tab" data-toggle="tab" href="#responses" role="tab" aria-controls="responses" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Responses</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="histograms-tab" data-toggle="tab" href="#histograms" role="tab" aria-controls="histograms" aria-selected="false">Histograms</a>
+          <a class="nav-link" id="histograms-tab" data-toggle="tab" href="#histograms" role="tab" aria-controls="histograms" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Histograms</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="percentiles-tab" data-toggle="tab" href="#percentiles" role="tab" aria-controls="percentiles" aria-selected="false">Percentiles</a>
+          <a class="nav-link" id="percentiles-tab" data-toggle="tab" href="#percentiles" role="tab" aria-controls="percentiles" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Percentiles</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="timeseries-tab" data-toggle="tab" href="#timeseries" role="tab" aria-controls="timeseries" aria-selected="false">Timeseries</a>
+          <a class="nav-link" id="timeseries-tab" data-toggle="tab" href="#timeseries" role="tab" aria-controls="timeseries" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Timeseries</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="responses-timeseries-tab" data-toggle="tab" href="#responses-timeseries" role="tab" aria-controls="responses-timeseries" aria-selected="false">Responses Timeseries</a>
+          <a class="nav-link" id="responses-timeseries-tab" data-toggle="tab" href="#responses-timeseries" role="tab" aria-controls="responses-timeseries" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Responses Timeseries</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="error-timeseries-tab" data-toggle="tab" href="#error-timeseries" role="tab" aria-controls="error-timeseries" aria-selected="false">Error Timeseries</a>
+          <a class="nav-link" id="error-timeseries-tab" data-toggle="tab" href="#error-timeseries" role="tab" aria-controls="error-timeseries" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Error Timeseries</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="error-percent-timeseries-tab" data-toggle="tab" href="#error-percent-timeseries" role="tab" aria-controls="error-percent-timeseries" aria-selected="false">Error% Timeseries</a>
+          <a class="nav-link" id="error-percent-timeseries-tab" data-toggle="tab" href="#error-percent-timeseries" role="tab" aria-controls="error-percent-timeseries" aria-selected="false" onclick="switchActiveNav('nav-link', this)">Error% Timeseries</a>
         </li>
       </ul>
       </div>
