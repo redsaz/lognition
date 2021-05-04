@@ -46,6 +46,11 @@
     <dependencies>
         <dependency>
             <groupId>com.redsaz.lognition</groupId>
+            <artifactId>lognition-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redsaz.lognition</groupId>
             <artifactId>lognition-api</artifactId>
             <version>${project.version}</version>
         </dependency>

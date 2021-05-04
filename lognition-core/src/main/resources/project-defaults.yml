@@ -1,0 +1,7 @@
+swarm:
+    undertow:
+        servers:
+            default-server:
+                http-listeners:
+                    default:
+                        max-post-size: 3221225472

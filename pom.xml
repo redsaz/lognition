@@ -24,6 +24,7 @@
         <module>lognition-api</module>
         <module>lognition-store-jooq</module>
         <module>lognition-convert</module>
+        <module>lognition-core</module>
         <module>lognition</module>
     </modules>
     <properties>
