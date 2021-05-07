@@ -25,6 +25,7 @@
         <module>lognition-store-jooq</module>
         <module>lognition-convert</module>
         <module>lognition-core</module>
+        <module>lognition-quarkus</module>
         <module>lognition-thorntail</module>
     </modules>
     <properties>
