@@ -25,7 +25,7 @@
         <module>lognition-store-jooq</module>
         <module>lognition-convert</module>
         <module>lognition-core</module>
-        <module>lognition</module>
+        <module>lognition-thorntail</module>
     </modules>
     <properties>
         <version.thorntail>2.7.0.Final</version.thorntail>

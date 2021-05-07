@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.redsaz.lognition</groupId>
-    <artifactId>lognition</artifactId>
+    <artifactId>lognition-thorntail</artifactId>
     <version>0.1.4</version>
     <packaging>war</packaging>
     <parent>
