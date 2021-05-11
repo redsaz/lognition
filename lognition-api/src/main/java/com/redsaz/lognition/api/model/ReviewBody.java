@@ -32,7 +32,7 @@ public class ReviewBody {
     private final List<ReviewPanel> panels;
 
     @JsonCreator
-    @ConstructorProperties({"title", "notes", "baseLogLabelSelector"})
+    @ConstructorProperties({"title", "notes", "baseLogLabelSelector", "panels"})
     public ReviewBody(
             @JsonProperty("title") String inTitle,
             @JsonProperty("notes") String inNotes,

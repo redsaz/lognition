@@ -37,7 +37,7 @@ public class Review {
     private final String body;
 
     @JsonCreator
-    @ConstructorProperties({"id", "uriName", "title", "description", "createdMillis", "lastUpdatedMillis", "body"})
+    @ConstructorProperties({"id", "uriName", "name", "description", "createdMillis", "lastUpdatedMillis", "body"})
     public Review(
             @JsonProperty("id") long inId,
             @JsonProperty("uriName") String inUriName,

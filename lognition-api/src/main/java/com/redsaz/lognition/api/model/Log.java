@@ -33,12 +33,12 @@ public class Log {
     private final String notes;
 
     @JsonCreator
-    @ConstructorProperties({"id", "uriName", "name", "notes"})
+    @ConstructorProperties({"id", "status", "uriName", "name", "dataFile", "notes"})
     public Log(
             @JsonProperty("id") long inId,
             @JsonProperty("status") Status inStatus,
             @JsonProperty("uriName") String inUriName,
-            @JsonProperty("title") String inName,
+            @JsonProperty("name") String inName,
             @JsonProperty("dataFile") String inDataFile,
             @JsonProperty("notes") String inNotes) {
         id = inId;
