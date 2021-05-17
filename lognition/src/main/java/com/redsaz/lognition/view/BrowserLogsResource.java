@@ -443,8 +443,11 @@ public class BrowserLogsResource {
             String percentileGraph = createPercentileGraph(percentile, label, i);
             percentileGraphs.add(percentileGraph);
 
-            String codeCountsGraph = createTimeseriesCodeCountsGraph(timeseriesCodeCounts.get((long) i), label, i);
-            timeseriesCodeCountGraphs.add(codeCountsGraph);
+            CodeCounts timeseriesCodeCountsForLabel = timeseriesCodeCounts.get((long) i);
+            if (timeseriesCodeCountsForLabel != null) {
+                String codeCountsGraph = createTimeseriesCodeCountsGraph(timeseriesCodeCountsForLabel, label, i);
+                timeseriesCodeCountGraphs.add(codeCountsGraph);
+            }
 
             String errorGraph = createTimeseriesErrorGraph(timeseries, label, i);
             errorTimeseriesGraphs.add(errorGraph);
@@ -465,8 +468,10 @@ public class BrowserLogsResource {
         root.put("percentileGraphs", percentileGraphs);
         root.put("errorTimeseriesGraphs", errorTimeseriesGraphs);
         root.put("errorPercentTimeseriesGraphs", errorPercentTimeseriesGraphs);
-        root.put("aggregateCodes", aggregateCodeCounts.get(0).getCodes());
-        root.put("aggregateCodeCounts", aggregateCodeCounts);
+        if (aggregateCodeCounts.size() > 0) {
+            root.put("aggregateCodes", aggregateCodeCounts.get(0).getCodes());
+            root.put("aggregateCodeCounts", aggregateCodeCounts);
+        }
         root.put("timeseriesCodeCountsGraphs", timeseriesCodeCountGraphs);
         root.put("base", base);
         root.put("dist", dist);
@@ -698,6 +703,9 @@ public class BrowserLogsResource {
      * the keys.
      */
     private static List<CodeCounts> normalizeCodeCounts(Map<Long, CodeCounts> originals) {
+        if (originals == null || originals.isEmpty()) {
+            return Collections.emptyList();
+        }
         // Since overall will by definition have ALL of the code counts, it already has the complete
         // list of codes. Normalize all the CodeCounts to this.
         CodeCounts overall = originals.get(0L);

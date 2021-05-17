@@ -35,7 +35,7 @@ public class Percentiles {
      * Create a new percentiles list.
      *
      * @param totalCounts array of the number of samples covered by the percentiles. Must be same
-     * number of elements as values and bucketMaximums arrays.
+     * number of elements as values and percentiles lists.
      * @param values array of the value at each percentile. Must be same size as percentiles.
      * @param percentiles array of percentiles
      */
