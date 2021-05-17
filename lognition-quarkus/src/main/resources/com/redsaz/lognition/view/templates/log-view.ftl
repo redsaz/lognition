@@ -105,6 +105,7 @@
     </div>
     <div class="tab-pane" id="responses" role="tabpanel" aria-labelledby="responses-tab">
       <div class="container">
+<#if (object.attribute)??>
         <table class="table table-hover">
           <thead>
           <tr>
@@ -125,6 +126,9 @@
 </#list>
           </tbody>
         </table>
+<#else>
+        Response statistics were not collected for this log.
+</#if>
       </div>
     </div>
     <div class="tab-pane" id="histograms" role="tabpanel" aria-labelledby="histograms-tab">
@@ -168,6 +172,10 @@
             <div id="codecountsgraphdiv${graph?index}" style="width: 100%"></div>
           </div>
         </div>
+      </div>
+      <#else>
+      <div class="container">
+        Response timeseries were not collected for this log.
       </div>
       </#list>
     </div>

@@ -18,11 +18,12 @@ package com.redsaz.lognition.api.model;
 import java.util.Objects;
 
 /**
- * A label is a key/value pair that can be attached to logs. The key is required and must be no
- * longer than 63-characters. It may start and end with alphanumeric characters [a-zA-Z0-9] and can
- * have alphanumeric characters, dashes (-), and periods (.) in between. The value is optional, it
- * can be either an empty String or can start and end with alphanumeric characters with alphanumeric
- * characters, dashes, and periods in between.
+ * A label is a key/value pair that can be attached to logs. Labels are how reports can select which
+ * logs to report on. The key is required and must be no longer than 63-characters. It may start and
+ * end with alphanumeric characters [a-zA-Z0-9] and can have alphanumeric characters, dashes (-),
+ * and periods (.) in between. The value is optional, it can be either an empty String or can start
+ * and end with alphanumeric characters with alphanumeric characters, dashes, and periods in
+ * between.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
