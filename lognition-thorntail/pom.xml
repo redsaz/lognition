@@ -20,12 +20,12 @@
 
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-thorntail</artifactId>
-    <version>0.1.4</version>
+    <version>0.2.0</version>
     <packaging>war</packaging>
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>0.1.4</version>
+        <version>0.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
