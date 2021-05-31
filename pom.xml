@@ -26,7 +26,6 @@
         <module>lognition-convert</module>
         <module>lognition-core</module>
         <module>lognition-quarkus</module>
-        <module>lognition-thorntail</module>
     </modules>
     <properties>
         <version.thorntail>2.7.0.Final</version.thorntail>
@@ -131,13 +130,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
-            </dependency>
-            <dependency>
-                <groupId>io.thorntail</groupId>
-                <artifactId>bom</artifactId>
-                <version>${version.thorntail}</version>
-                <scope>import</scope>
-                <type>pom</type>            
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
