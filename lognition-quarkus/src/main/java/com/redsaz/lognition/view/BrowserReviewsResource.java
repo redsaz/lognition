@@ -46,7 +46,6 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -157,20 +156,6 @@ public class BrowserReviewsResource {
     public Response getReviewByIdWithName(@PathParam("id") long reviewId,
             @PathParam("urlName") String urlName) {
         return getReview(reviewId, urlName);
-    }
-
-    /**
-     * Delete a review.
-     *
-     * @param reviewId The id of the review.
-     * @return Review list page.
-     */
-    @DELETE
-    @Produces(MediaType.TEXT_HTML)
-    @Path("{id}")
-    public Response deleteReview(@PathParam("id") long reviewId) {
-        reviewsSrv.delete(reviewId);
-        return Response.status(Response.Status.NO_CONTENT).build();
     }
 
     @POST
