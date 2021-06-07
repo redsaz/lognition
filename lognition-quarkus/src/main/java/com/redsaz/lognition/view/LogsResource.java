@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -75,14 +76,26 @@ public class LogsResource {
     }
 
     /**
-     * Lists all of the logs URI and titles.
+     * Lists logs URI and titles. If given a selector then logs with matching labels are listed. If
+     * no selector is given then all logs are listed.
      *
+     * @param labelSelector label selector for logs
      * @return Logs, by URI and title.
      */
     @GET
     @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response listLogBriefs() {
-        return Response.ok(logsSrv.list()).build();
+    public Response listLogBriefs(@QueryParam("labelSelector") String labelSelector) {
+        List<Log> logs;
+        if (labelSelector == null) {
+            logs = logsSrv.list();
+        } else {
+            LabelSelectorExpression lse = LabelSelectorParser.parse(labelSelector);
+            List<Long> logIds = logsSrv.listIdsBySelector(lse);
+            logs = logIds.stream()
+                    .map(logsSrv::get)
+                    .collect(Collectors.toList());
+        }
+        return Response.ok(logs).build();
     }
 
     /**
