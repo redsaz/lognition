@@ -18,6 +18,7 @@ package com.redsaz.logntion;
 import com.redsaz.lognition.api.LognitionMediaType;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
+import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.view.Sanitizer;
 import io.quarkus.test.junit.QuarkusTest;
@@ -30,6 +31,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,6 +107,34 @@ public class ReviewsResourceTest {
                 .then()
                 .statusCode(204);
         verify(reviews).delete(1L);
+    }
+
+    @Test
+    public void testListLogs() {
+        when(reviews.getReviewLogs(anyLong())).thenReturn(
+                Arrays.asList(
+                        new Log(1L, Log.Status.COMPLETE, "test", "Test Name", "test.hsqldb", "Test notes.")
+                )
+        );
+        given()
+                .when().accept(LognitionMediaType.LOGBRIEF_V1_JSON)
+                .get("/reviews/1/logs")
+                .then()
+                .statusCode(200)
+                .body(containsString("\"id\":1"))
+                .body(containsString("test"))
+                .body(containsString("Test Name"));
+    }
+
+    @Test
+    public void testListLogs_empty() {
+        when(reviews.getReviewLogs(anyLong())).thenReturn(Collections.emptyList());
+        given()
+                .when().accept(LognitionMediaType.LOGBRIEF_V1_JSON)
+                .get("/reviews/1/logs")
+                .then()
+                .statusCode(200)
+                .body(containsString("[]"));
     }
 
 }
