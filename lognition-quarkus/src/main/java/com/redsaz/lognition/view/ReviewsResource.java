@@ -21,6 +21,7 @@ import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpressionFormatter;
 import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
+import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.services.LabelSelectorParser;
 import java.net.URI;
@@ -130,6 +131,14 @@ public class ReviewsResource {
     public Response deleteReview(@PathParam("id") long id) {
         reviewsSrv.delete(id);
         return Response.status(Status.NO_CONTENT).build();
+    }
+
+    @GET
+    @Path("{id}/logs")
+    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+    public Response listLogs(@PathParam("id") long id) {
+        List<Log> logs = reviewsSrv.getReviewLogs(id);
+        return Response.ok(logs).build();
     }
 
     private void calculateReviewLogs(Review review) {
