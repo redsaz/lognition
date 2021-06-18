@@ -63,12 +63,13 @@ public class ProcessorImportServiceTest {
         Log log = new Log(1L, Log.Status.AWAITING_UPLOAD, "test", "Test", "testtest.csv", "notes");
 
         doNothing().when(logSvc).updateStatus(anyLong(), anyObject());
-        InputStream is = Files.newInputStream(Paths.get("jtls/target/real-small-sorted.jtl"));
-        ImportInfo imported = new ImportInfo(1L, "jtls/target/real-small-sorted.jtl", importedUtc);
+        String filename = "src/test/resources/test.jtl";
+        InputStream is = Files.newInputStream(Paths.get(filename));
+        ImportInfo imported = new ImportInfo(1L, filename, importedUtc);
         when(impSvc.upload(same(is), same(log), eq(importDirStr), eq(uploadedUtc))).thenReturn(imported);
 
         // This is how to wait for the eager stats calc to complete since it is async.
-        long lastLabelId = 20L;
+        long lastLabelId = 2L;
         CountDownLatch lastStatsComplete = new CountDownLatch(1);
         doAnswer((invocation) -> {
             lastStatsComplete.countDown();
