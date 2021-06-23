@@ -28,7 +28,13 @@ import static com.redsaz.lognition.model.tables.Label.LABEL;
 import static com.redsaz.lognition.model.tables.Log.LOG;
 import com.redsaz.lognition.model.tables.records.LabelRecord;
 import com.redsaz.lognition.model.tables.records.LogRecord;
-import java.io.OutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -122,16 +128,19 @@ public class JooqLogsService implements LogsService {
     }
 
     @Override
-    public OutputStream getContent(long id) {
-//        try (Connection c = POOL.getConnection()) {
-//            DSLContext context = DSL.using(c, dialect);
-//
-//            LogRecord nr = context.selectFrom(LOG).where(LOG.ID.eq(id)).fetchOne();
-//            return recordToLog(nr);
-//        } catch (SQLException ex) {
-//            throw new AppServerException("Cannot get log_id=" + id + " because: " + ex.getMessage(), ex);
-//        }
-        return null;
+    public InputStream getCsvContent(long id) throws IOException {
+        Path dataPath = Path.of(logsDir, id + ".avro");
+        InputStream is = Files.newInputStream(dataPath, StandardOpenOption.READ);
+        return is;
+    }
+
+    @Override
+    public File getAvroFile(long id) throws FileNotFoundException {
+        Path dataPath = Path.of(logsDir, id + ".avro");
+        if (!Files.exists(dataPath)) {
+            throw new FileNotFoundException("No content file exists for " + dataPath.getFileName());
+        }
+        return dataPath.toFile();
     }
 
     @Override
