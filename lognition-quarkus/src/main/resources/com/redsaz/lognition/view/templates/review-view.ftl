@@ -44,6 +44,14 @@
         <#list reviewGraphs as g>
           <li role="presentation" class="nav-item"><a class="graph-nav nav-link<#if g?is_first> active</#if>" href="#${g.urlName}" aria-controls="${g.name}" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">${g.name}</a></li>
         </#list>
+        <#if imageAttachments?has_content>
+          <#list imageAttachments as a>
+          <li role="presentation" class="nav-item"><a class="graph-nav nav-link" href="#attachment-${a?counter}" aria-controls="attachment-${a?counter}" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">${a.name}</a></li>
+          </#list>
+        </#if>
+        <#if attachments?has_content>
+          <li role="presentation" class="nav-item"><a class="graph-nav nav-link" href="#attachments" aria-controls="attachments" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">Attachments</a></li>
+        </#if>
         </ul>
         <div class="tab-content" style="width: 100%">
         <#list reviewGraphs as g>
@@ -54,6 +62,43 @@
             </div>
           </div>
         </#list>
+        <#if imageAttachments?has_content>
+          <#list imageAttachments as a>
+          <div role="tabpanel" class="tab-pane" id="attachment-${a?counter}" style="width: 100%">
+            <h2>${a.name}</h2>
+            <div class="attachment" style="width: 100%">
+              <img src="attachments/${a.path}"/>
+            </div>
+          </div>
+          </#list>
+        </#if>
+        <#if attachments?has_content>
+          <div role="tabpanel" class="tab-pane" id="attachments" style="width: 100%">
+            <h2>Attachments</h2>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Path</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <#list attachments as a>
+                  <tr>
+                    <td><a href="attachments/${a.path}">${a.name}</a></td>
+                    <td><a href="attachments/${a.path}">${a.path}</a></td>
+                    <td>${a.description}</td>
+                    <td>${a.mimeType}</td>
+                  </tr>
+                </#list>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </#if>
         </div>
       </div>
       <script src="${dist}/js/chartist.min.js"></script>

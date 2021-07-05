@@ -17,8 +17,10 @@ package com.redsaz.lognition.services;
 
 import com.github.slugify.Slugify;
 import com.redsaz.lognition.api.ReviewsService;
+import com.redsaz.lognition.api.model.Attachment;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
+import java.io.InputStream;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
@@ -94,6 +96,41 @@ public class SanitizerReviewsService implements ReviewsService {
     @Override
     public List<Log> getReviewLogs(long reviewId) {
         return srv.getReviewLogs(reviewId);
+    }
+
+    @Override
+    public Attachment putAttachment(long reviewId, Attachment source, InputStream data) {
+        return srv.putAttachment(reviewId, source, data);
+    }
+
+    @Override
+    public List<Attachment> listAttachments(long reviewId) {
+        return srv.listAttachments(reviewId);
+    }
+
+    @Override
+    public InputStream getAttachmentData(long reviewId, String attachmentPath) {
+        return srv.getAttachmentData(reviewId, attachmentPath);
+    }
+
+    @Override
+    public Attachment getAttachment(long reviewId, String attachmentPath) {
+        return srv.getAttachment(reviewId, attachmentPath);
+    }
+
+    @Override
+    public void deleteAttachment(long reviewId, String attachmentPath) {
+        srv.deleteAttachment(reviewId, attachmentPath);
+    }
+
+    @Override
+    public Attachment updateAttachment(long reviewId, Attachment source) {
+        return srv.updateAttachment(reviewId, source);
+    }
+
+    @Override
+    public Attachment moveAttachment(long reviewId, String sourcePath, String targetPath) {
+        return srv.moveAttachment(reviewId, sourcePath, targetPath);
     }
 
     /**

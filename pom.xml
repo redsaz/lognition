@@ -161,6 +161,11 @@
                 <artifactId>jooq-meta</artifactId>
                 <version>${version.jooq}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>1.27</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <build>

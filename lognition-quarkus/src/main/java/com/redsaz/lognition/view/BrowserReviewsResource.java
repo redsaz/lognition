@@ -19,17 +19,22 @@ import com.github.slugify.Slugify;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
+import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpression;
 import com.redsaz.lognition.api.labelselector.LabelSelectorExpressionFormatter;
 import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
+import com.redsaz.lognition.api.model.Attachment;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Percentiles;
 import com.redsaz.lognition.api.model.Review;
 import com.redsaz.lognition.api.model.Stats;
+import com.redsaz.lognition.quarkus.ErrorMessage;
 import com.redsaz.lognition.services.LabelSelectorParser;
+import com.redsaz.lognition.services.MediaTypeDetector;
 import com.redsaz.lognition.view.model.Chart;
 import io.vertx.core.http.HttpServerRequest;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -41,9 +46,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -88,6 +95,7 @@ public class BrowserReviewsResource {
     private static final Parser CM_PARSER = Parser.builder().build();
     private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
     private static final Slugify SLG = new Slugify();
+    private static final MediaTypeDetector MEDIA_TYPE_DETECTOR = new MediaTypeDetector();
 
     private static final ThreadLocal<NumberFormat> PERC_FORMAT = new ThreadLocal<NumberFormat>() {
         @Override
@@ -341,6 +349,158 @@ public class BrowserReviewsResource {
         return resp;
     }
 
+    @GET
+    @Path("{id}/attachments/{attachmentPath:.*}")
+    @Produces(MediaType.WILDCARD)
+    public Response getAttachment(@PathParam("id") long id,
+            @PathParam("attachmentPath") String attachmentPath) {
+        InputStream content = reviewsSrv.getAttachmentData(id, attachmentPath);
+        String type = reviewsSrv.getAttachment(id, attachmentPath).getMimeType();
+        return Response.ok(content, type).build();
+    }
+
+    /**
+     * Uploads an attachment for a review. If the path matches a previous attachment path for the
+     * review, then previous attachment will be replaced.
+     *
+     * @param id Identifier of the review
+     * @param input The attachment info and contents.
+     * @return A redirect response back to the review.
+     */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_JSON})
+    @Path("{id}/attachments")
+    public Response uploadAttachments(@PathParam("id") long id, MultipartInput input) {
+        LOGGER.info("Uploading attachments for review {}", id);
+        long uploadMillis = System.currentTimeMillis();
+
+        /*
+        Anyway,
+        It's possible to upload a bunch of images at once, and specify the paths for each.
+        We should do that here, but also in the creation of the review itself.
+        And in the edit screen for the review, those attachments should be listed? Right?
+         */
+        try {
+            ContentDispositionSubParts subParts = new ContentDispositionSubParts();
+            String path = null;
+            String name = null;
+            String description = "";
+            String mimetype = null;
+            Attachment stored = null;
+            // If any details of the attachment were changed after the file upload, then the
+            // stored attachment info needs updated to reflect it.
+            boolean changed = false;
+            for (InputPart part : input.getParts()) {
+                subParts.clear();
+                String partContentDisposition = part.getHeaders().getFirst("Content-Disposition");
+                parseContentDispositionHeader(partContentDisposition, subParts);
+                switch (subParts.getName()) {
+                    case "path":
+                        path = part.getBodyAsString();
+                        changed = true;
+                        break;
+                    case "name":
+                        name = part.getBodyAsString();
+                        changed = true;
+                        break;
+                    case "description":
+                        description = part.getBodyAsString();
+                        changed = true;
+                        break;
+                    case "file":
+                        try (InputStream attStream = part.getBody(InputStream.class, null)) {
+                        // If path isn't encountered yet (or doesn't exist at all) then use the
+                        // attachment filename itself for the path.
+                        String filename = subParts.getFilename();
+                        if (path == null) {
+                            path = filename;
+                        }
+                        if (name == null) {
+                            name = path;
+                        }
+                        LOGGER.info("Uploading attachment from filename={}...", filename);
+                        mimetype = Optional.ofNullable(part.getMediaType())
+                                .orElse(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                                .toString();
+                        mimetype = MEDIA_TYPE_DETECTOR.getBaseType(mimetype);
+
+                        Attachment source = new Attachment(0, "", path, name, description, mimetype, uploadMillis);
+                        stored = reviewsSrv.putAttachment(id, source, attStream);
+
+                        // Detect the filetype if it wasn't specified.
+                        if (MediaType.APPLICATION_OCTET_STREAM.equals(mimetype)) {
+                            try (InputStream is = reviewsSrv.getAttachmentData(id, path)) {
+                                mimetype = MEDIA_TYPE_DETECTOR.detect(is, path);
+                            }
+                            // If the detector was able to find a more accurate type, then update.
+                            if (!MediaType.APPLICATION_OCTET_STREAM.equals(mimetype)) {
+                                stored = new Attachment(stored.getId(), stored.getOwner(),
+                                        stored.getPath(), stored.getName(), stored.getDescription(),
+                                        mimetype, stored.getUploadedUtcMillis());
+                                reviewsSrv.updateAttachment(id, stored);
+                            }
+                        }
+
+                        // If "file" was the last part uploaded, then the attachment details do not
+                        // need changed.
+                        changed = false;
+
+                        LOGGER.info("Uploaded {}", stored);
+                        break;
+                    } catch (IOException ex) {
+                        LOGGER.error("Could not upload/save attachment because " + ex.getMessage(), ex);
+                        Response resp = Response.serverError().entity(ex).build();
+                        return resp;
+                    }
+                    default: {
+                        // Skip it, we don't use it.
+                        LOGGER.info("Skipped part={}", subParts.getName());
+                    }
+                    break;
+                }
+            }
+
+            if (stored == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(
+                                new ErrorMessage("Missing \"file\"",
+                                        "Required multiPart \"file\" is missing.")).build();
+            }
+
+            if (changed) {
+                if (!Objects.equals(stored.getPath(), path)) {
+                    reviewsSrv.moveAttachment(id, stored.getPath(), path);
+                }
+                Attachment source = new Attachment(0, "", path, name, description, mimetype, uploadMillis);
+                stored = reviewsSrv.updateAttachment(id, source);
+                LOGGER.info("Attachment info changed: {}", stored);
+            }
+
+            return Response.seeOther(URI.create("reviews/" + id)).build();
+        } catch (IOException ex) {
+            String message = "Unable to read uploaded attachment.";
+            LOGGER.error(message, ex);
+            throw new AppServerException(message, ex);
+        } catch (RuntimeException ex) {
+            LOGGER.error("BAD STUFF:" + ex.getMessage(), ex);
+            throw ex;
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+    }
+
+    @POST
+    @Path("{id}/attachments/{attachmentPath:.*}/delete")
+    public Response deleteAttachment(@FormParam("id") long id,
+            @PathParam("attachmentPath") String attachmentPath) {
+        reviewsSrv.deleteAttachment(id, attachmentPath);
+        Response resp = Response.seeOther(URI.create("/reviews")).build();
+        return resp;
+    }
+
     /**
      * Presents a web page for viewing a specific review. The actual review displayed only really
      * depends on the review id, the URL name is optional. If the given URL name doesn't match the
@@ -377,7 +537,23 @@ public class BrowserReviewsResource {
         root.put("descriptionHtml", commonMarkToHtml(review.getDescription()));
         root.put("content", "review-view.ftl");
         root.put("reviewGraphs", reviewGraphs);
+        addAttachments(root, reviewId);
+
         return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    }
+
+    private void addAttachments(Map<String, Object> root, long reviewId) {
+        List<Attachment> attachments = reviewsSrv.listAttachments(reviewId);
+        if (attachments.isEmpty()) {
+            return;
+        }
+
+        var images = attachments.stream()
+                .filter(a -> a.getMimeType().startsWith("image/"))
+                .collect(Collectors.toList());
+
+        root.put("imageAttachments", images);
+        root.put("attachments", attachments);
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
