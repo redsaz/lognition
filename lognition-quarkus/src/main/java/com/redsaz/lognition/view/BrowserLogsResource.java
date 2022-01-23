@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package com.redsaz.lognition.view;
+ */
+package com.redsaz.lognition.view;
 
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;

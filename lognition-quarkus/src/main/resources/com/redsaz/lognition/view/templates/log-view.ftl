@@ -105,7 +105,7 @@
     </div>
     <div class="tab-pane" id="responses" role="tabpanel" aria-labelledby="responses-tab">
       <div class="container">
-<#if (object.attribute)??>
+<#if (aggregateCodes)??>
         <table class="table table-hover">
           <thead>
           <tr>
