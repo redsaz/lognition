@@ -31,10 +31,10 @@ import static org.junit.Assert.fail;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -62,7 +62,7 @@ public class ProcessorImportServiceTest {
 
         Log log = new Log(1L, Log.Status.AWAITING_UPLOAD, "test", "Test", "testtest.csv", "notes");
 
-        doNothing().when(logSvc).updateStatus(anyLong(), anyObject());
+        doNothing().when(logSvc).updateStatus(anyLong(), any());
         String filename = "src/test/resources/test.jtl";
         InputStream is = Files.newInputStream(Paths.get(filename));
         ImportInfo imported = new ImportInfo(1L, filename, importedUtc);
@@ -74,7 +74,7 @@ public class ProcessorImportServiceTest {
         doAnswer((invocation) -> {
             lastStatsComplete.countDown();
             return null;
-        }).when(statsSvc).createOrUpdatePercentiles(eq(log.getId()), eq(lastLabelId), anyObject());
+        }).when(statsSvc).createOrUpdatePercentiles(eq(log.getId()), eq(lastLabelId), any());
 
         // When the file is imported,
         ImportInfo ii = unit.upload(is, log, importDirStr, uploadedUtc);
@@ -83,14 +83,14 @@ public class ProcessorImportServiceTest {
         // Then an avro file should be in the imported dir with the log id,
         assertTrue(Files.exists(Paths.get(importDirStr, log.getId() + ".avro")));
         // and the stats should be eagerly calculated.
-        verify(statsSvc).createSampleLabels(eq(log.getId()), anyObject());
+        verify(statsSvc).createSampleLabels(eq(log.getId()), any());
 
         for (long i = 0; i <= lastLabelId; ++i) {
-            verify(statsSvc, times(2)).createOrUpdateCodeCounts(eq(log.getId()), eq(i), anyObject());
-            verify(statsSvc).createOrUpdateTimeseries(eq(log.getId()), eq(i), anyObject());
-            verify(statsSvc).createOrUpdateAggregate(eq(log.getId()), eq(i), anyObject());
-            verify(statsSvc).createOrUpdateHistogram(eq(log.getId()), eq(i), anyObject());
-            verify(statsSvc).createOrUpdatePercentiles(eq(log.getId()), eq(i), anyObject());
+            verify(statsSvc, times(2)).createOrUpdateCodeCounts(eq(log.getId()), eq(i), any());
+            verify(statsSvc).createOrUpdateTimeseries(eq(log.getId()), eq(i), any());
+            verify(statsSvc).createOrUpdateAggregate(eq(log.getId()), eq(i), any());
+            verify(statsSvc).createOrUpdateHistogram(eq(log.getId()), eq(i), any());
+            verify(statsSvc).createOrUpdatePercentiles(eq(log.getId()), eq(i), any());
         }
 
         // Uploading is status whilst receiving bytes
