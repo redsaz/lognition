@@ -24,5 +24,5 @@ import freemarker.template.Configuration;
  */
 public interface Templater {
 
-    String buildFromTemplate(Object dataModel, String templateName);
+  String buildFromTemplate(Object dataModel, String templateName);
 }

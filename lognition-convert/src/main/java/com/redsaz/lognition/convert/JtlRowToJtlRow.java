@@ -22,44 +22,42 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Converts a JTL Row into a different JTL Row with potentially different
- * columns.
+ * Converts a JTL Row into a different JTL Row with potentially different columns.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 class JtlRowToJtlRow {
 
-    private final List<Integer> cols = new ArrayList<>();
-    private final List<JtlType> jtlTypes = new ArrayList<>();
+  private final List<Integer> cols = new ArrayList<>();
+  private final List<JtlType> jtlTypes = new ArrayList<>();
 
-    public JtlRowToJtlRow(String[] headers, JtlType... columns) {
-        Set<JtlType> colSet = new HashSet<>(Arrays.asList(columns));
-        for (int i = 0; i < headers.length; ++i) {
-            String header = headers[i];
-            JtlType jtlType = JtlType.fromHeader(header);
-            if (jtlType != null && colSet.contains(jtlType)) {
-                cols.add(i);
-                jtlTypes.add(jtlType);
-            }
-        }
+  public JtlRowToJtlRow(String[] headers, JtlType... columns) {
+    Set<JtlType> colSet = new HashSet<>(Arrays.asList(columns));
+    for (int i = 0; i < headers.length; ++i) {
+      String header = headers[i];
+      JtlType jtlType = JtlType.fromHeader(header);
+      if (jtlType != null && colSet.contains(jtlType)) {
+        cols.add(i);
+        jtlTypes.add(jtlType);
+      }
     }
+  }
 
-    public String[] getHeaders() {
-        String[] outputRow = new String[cols.size()];
-        for (int i = 0; i < cols.size(); ++i) {
-            outputRow[i] = jtlTypes.get(i).csvName();
-        }
-        return outputRow;
+  public String[] getHeaders() {
+    String[] outputRow = new String[cols.size()];
+    for (int i = 0; i < cols.size(); ++i) {
+      outputRow[i] = jtlTypes.get(i).csvName();
     }
+    return outputRow;
+  }
 
-    public String[] convert(String[] row) {
-        String[] outputRow = new String[cols.size()];
-        for (int i = 0; i < cols.size(); ++i) {
-            int col = cols.get(i);
-            String value = row[col];
-            outputRow[i] = value;
-        }
-        return outputRow;
+  public String[] convert(String[] row) {
+    String[] outputRow = new String[cols.size()];
+    for (int i = 0; i < cols.size(); ++i) {
+      int col = cols.get(i);
+      String value = row[col];
+      outputRow[i] = value;
     }
-
+    return outputRow;
+  }
 }

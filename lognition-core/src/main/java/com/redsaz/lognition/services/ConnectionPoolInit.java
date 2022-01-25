@@ -32,55 +32,58 @@ import org.slf4j.LoggerFactory;
  */
 public class ConnectionPoolInit {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionPoolInit.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionPoolInit.class);
 
-    // Don't allow creation of utility class.
-    private ConnectionPoolInit() {
+  // Don't allow creation of utility class.
+  private ConnectionPoolInit() {}
+
+  /**
+   * Since several services all share the same DB, there should not need to be multiple JDBCPools,
+   * only one. Calling this once and then passing it into each service to create should be done.
+   *
+   * @return the JDBCPool to use for all services using the HSQLDB.
+   */
+  public static ConnectionPool initPool() {
+    LOGGER.info("Initing Connection Pool...");
+    File deciDir = new File("./lognition-data");
+    if (!deciDir.exists() && !deciDir.mkdirs()) {
+      throw new RuntimeException("Could not create " + deciDir);
     }
+    File deciDb = new File(deciDir, "lognitiondb");
+    JDBCPool jdbc = new JDBCPool();
+    jdbc.setUrl(
+        "jdbc:hsqldb:"
+            + deciDb.toURI()
+            + ";shutdown=true;hsqldb.lob_file_scale=4;hsqldb.lob_compressed=true");
+    jdbc.setUser("SA");
+    jdbc.setPassword("SA");
 
-    /**
-     * Since several services all share the same DB, there should not need to be multiple JDBCPools,
-     * only one. Calling this once and then passing it into each service to create should be done.
-     *
-     * @return the JDBCPool to use for all services using the HSQLDB.
-     */
-    public static ConnectionPool initPool() {
-        LOGGER.info("Initing Connection Pool...");
-        File deciDir = new File("./lognition-data");
-        if (!deciDir.exists() && !deciDir.mkdirs()) {
-            throw new RuntimeException("Could not create " + deciDir);
-        }
-        File deciDb = new File(deciDir, "lognitiondb");
-        JDBCPool jdbc = new JDBCPool();
-        jdbc.setUrl("jdbc:hsqldb:" + deciDb.toURI() + ";shutdown=true;hsqldb.lob_file_scale=4;hsqldb.lob_compressed=true");
-        jdbc.setUser("SA");
-        jdbc.setPassword("SA");
-
-        try (Connection c = jdbc.getConnection()) {
-            DbInitializer.initDb(c);
-        } catch (SQLException ex) {
-            throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
-        }
-        LOGGER.info("...Finish Initing DB.");
-        return new JdbcPoolConnectionPool(jdbc);
+    try (Connection c = jdbc.getConnection()) {
+      DbInitializer.initDb(c);
+    } catch (SQLException ex) {
+      throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
     }
+    LOGGER.info("...Finish Initing DB.");
+    return new JdbcPoolConnectionPool(jdbc);
+  }
 
-// Inits a ConnectionPool for an SQLite-backed store.
-//    public static ConnectionPool initPool() {
-//        LOGGER.info("Initing DB...");
-//        File deciDir = new File("./lognition-data");
-//        if (!deciDir.exists() && !deciDir.mkdirs()) {
-//            throw new RuntimeException("Could not create " + deciDir);
-//        }
-//        File deciDb = new File(deciDir, "lognition-sqlite");
-//        try {
-//            Connection c = DriverManager.getConnection("jdbc:sqlite:" + deciDb.toURI());
-//            DbInitializer.initDb(c);
-//
-//            LOGGER.info("...Finish Initing DB.");
-//            return new SingletonConnectionPool(c);
-//        } catch (SQLException ex) {
-//            throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
-//        }
-//    }
+  // Inits a ConnectionPool for an SQLite-backed store.
+  //    public static ConnectionPool initPool() {
+  //        LOGGER.info("Initing DB...");
+  //        File deciDir = new File("./lognition-data");
+  //        if (!deciDir.exists() && !deciDir.mkdirs()) {
+  //            throw new RuntimeException("Could not create " + deciDir);
+  //        }
+  //        File deciDb = new File(deciDir, "lognition-sqlite");
+  //        try {
+  //            Connection c = DriverManager.getConnection("jdbc:sqlite:" + deciDb.toURI());
+  //            DbInitializer.initDb(c);
+  //
+  //            LOGGER.info("...Finish Initing DB.");
+  //            return new SingletonConnectionPool(c);
+  //        } catch (SQLException ex) {
+  //            throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(),
+  // ex);
+  //        }
+  //    }
 }

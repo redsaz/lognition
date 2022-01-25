@@ -31,78 +31,79 @@ import org.slf4j.LoggerFactory;
  * and retrieved from the store are correctly formatted, sized, and without malicious/errorific
  * content.
  *
- * Default values for jtl files:
+ * <p>Default values for jtl files:
  * timestamp,elapsed,label,responseCode,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 public class SanitizerImportService implements ImportService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerImportService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerImportService.class);
 
-    private static final int SHORTENED_MAX = 512;
-    private static final int SHORTENED_MIN = 12;
-    private static final ThreadLocal<SimpleDateFormat> LONG_DATE
-            = new ThreadLocal<SimpleDateFormat>() {
+  private static final int SHORTENED_MAX = 512;
+  private static final int SHORTENED_MIN = 12;
+  private static final ThreadLocal<SimpleDateFormat> LONG_DATE =
+      new ThreadLocal<SimpleDateFormat>() {
         @Override
         protected SimpleDateFormat initialValue() {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            return sdf;
+          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+          sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+          return sdf;
         }
-    };
+      };
 
-    private final ImportService srv;
+  private final ImportService srv;
 
-    public SanitizerImportService(ImportService wrappee) {
-        srv = wrappee;
+  public SanitizerImportService(ImportService wrappee) {
+    srv = wrappee;
+  }
+
+  @Override
+  public void delete(long id) {
+    srv.delete(id);
+  }
+
+  @Override
+  public ImportInfo get(long id) {
+    return srv.get(id);
+  }
+
+  @Override
+  public List<ImportInfo> list() {
+    return srv.list();
+  }
+
+  @Override
+  public ImportInfo upload(
+      InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
+    importedFilename = sanitizeFilename(importedFilename);
+    return srv.upload(raw, log, importedFilename, uploadedUtcMillis);
+  }
+
+  @Override
+  public ImportInfo update(ImportInfo source) {
+    source = sanitize(source);
+    return srv.update(source);
+  }
+
+  /**
+   * @param source The item to sanitize
+   * @return A new brief instance with sanitized data.
+   */
+  private static ImportInfo sanitize(ImportInfo source) {
+    if (source == null) {
+      source = new ImportInfo(0, null, System.currentTimeMillis());
     }
+    return new ImportInfo(
+        source.getId(), source.getImportedFilename(), source.getUploadedUtcMillis());
+  }
 
-    @Override
-    public void delete(long id) {
-        srv.delete(id);
+  private static String sanitizeFilename(String original) {
+    if (original == null) {
+      return null;
     }
-
-    @Override
-    public ImportInfo get(long id) {
-        return srv.get(id);
-    }
-
-    @Override
-    public List<ImportInfo> list() {
-        return srv.list();
-    }
-
-    @Override
-    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
-        importedFilename = sanitizeFilename(importedFilename);
-        return srv.upload(raw, log, importedFilename, uploadedUtcMillis);
-    }
-
-    @Override
-    public ImportInfo update(ImportInfo source) {
-        source = sanitize(source);
-        return srv.update(source);
-    }
-
-    /**
-     * @param source The item to sanitize
-     * @return A new brief instance with sanitized data.
-     */
-    private static ImportInfo sanitize(ImportInfo source) {
-        if (source == null) {
-            source = new ImportInfo(0, null, System.currentTimeMillis());
-        }
-        return new ImportInfo(source.getId(), source.getImportedFilename(), source.getUploadedUtcMillis());
-    }
-
-    private static String sanitizeFilename(String original) {
-        if (original == null) {
-            return null;
-        }
-        original = original.trim();
-        original = original.replaceAll("[!&;*?<>`\"']", "");
-        return original;
-    }
-
+    original = original.trim();
+    original = original.replaceAll("[!&;*?<>`\"']", "");
+    return original;
+  }
 }

@@ -25,20 +25,19 @@ import java.util.List;
  */
 public interface Samples {
 
-    long getEarliestMillis();
+  long getEarliestMillis();
 
-    Sample getEarliestSample();
+  Sample getEarliestSample();
 
-    List<String> getLabels();
+  List<String> getLabels();
 
-    long getLatestMillis();
+  long getLatestMillis();
 
-    Sample getLatestSample();
+  Sample getLatestSample();
 
-    List<Sample> getSamples();
+  List<Sample> getSamples();
 
-    StatusCodeLookup getStatusCodeLookup();
+  StatusCodeLookup getStatusCodeLookup();
 
-    List<String> getThreadNames();
-
+  List<String> getThreadNames();
 }

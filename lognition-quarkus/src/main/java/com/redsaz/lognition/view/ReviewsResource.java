@@ -52,105 +52,113 @@ import org.slf4j.LoggerFactory;
 @Path("/reviews")
 public class ReviewsResource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReviewsResource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ReviewsResource.class);
 
-    private ReviewsService reviewsSrv;
-    private LogsService logsSrv;
+  private ReviewsService reviewsSrv;
+  private LogsService logsSrv;
 
-    public ReviewsResource() {
+  public ReviewsResource() {}
+
+  @Inject
+  public ReviewsResource(
+      @Sanitizer ReviewsService reviewsService, @Sanitizer LogsService logsService) {
+    reviewsSrv = reviewsService;
+    logsSrv = logsService;
+  }
+
+  /**
+   * Lists all of the reviews.
+   *
+   * @return List of reviews.
+   */
+  @GET
+  @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
+  public Response listReviews() {
+    return Response.ok(reviewsSrv.list()).build();
+  }
+
+  /**
+   * Get a review by id.
+   *
+   * @param id The id of the review.
+   * @return a review.
+   */
+  @GET
+  @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
+  @Path("{id}")
+  public Response getReview(@PathParam("id") long id) {
+    Review review = reviewsSrv.get(id);
+    if (review == null) {
+      throw new NotFoundException("Could not find review id=" + id);
     }
+    return Response.ok(review).build();
+  }
 
-    @Inject
-    public ReviewsResource(@Sanitizer ReviewsService reviewsService,
-            @Sanitizer LogsService logsService) {
-        reviewsSrv = reviewsService;
-        logsSrv = logsService;
+  @POST
+  @Consumes({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
+  @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
+  public Response createReview(Review received) {
+    LOGGER.info("Creating review...");
+    // Only the name, uriName, description, and label selector from the received review should
+    // be used since the rest are calculated by the app.
+    String body =
+        LabelSelectorExpressionFormatter.format(LabelSelectorParser.parse(received.getBody()));
+
+    // TODO hey whoops we store millis not seconds, fix it later. For now this matches what
+    // has been done in lognition for quite some time now.
+    long now = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond();
+
+    Review review =
+        new Review(
+            0,
+            received.getUriName(),
+            received.getName(),
+            received.getDescription(),
+            now,
+            now,
+            body);
+    Review result = reviewsSrv.create(review);
+
+    // TODO calculation of the logs can be done asynchronously.
+    calculateReviewLogs(result);
+    Response resp =
+        Response.created(URI.create("/reviews/" + result.getId())).entity(result).build();
+    LOGGER.info("Finished creating review {}", result);
+    return resp;
+  }
+
+  /**
+   * Delete a review.
+   *
+   * @param id The id of the review.
+   * @return No content response.
+   */
+  @DELETE
+  @Path("{id}")
+  public Response deleteReview(@PathParam("id") long id) {
+    reviewsSrv.delete(id);
+    return Response.status(Status.NO_CONTENT).build();
+  }
+
+  @GET
+  @Path("{id}/logs")
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  public Response listLogs(@PathParam("id") long id) {
+    List<Log> logs = reviewsSrv.getReviewLogs(id);
+    return Response.ok(logs).build();
+  }
+
+  private void calculateReviewLogs(Review review) {
+    try {
+      String body = review.getBody();
+      LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+      List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+
+      reviewsSrv.setReviewLogs(review.getId(), logIds);
+    } catch (LabelSelectorSyntaxException ex) {
+      LOGGER.error(
+          "Could not find logs for review due to Syntax error in label selector for review_id={}",
+          review.getId());
     }
-
-    /**
-     * Lists all of the reviews.
-     *
-     * @return List of reviews.
-     */
-    @GET
-    @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response listReviews() {
-        return Response.ok(reviewsSrv.list()).build();
-    }
-
-    /**
-     * Get a review by id.
-     *
-     * @param id The id of the review.
-     * @return a review.
-     */
-    @GET
-    @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
-    @Path("{id}")
-    public Response getReview(@PathParam("id") long id) {
-        Review review = reviewsSrv.get(id);
-        if (review == null) {
-            throw new NotFoundException("Could not find review id=" + id);
-        }
-        return Response.ok(review).build();
-    }
-
-    @POST
-    @Consumes({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
-    @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response createReview(Review received) {
-        LOGGER.info("Creating review...");
-        // Only the name, uriName, description, and label selector from the received review should
-        // be used since the rest are calculated by the app.
-        String body = LabelSelectorExpressionFormatter.format(
-                LabelSelectorParser.parse(received.getBody()));
-
-        // TODO hey whoops we store millis not seconds, fix it later. For now this matches what
-        // has been done in lognition for quite some time now.
-        long now = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond();
-
-        Review review = new Review(0, received.getUriName(), received.getName(),
-                received.getDescription(), now, now, body);
-        Review result = reviewsSrv.create(review);
-
-        // TODO calculation of the logs can be done asynchronously.
-        calculateReviewLogs(result);
-        Response resp = Response.created(URI.create("/reviews/" + result.getId())).entity(result).build();
-        LOGGER.info("Finished creating review {}", result);
-        return resp;
-    }
-
-    /**
-     * Delete a review.
-     *
-     * @param id The id of the review.
-     * @return No content response.
-     */
-    @DELETE
-    @Path("{id}")
-    public Response deleteReview(@PathParam("id") long id) {
-        reviewsSrv.delete(id);
-        return Response.status(Status.NO_CONTENT).build();
-    }
-
-    @GET
-    @Path("{id}/logs")
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response listLogs(@PathParam("id") long id) {
-        List<Log> logs = reviewsSrv.getReviewLogs(id);
-        return Response.ok(logs).build();
-    }
-
-    private void calculateReviewLogs(Review review) {
-        try {
-            String body = review.getBody();
-            LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
-            List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
-
-            reviewsSrv.setReviewLogs(review.getId(), logIds);
-        } catch (LabelSelectorSyntaxException ex) {
-            LOGGER.error("Could not find logs for review due to Syntax error in label selector for review_id={}", review.getId());
-        }
-    }
-
+  }
 }

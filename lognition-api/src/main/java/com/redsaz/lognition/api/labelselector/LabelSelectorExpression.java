@@ -15,12 +15,8 @@
  */
 package com.redsaz.lognition.api.labelselector;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public interface LabelSelectorExpression {
 
-    void consume(LabelSelectorExpressionListener listener);
-
+  void consume(LabelSelectorExpressionListener listener);
 }

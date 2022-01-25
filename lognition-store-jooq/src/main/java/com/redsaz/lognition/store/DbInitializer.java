@@ -26,30 +26,27 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public class DbInitializer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DbInitializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbInitializer.class);
 
-    // Don't allow util classes to be created.
-    private DbInitializer() {
+  // Don't allow util classes to be created.
+  private DbInitializer() {}
+
+  public static void initDb(Connection c) {
+    try {
+      LOGGER.info("Initing DB...");
+      // If the database doesn't exist, create it according to the spec.
+      Database database =
+          DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(c));
+      Liquibase liquibase =
+          new Liquibase("lognition-db.yaml", new ClassLoaderResourceAccessor(), database);
+      // Update the database if it does exist, if needed.
+      liquibase.update((String) null);
+    } catch (LiquibaseException ex) {
+      throw new AppServerException("Cannot initialize database: " + ex.getMessage(), ex);
     }
-
-    public static void initDb(Connection c) {
-        try {
-            LOGGER.info("Initing DB...");
-            // If the database doesn't exist, create it according to the spec.
-            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(c));
-            Liquibase liquibase = new Liquibase("lognition-db.yaml", new ClassLoaderResourceAccessor(), database);
-            // Update the database if it does exist, if needed.
-            liquibase.update((String) null);
-        } catch (LiquibaseException ex) {
-            throw new AppServerException("Cannot initialize database: " + ex.getMessage(), ex);
-        }
-        LOGGER.info("...Finish Initing DB.");
-    }
-
+    LOGGER.info("...Finish Initing DB.");
+  }
 }

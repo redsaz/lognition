@@ -28,60 +28,56 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 @Provider
 public class AppExceptionMapper implements ExceptionMapper<AppException> {
 
-    @Context
-    HttpHeaders headers;
+  @Context HttpHeaders headers;
 
-    private Templater cfg;
+  private Templater cfg;
 
-    public AppExceptionMapper() {
+  public AppExceptionMapper() {}
+
+  @Inject
+  public AppExceptionMapper(Templater templater) {
+    cfg = templater;
+  }
+
+  @Override
+  public Response toResponse(AppException e) {
+    if (headers.getAcceptableMediaTypes().contains(MediaType.TEXT_HTML_TYPE)) {
+      return createHtmlResponse(e);
     }
-
-    @Inject
-    public AppExceptionMapper(Templater templater) {
-        cfg = templater;
+    Response.ResponseBuilder resp =
+        Response.status(500).entity("").type(MediaType.APPLICATION_JSON);
+    if (e instanceof AppClientException) {
+      resp.status(400);
     }
+    return resp.build();
+  }
 
-    @Override
-    public Response toResponse(AppException e) {
-        if (headers.getAcceptableMediaTypes().contains(MediaType.TEXT_HTML_TYPE)) {
-            return createHtmlResponse(e);
-        }
-        Response.ResponseBuilder resp = Response.status(500)
-                .entity("")
-                .type(MediaType.APPLICATION_JSON);
-        if (e instanceof AppClientException) {
-            resp.status(400);
-        }
-        return resp.build();
+  private Response createHtmlResponse(Throwable e) {
+    Map<String, Object> root = new HashMap<>();
+    String base = "";
+    String dist = base + "/dist";
+    root.put("base", base);
+    root.put("dist", dist);
+    root.put("title", "Bad Request");
+    root.put("message", e.getMessage());
+    root.put("content", "error.ftl");
+    Response.ResponseBuilder resp = Response.status(500);
+    if (e instanceof AppClientException) {
+      resp.status(400);
+      root.put(
+          "action",
+          "Please <a href=\"javascript:history.back()\">go back</a>, check for any potential mistakes, and try again.");
+    } else {
+      root.put(
+          "action",
+          "Please <a href=\"javascript:history.back()\">go back</a> and try again. If the problem persists, contact the application team.");
     }
-
-    private Response createHtmlResponse(Throwable e) {
-        Map<String, Object> root = new HashMap<>();
-        String base = "";
-        String dist = base + "/dist";
-        root.put("base", base);
-        root.put("dist", dist);
-        root.put("title", "Bad Request");
-        root.put("message", e.getMessage());
-        root.put("content", "error.ftl");
-        Response.ResponseBuilder resp = Response.status(500);
-        if (e instanceof AppClientException) {
-            resp.status(400);
-            root.put("action",
-                    "Please <a href=\"javascript:history.back()\">go back</a>, check for any potential mistakes, and try again.");
-        } else {
-            root.put("action",
-                    "Please <a href=\"javascript:history.back()\">go back</a> and try again. If the problem persists, contact the application team.");
-        }
-        String body = cfg.buildFromTemplate(root, "page.ftl");
-        resp.entity(body).type(MediaType.TEXT_HTML_TYPE);
-        return resp.build();
-    }
+    String body = cfg.buildFromTemplate(root, "page.ftl");
+    resp.entity(body).type(MediaType.TEXT_HTML_TYPE);
+    return resp.build();
+  }
 }

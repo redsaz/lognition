@@ -61,155 +61,166 @@ import org.slf4j.LoggerFactory;
 @Path("/logs")
 public class LogsResource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogsResource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(LogsResource.class);
 
-    private ReviewsService reviewsSrv;
-    private LogsService logsSrv;
-    private ImportService importSrv;
-    private static final ExecutorService REVIEWS_CALC_EXEC = Executors.newSingleThreadExecutor();
-    private static final AvroToCsvJtlConverter CONVERTER = new AvroToCsvJtlConverter();
+  private ReviewsService reviewsSrv;
+  private LogsService logsSrv;
+  private ImportService importSrv;
+  private static final ExecutorService REVIEWS_CALC_EXEC = Executors.newSingleThreadExecutor();
+  private static final AvroToCsvJtlConverter CONVERTER = new AvroToCsvJtlConverter();
 
-    public LogsResource() {
+  public LogsResource() {}
+
+  @Inject
+  public LogsResource(
+      @Sanitizer ReviewsService reviewsService,
+      @Sanitizer LogsService logsService,
+      @Processor ImportService importService) {
+    reviewsSrv = reviewsService;
+    logsSrv = logsService;
+    importSrv = importService;
+  }
+
+  /**
+   * Lists logs URI and titles. If given a selector then logs with matching labels are listed. If no
+   * selector is given then all logs are listed.
+   *
+   * @param labelSelector label selector for logs
+   * @return Logs, by URI and title.
+   */
+  @GET
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  public Response listLogBriefs(@QueryParam("labelSelector") String labelSelector) {
+    List<Log> logs;
+    if (labelSelector == null) {
+      logs = logsSrv.list();
+    } else {
+      LabelSelectorExpression lse = LabelSelectorParser.parse(labelSelector);
+      List<Long> logIds = logsSrv.listIdsBySelector(lse);
+      logs = logIds.stream().map(logsSrv::get).collect(Collectors.toList());
+    }
+    return Response.ok(logs).build();
+  }
+
+  /**
+   * Get the note contents.
+   *
+   * @param id The id of the note.
+   * @return Note.
+   */
+  @GET
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  @Path("{id}")
+  public Response getLogBrief(@PathParam("id") long id) {
+    Log brief = logsSrv.get(id);
+    if (brief == null) {
+      throw new NotFoundException("Could not find log brief id=" + id);
+    }
+    return Response.ok(brief).build();
+  }
+
+  /**
+   * Download the log data in CSV form.
+   *
+   * @param id The id of the log.
+   * @return log data.
+   */
+  @GET
+  @Produces({"text/csv"})
+  @Path("{id}/content")
+  public Response getCsvContent(@PathParam("id") long id) throws IOException {
+    try {
+      File file = logsSrv.getAvroFile(id);
+      return Response.ok(CONVERTER.convertStreaming(file), "text/csv").build();
+    } catch (FileNotFoundException ex) {
+      throw new NotFoundException(ex.getMessage());
+    }
+  }
+
+  @POST
+  @Consumes({
+    MediaType.APPLICATION_OCTET_STREAM,
+    "text/csv",
+    MediaType.TEXT_PLAIN,
+    MediaType.TEXT_XML,
+    MediaType.APPLICATION_XML,
+    MediaType.APPLICATION_JSON,
+    "application/zip"
+  })
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  public Response importLog(
+      InputStream source,
+      @QueryParam("name") String name,
+      @QueryParam("notes") String notes,
+      @QueryParam("labels") String labelsText) {
+    if (name == null) {
+      name = "uploaded";
+    }
+    List<Label> labels = toLabelsList(labelsText);
+
+    Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
+    Log resultLog = logsSrv.create(sourceLog);
+    if (!labels.isEmpty()) {
+      logsSrv.setLabels(resultLog.getId(), labels);
     }
 
-    @Inject
-    public LogsResource(@Sanitizer ReviewsService reviewsService,
-            @Sanitizer LogsService logsService, @Processor ImportService importService) {
-        reviewsSrv = reviewsService;
-        logsSrv = logsService;
-        importSrv = importService;
-    }
-
-    /**
-     * Lists logs URI and titles. If given a selector then logs with matching labels are listed. If
-     * no selector is given then all logs are listed.
-     *
-     * @param labelSelector label selector for logs
-     * @return Logs, by URI and title.
-     */
-    @GET
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response listLogBriefs(@QueryParam("labelSelector") String labelSelector) {
-        List<Log> logs;
-        if (labelSelector == null) {
-            logs = logsSrv.list();
-        } else {
-            LabelSelectorExpression lse = LabelSelectorParser.parse(labelSelector);
-            List<Long> logIds = logsSrv.listIdsBySelector(lse);
-            logs = logIds.stream()
-                    .map(logsSrv::get)
-                    .collect(Collectors.toList());
-        }
-        return Response.ok(logs).build();
-    }
-
-    /**
-     * Get the note contents.
-     *
-     * @param id The id of the note.
-     * @return Note.
-     */
-    @GET
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
-    @Path("{id}")
-    public Response getLogBrief(@PathParam("id") long id) {
-        Log brief = logsSrv.get(id);
-        if (brief == null) {
-            throw new NotFoundException("Could not find log brief id=" + id);
-        }
-        return Response.ok(brief).build();
-    }
-
-    /**
-     * Download the log data in CSV form.
-     *
-     * @param id The id of the log.
-     * @return log data.
-     */
-    @GET
-    @Produces({"text/csv"})
-    @Path("{id}/content")
-    public Response getCsvContent(@PathParam("id") long id) throws IOException {
-        try {
-            File file = logsSrv.getAvroFile(id);
-            return Response.ok(CONVERTER.convertStreaming(file), "text/csv").build();
-        } catch (FileNotFoundException ex) {
-            throw new NotFoundException(ex.getMessage());
-        }
-    }
-
-    @POST
-    @Consumes({MediaType.APPLICATION_OCTET_STREAM, "text/csv", MediaType.TEXT_PLAIN,
-        MediaType.TEXT_XML, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON,
-        "application/zip"})
-    @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
-    public Response importLog(InputStream source,
-            @QueryParam("name") String name, @QueryParam("notes") String notes,
-            @QueryParam("labels") String labelsText) {
-        if (name == null) {
-            name = "uploaded";
-        }
-        List<Label> labels = toLabelsList(labelsText);
-
-        Log sourceLog = new Log(0L, Log.Status.AWAITING_UPLOAD, null, name, null, notes);
-        Log resultLog = logsSrv.create(sourceLog);
-        if (!labels.isEmpty()) {
-            logsSrv.setLabels(resultLog.getId(), labels);
-        }
-
-        REVIEWS_CALC_EXEC.execute(() -> {
-            calculateAllReviewLogs();
+    REVIEWS_CALC_EXEC.execute(
+        () -> {
+          calculateAllReviewLogs();
         });
 
-        return Response.status(Status.CREATED).entity(importSrv.upload(source, resultLog, name, System.currentTimeMillis())).build();
+    return Response.status(Status.CREATED)
+        .entity(importSrv.upload(source, resultLog, name, System.currentTimeMillis()))
+        .build();
+  }
+
+  @DELETE
+  @Path("{id}")
+  public Response deleteLog(@PathParam("id") long id) {
+    logsSrv.delete(id);
+    return Response.status(Status.NO_CONTENT).build();
+  }
+
+  private void calculateAllReviewLogs() {
+    for (Review review : reviewsSrv.list()) {
+      try {
+        String body = review.getBody();
+        LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
+        List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+
+        reviewsSrv.setReviewLogs(review.getId(), logIds);
+      } catch (LabelSelectorSyntaxException ex) {
+        LOGGER.error(
+            "Review_id={} has a syntax error with it's label selector. No more logs will be added to the review until fixed.",
+            review.getId());
+      } catch (RuntimeException ex) {
+        LOGGER.error("Exception when using label selector from review_id={}.", ex);
+      }
+    }
+  }
+
+  private static List<Label> toLabelsList(String labelsText) {
+    LOGGER.info("Labelizing labels=\"{}\"", labelsText);
+    if (labelsText == null || labelsText.isEmpty()) {
+      return Collections.emptyList();
     }
 
-    @DELETE
-    @Path("{id}")
-    public Response deleteLog(@PathParam("id") long id) {
-        logsSrv.delete(id);
-        return Response.status(Status.NO_CONTENT).build();
+    String[] pairs = labelsText.split("(?:,|\\s)+");
+    List<Label> labels = new ArrayList<>(pairs.length);
+    for (String pair : pairs) {
+      Label label = toLabel(pair);
+      labels.add(label);
     }
 
-    private void calculateAllReviewLogs() {
-        for (Review review : reviewsSrv.list()) {
-            try {
-                String body = review.getBody();
-                LabelSelectorExpression labelSelector = LabelSelectorParser.parse(body);
-                List<Long> logIds = logsSrv.listIdsBySelector(labelSelector);
+    LOGGER.info("Labelized labels: {}", labels);
+    return labels;
+  }
 
-                reviewsSrv.setReviewLogs(review.getId(), logIds);
-            } catch (LabelSelectorSyntaxException ex) {
-                LOGGER.error("Review_id={} has a syntax error with it's label selector. No more logs will be added to the review until fixed.", review.getId());
-            } catch (RuntimeException ex) {
-                LOGGER.error("Exception when using label selector from review_id={}.", ex);
-            }
-        }
+  private static Label toLabel(String labelText) {
+    String[] keyval = labelText.split("=", 2);
+    if (keyval.length != 2) {
+      return new Label(keyval[0], "");
     }
-
-    private static List<Label> toLabelsList(String labelsText) {
-        LOGGER.info("Labelizing labels=\"{}\"", labelsText);
-        if (labelsText == null || labelsText.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        String[] pairs = labelsText.split("(?:,|\\s)+");
-        List<Label> labels = new ArrayList<>(pairs.length);
-        for (String pair : pairs) {
-            Label label = toLabel(pair);
-            labels.add(label);
-        }
-
-        LOGGER.info("Labelized labels: {}", labels);
-        return labels;
-    }
-
-    private static Label toLabel(String labelText) {
-        String[] keyval = labelText.split("=", 2);
-        if (keyval.length != 2) {
-            return new Label(keyval[0], "");
-        }
-        return new Label(keyval[0], keyval[1]);
-    }
-
+    return new Label(keyval[0], keyval[1]);
+  }
 }

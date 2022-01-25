@@ -33,159 +33,172 @@ import org.slf4j.LoggerFactory;
  * sent to and retrieved from the store are correctly formatted, sized, and without
  * malicious/errorific content.
  *
- * Default values for jtl files:
+ * <p>Default values for jtl files:
  * timestamp,elapsed,label,responseCode,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 public class SanitizerReviewsService implements ReviewsService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerReviewsService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerReviewsService.class);
 
-    private static final Slugify SLG = initSlug();
-    private static final int SHORTENED_MAX = 60;
-    private static final int SHORTENED_MIN = 12;
+  private static final Slugify SLG = initSlug();
+  private static final int SHORTENED_MAX = 60;
+  private static final int SHORTENED_MIN = 12;
 
-    private final ReviewsService srv;
+  private final ReviewsService srv;
 
-    public SanitizerReviewsService(ReviewsService reviewsService) {
-        srv = reviewsService;
+  public SanitizerReviewsService(ReviewsService reviewsService) {
+    srv = reviewsService;
+  }
+
+  @Override
+  public Review create(Review source) {
+    return srv.create(sanitize(source));
+  }
+
+  @Override
+  public void delete(long id) {
+    srv.delete(id);
+  }
+
+  @Override
+  public Review get(long id) {
+    return srv.get(id);
+  }
+
+  @Override
+  public List<Review> list() {
+    return srv.list();
+  }
+
+  @Override
+  public Review update(Review source) {
+    // Don't use sanitize, as update CAN contain null fields. It means those weren't updated.
+    if (source == null) {
+      return null;
+    }
+    String uriName = source.getUriName();
+    if (uriName != null) {
+      uriName = SLG.slugify(uriName);
     }
 
-    @Override
-    public Review create(Review source) {
-        return srv.create(sanitize(source));
+    source =
+        new Review(
+            source.getId(),
+            uriName,
+            source.getName(),
+            source.getDescription(),
+            source.getCreatedMillis(),
+            source.getLastUpdatedMillis(),
+            source.getBody());
+    return srv.update(source);
+  }
+
+  @Override
+  public void setReviewLogs(long reviewId, Collection<Long> logIds) {
+    srv.setReviewLogs(reviewId, logIds);
+  }
+
+  @Override
+  public List<Log> getReviewLogs(long reviewId) {
+    return srv.getReviewLogs(reviewId);
+  }
+
+  @Override
+  public Attachment putAttachment(long reviewId, Attachment source, InputStream data) {
+    return srv.putAttachment(reviewId, source, data);
+  }
+
+  @Override
+  public List<Attachment> listAttachments(long reviewId) {
+    return srv.listAttachments(reviewId);
+  }
+
+  @Override
+  public InputStream getAttachmentData(long reviewId, String attachmentPath) {
+    return srv.getAttachmentData(reviewId, attachmentPath);
+  }
+
+  @Override
+  public Attachment getAttachment(long reviewId, String attachmentPath) {
+    return srv.getAttachment(reviewId, attachmentPath);
+  }
+
+  @Override
+  public void deleteAttachment(long reviewId, String attachmentPath) {
+    srv.deleteAttachment(reviewId, attachmentPath);
+  }
+
+  @Override
+  public Attachment updateAttachment(long reviewId, Attachment source) {
+    return srv.updateAttachment(reviewId, source);
+  }
+
+  @Override
+  public Attachment moveAttachment(long reviewId, String sourcePath, String targetPath) {
+    return srv.moveAttachment(reviewId, sourcePath, targetPath);
+  }
+
+  /**
+   * Ensures nothing is null. The ID will remain unchanged.
+   *
+   * @param source The review to sanitize
+   * @return A new brief instance with sanitized data.
+   */
+  private static Review sanitize(Review source) {
+    if (source == null) {
+      source =
+          new Review(
+              0, null, null, null, ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(), null, null);
+    }
+    String uriName = source.getUriName();
+    if (uriName == null || uriName.isEmpty()) {
+      uriName = source.getName();
+    }
+    uriName = SLG.slugify(uriName);
+
+    String name = source.getName();
+    if (name == null) {
+      // If the name is null, see if we can use the notes instead.
+      name = shortened(source.getDescription());
+      if (name == null) {
+        name = "";
+      }
+    }
+    String description = source.getDescription();
+    if (description == null) {
+      description = "";
+    }
+    String body = source.getBody();
+    if (body == null) {
+      body = "";
     }
 
-    @Override
-    public void delete(long id) {
-        srv.delete(id);
+    return new Review(
+        source.getId(),
+        uriName,
+        name,
+        description,
+        source.getCreatedMillis(),
+        source.getLastUpdatedMillis(),
+        body);
+  }
+
+  private static String shortened(String text) {
+    if (text == null || text.length() <= SHORTENED_MAX) {
+      return text;
+    }
+    text = text.substring(0, SHORTENED_MAX);
+    String candidate = text.replaceFirst("\\S+$", "");
+    if (candidate.length() < SHORTENED_MIN) {
+      candidate = text;
     }
 
-    @Override
-    public Review get(long id) {
-        return srv.get(id);
-    }
+    return candidate + "...";
+  }
 
-    @Override
-    public List<Review> list() {
-        return srv.list();
-    }
-
-    @Override
-    public Review update(Review source) {
-        // Don't use sanitize, as update CAN contain null fields. It means those weren't updated.
-        if (source == null) {
-            return null;
-        }
-        String uriName = source.getUriName();
-        if (uriName != null) {
-            uriName = SLG.slugify(uriName);
-        }
-
-        source = new Review(source.getId(), uriName, source.getName(), source.getDescription(),
-                source.getCreatedMillis(), source.getLastUpdatedMillis(), source.getBody());
-        return srv.update(source);
-    }
-
-    @Override
-    public void setReviewLogs(long reviewId, Collection<Long> logIds) {
-        srv.setReviewLogs(reviewId, logIds);
-    }
-
-    @Override
-    public List<Log> getReviewLogs(long reviewId) {
-        return srv.getReviewLogs(reviewId);
-    }
-
-    @Override
-    public Attachment putAttachment(long reviewId, Attachment source, InputStream data) {
-        return srv.putAttachment(reviewId, source, data);
-    }
-
-    @Override
-    public List<Attachment> listAttachments(long reviewId) {
-        return srv.listAttachments(reviewId);
-    }
-
-    @Override
-    public InputStream getAttachmentData(long reviewId, String attachmentPath) {
-        return srv.getAttachmentData(reviewId, attachmentPath);
-    }
-
-    @Override
-    public Attachment getAttachment(long reviewId, String attachmentPath) {
-        return srv.getAttachment(reviewId, attachmentPath);
-    }
-
-    @Override
-    public void deleteAttachment(long reviewId, String attachmentPath) {
-        srv.deleteAttachment(reviewId, attachmentPath);
-    }
-
-    @Override
-    public Attachment updateAttachment(long reviewId, Attachment source) {
-        return srv.updateAttachment(reviewId, source);
-    }
-
-    @Override
-    public Attachment moveAttachment(long reviewId, String sourcePath, String targetPath) {
-        return srv.moveAttachment(reviewId, sourcePath, targetPath);
-    }
-
-    /**
-     * Ensures nothing is null. The ID will remain unchanged.
-     *
-     * @param source The review to sanitize
-     * @return A new brief instance with sanitized data.
-     */
-    private static Review sanitize(Review source) {
-        if (source == null) {
-            source = new Review(0, null, null, null,
-                    ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(), null, null);
-        }
-        String uriName = source.getUriName();
-        if (uriName == null || uriName.isEmpty()) {
-            uriName = source.getName();
-        }
-        uriName = SLG.slugify(uriName);
-
-        String name = source.getName();
-        if (name == null) {
-            // If the name is null, see if we can use the notes instead.
-            name = shortened(source.getDescription());
-            if (name == null) {
-                name = "";
-            }
-        }
-        String description = source.getDescription();
-        if (description == null) {
-            description = "";
-        }
-        String body = source.getBody();
-        if (body == null) {
-            body = "";
-        }
-
-        return new Review(source.getId(), uriName, name, description, source.getCreatedMillis(),
-                source.getLastUpdatedMillis(), body);
-    }
-
-    private static String shortened(String text) {
-        if (text == null || text.length() <= SHORTENED_MAX) {
-            return text;
-        }
-        text = text.substring(0, SHORTENED_MAX);
-        String candidate = text.replaceFirst("\\S+$", "");
-        if (candidate.length() < SHORTENED_MIN) {
-            candidate = text;
-        }
-
-        return candidate + "...";
-    }
-
-    private static Slugify initSlug() {
-        return new Slugify();
-    }
-
+  private static Slugify initSlug() {
+    return new Slugify();
+  }
 }

@@ -22,51 +22,52 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public class Percentiles {
 
-    private final List<Long> totalCounts;
-    private final List<Long> values;
-    private final List<Double> percentiles;
+  private final List<Long> totalCounts;
+  private final List<Long> values;
+  private final List<Double> percentiles;
 
-    /**
-     * Create a new percentiles list.
-     *
-     * @param totalCounts array of the number of samples covered by the percentiles. Must be same
-     * number of elements as values and percentiles lists.
-     * @param values array of the value at each percentile. Must be same size as percentiles.
-     * @param percentiles array of percentiles
-     */
-    @JsonCreator
-    public Percentiles(
-            @JsonProperty("totalCounts") List<Long> totalCounts,
-            @JsonProperty("values") List<Long> values,
-            @JsonProperty("percentiles") List<Double> percentiles) {
-        if (totalCounts == null || values == null || percentiles == null
-                || totalCounts.size() != percentiles.size() && totalCounts.size() != values.size()) {
-            throw new IllegalArgumentException("totalCounts, values, and percentiles cannot be null and must be equal in size.");
-        }
-        this.totalCounts = Collections.unmodifiableList(new ArrayList<>(totalCounts));
-        this.values = Collections.unmodifiableList(new ArrayList<>(values));
-        this.percentiles = Collections.unmodifiableList(new ArrayList<>(percentiles));
+  /**
+   * Create a new percentiles list.
+   *
+   * @param totalCounts array of the number of samples covered by the percentiles. Must be same
+   *     number of elements as values and percentiles lists.
+   * @param values array of the value at each percentile. Must be same size as percentiles.
+   * @param percentiles array of percentiles
+   */
+  @JsonCreator
+  public Percentiles(
+      @JsonProperty("totalCounts") List<Long> totalCounts,
+      @JsonProperty("values") List<Long> values,
+      @JsonProperty("percentiles") List<Double> percentiles) {
+    if (totalCounts == null
+        || values == null
+        || percentiles == null
+        || totalCounts.size() != percentiles.size() && totalCounts.size() != values.size()) {
+      throw new IllegalArgumentException(
+          "totalCounts, values, and percentiles cannot be null and must be equal in size.");
     }
+    this.totalCounts = Collections.unmodifiableList(new ArrayList<>(totalCounts));
+    this.values = Collections.unmodifiableList(new ArrayList<>(values));
+    this.percentiles = Collections.unmodifiableList(new ArrayList<>(percentiles));
+  }
 
-    public List<Long> getCounts() {
-        return totalCounts;
-    }
+  public List<Long> getCounts() {
+    return totalCounts;
+  }
 
-    public List<Long> getValues() {
-        return values;
-    }
+  public List<Long> getValues() {
+    return values;
+  }
 
-    public List<Double> getPercentiles() {
-        return percentiles;
-    }
+  public List<Double> getPercentiles() {
+    return percentiles;
+  }
 
-    @JsonIgnore
-    public int size() {
-        return totalCounts.size();
-    }
+  @JsonIgnore
+  public int size() {
+    return totalCounts.size();
+  }
 }

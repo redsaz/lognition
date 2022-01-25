@@ -29,50 +29,49 @@ import java.util.Objects;
  */
 public class Label implements Comparable<Label> {
 
-    private final String key;
-    private final String value;
+  private final String key;
+  private final String value;
 
-    public Label(String inKey, String inValue) {
-        key = inKey;
-        value = inValue;
+  public Label(String inKey, String inValue) {
+    key = inKey;
+    value = inValue;
+  }
+
+  public String getKey() {
+    return key;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    if (value.isEmpty()) {
+      return key;
     }
+    return key + "=" + value;
+  }
 
-    public String getKey() {
-        return key;
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof Label)) {
+      return false;
     }
+    Label right = (Label) obj;
+    return Objects.equals(key, right.key) && Objects.equals(value, right.value);
+  }
 
-    public String getValue() {
-        return value;
+  @Override
+  public int hashCode() {
+    return Objects.hash(key, value);
+  }
+
+  @Override
+  public int compareTo(Label o) {
+    if (o == null) {
+      return -1;
     }
-
-    @Override
-    public String toString() {
-        if (value.isEmpty()) {
-            return key;
-        }
-        return key + "=" + value;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof Label)) {
-            return false;
-        }
-        Label right = (Label) obj;
-        return Objects.equals(key, right.key) && Objects.equals(value, right.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(key, value);
-    }
-
-    @Override
-    public int compareTo(Label o) {
-        if (o == null) {
-            return -1;
-        }
-        return this.getKey().compareTo(o.getKey());
-    }
-
+    return this.getKey().compareTo(o.getKey());
+  }
 }

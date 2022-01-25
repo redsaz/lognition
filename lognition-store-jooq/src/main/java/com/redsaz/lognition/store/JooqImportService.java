@@ -15,12 +15,13 @@
  */
 package com.redsaz.lognition.store;
 
+import static com.redsaz.lognition.model.tables.ImportInfo.IMPORT_INFO;
+
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Log;
-import static com.redsaz.lognition.model.tables.ImportInfo.IMPORT_INFO;
 import com.redsaz.lognition.model.tables.records.ImportInfoRecord;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -51,202 +52,203 @@ import org.slf4j.LoggerFactory;
  */
 public class JooqImportService implements ImportService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JooqImportService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(JooqImportService.class);
 
-    private static final RecordToImportMapper R2I = new RecordToImportMapper();
+  private static final RecordToImportMapper R2I = new RecordToImportMapper();
 
-    private final ConnectionPool pool;
-    private final SQLDialect dialect;
-    private final File uploadedLogsDir;
+  private final ConnectionPool pool;
+  private final SQLDialect dialect;
+  private final File uploadedLogsDir;
 
-    /**
-     * Create a new ImportService backed by a data store.
-     *
-     * @param jdbcPool opens connections to database
-     * @param sqlDialect the type of SQL database that we should speak
-     */
-    public JooqImportService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
-        LOGGER.info("Using given Connection Pool.");
-        pool = jdbcPool;
-        dialect = sqlDialect;
-        uploadedLogsDir = new File("./lognition-data/uploaded-logs");
-        try {
-            Files.createDirectories(uploadedLogsDir.toPath());
-        } catch (IOException ex) {
-            throw new RuntimeException("Unable to create data directories.", ex);
-        }
+  /**
+   * Create a new ImportService backed by a data store.
+   *
+   * @param jdbcPool opens connections to database
+   * @param sqlDialect the type of SQL database that we should speak
+   */
+  public JooqImportService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
+    LOGGER.info("Using given Connection Pool.");
+    pool = jdbcPool;
+    dialect = sqlDialect;
+    uploadedLogsDir = new File("./lognition-data/uploaded-logs");
+    try {
+      Files.createDirectories(uploadedLogsDir.toPath());
+    } catch (IOException ex) {
+      throw new RuntimeException("Unable to create data directories.", ex);
     }
+  }
+
+  @Override
+  public ImportInfo upload(
+      InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
+    if (raw == null) {
+      throw new NullPointerException("No import was specified.");
+    } else if (log == null) {
+      throw new NullPointerException("No import information was specified.");
+    }
+
+    LOGGER.info("Storing uploaded file...");
+    long bytesRead = 0;
+    File destFile = createUploadFile();
+    LOGGER.info("Storing into {}", destFile.getAbsolutePath());
+    try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      byte[] buff = new byte[4096];
+      int num;
+      while ((num = raw.read(buff)) >= 0) {
+        md.update(buff, 0, num);
+        os.write(buff, 0, num);
+        bytesRead += num;
+      }
+      os.flush();
+    } catch (IOException | NoSuchAlgorithmException ex) {
+      LOGGER.error("Exception when uploading log.", ex);
+      throw new AppServerException("Failed to upload content.", ex);
+    }
+    if (bytesRead == 0) {
+      destFile.delete();
+      throw new AppClientException("No data was uploaded.");
+    }
+    LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
+
+    LOGGER.info("Creating entry in DB...");
+    LOGGER.info("Import for log id={}", log.getId());
+    try (Connection c = pool.getConnection()) {
+      DSLContext context = DSL.using(c, dialect);
+
+      // TODO make relative to storage.
+      ImportInfoRecord result =
+          context
+              .insertInto(
+                  IMPORT_INFO,
+                  IMPORT_INFO.ID,
+                  IMPORT_INFO.IMPORTED_FILENAME,
+                  IMPORT_INFO.UPLOADED_UTC_MILLIS)
+              .values(log.getId(), destFile.getAbsolutePath(), uploadedUtcMillis)
+              .returning()
+              .fetchOne();
+      LOGGER.info("...Created entry in DB.");
+      LOGGER.info("Finished uploading import {} {}.", result.getId(), result.getImportedFilename());
+      return R2I.map(result);
+    } catch (SQLException ex) {
+      throw new AppServerException("Failed to create import: " + ex.getMessage(), ex);
+    }
+  }
+
+  @Override
+  public ImportInfo get(long id) {
+    try (Connection c = pool.getConnection()) {
+      DSLContext context = DSL.using(c, dialect);
+      return context.selectFrom(IMPORT_INFO).where(IMPORT_INFO.ID.eq(id)).fetchOne(R2I);
+    } catch (SQLException ex) {
+      throw new AppServerException(
+          "Cannot get import_id=" + id + " because: " + ex.getMessage(), ex);
+    }
+  }
+
+  @Override
+  public List<ImportInfo> list() {
+    try (Connection c = pool.getConnection()) {
+      DSLContext context = DSL.using(c, dialect);
+      ImportInfoRecordsToListHandler r2iHandler = new ImportInfoRecordsToListHandler();
+      return context.selectFrom(IMPORT_INFO).fetchInto(r2iHandler).getImports();
+    } catch (SQLException ex) {
+      throw new AppServerException("Cannot get imports list because: " + ex.getMessage(), ex);
+    }
+  }
+
+  @Override
+  public void delete(long id) {
+    try (Connection c = pool.getConnection()) {
+      DSLContext context = DSL.using(c, dialect);
+      LOGGER.debug("Deleting import_id={}...", id);
+      ImportInfo info = get(id);
+      if (info == null) {
+        LOGGER.info("No such import_id={} exists.", id);
+        return;
+      }
+      File file = new File(info.getImportedFilename());
+      if (!file.delete()) {
+        LOGGER.error("Unable to delete imported file {}.", file);
+      }
+      context.delete(IMPORT_INFO).where(IMPORT_INFO.ID.eq(id)).execute();
+      LOGGER.debug("...Deleted import_id={}.", id);
+    } catch (SQLException ex) {
+      throw new AppServerException(
+          "Failed to delete pendingimport_id=" + id + " because: " + ex.getMessage(), ex);
+    }
+  }
+
+  @Override
+  public ImportInfo update(ImportInfo source) {
+    if (source == null) {
+      throw new NullPointerException("No import information was specified.");
+    }
+
+    LOGGER.debug("Updating entry in DB...");
+    try (Connection c = pool.getConnection()) {
+      DSLContext context = DSL.using(c, dialect);
+
+      UpdateSetMoreStep<ImportInfoRecord> up =
+          context.update(IMPORT_INFO).set(IMPORT_INFO.ID, source.getId());
+      if (source.getImportedFilename() != null) {
+        up.set(IMPORT_INFO.IMPORTED_FILENAME, source.getImportedFilename());
+      }
+      if (source.getUploadedUtcMillis() != 0) {
+        up.set(IMPORT_INFO.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis());
+      }
+      ImportInfoRecord result = up.where(IMPORT_INFO.ID.eq(source.getId())).returning().fetchOne();
+      LOGGER.debug("...Updated entry in DB.");
+      return R2I.map(result);
+    } catch (SQLException ex) {
+      throw new AppServerException("Failed to update import: " + ex.getMessage(), ex);
+    }
+  }
+
+  private File createUploadFile() {
+    try {
+      return File.createTempFile("log-", ".tmp", uploadedLogsDir);
+    } catch (IOException ex) {
+      LOGGER.error("Exception when creating upload file.", ex);
+      throw new AppServerException("Failed to upload content.", ex);
+    }
+  }
+
+  protected static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
+
+  private static String bytesToHex(byte[] bytes) {
+    char[] hexChars = new char[bytes.length * 2];
+    for (int j = 0; j < bytes.length; j++) {
+      int v = bytes[j] & 0xFF;
+      hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+      hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+    }
+    return new String(hexChars);
+  }
+
+  private static class RecordToImportMapper implements RecordMapper<ImportInfoRecord, ImportInfo> {
 
     @Override
-    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis) {
-        if (raw == null) {
-            throw new NullPointerException("No import was specified.");
-        } else if (log == null) {
-            throw new NullPointerException("No import information was specified.");
-        }
-
-        LOGGER.info("Storing uploaded file...");
-        long bytesRead = 0;
-        File destFile = createUploadFile();
-        LOGGER.info("Storing into {}", destFile.getAbsolutePath());
-        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(destFile))) {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] buff = new byte[4096];
-            int num;
-            while ((num = raw.read(buff)) >= 0) {
-                md.update(buff, 0, num);
-                os.write(buff, 0, num);
-                bytesRead += num;
-            }
-            os.flush();
-        } catch (IOException | NoSuchAlgorithmException ex) {
-            LOGGER.error("Exception when uploading log.", ex);
-            throw new AppServerException("Failed to upload content.", ex);
-        }
-        if (bytesRead == 0) {
-            destFile.delete();
-            throw new AppClientException("No data was uploaded.");
-        }
-        LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
-
-        LOGGER.info("Creating entry in DB...");
-        LOGGER.info("Import for log id={}", log.getId());
-        try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, dialect);
-
-            // TODO make relative to storage.
-            ImportInfoRecord result = context.insertInto(IMPORT_INFO,
-                    IMPORT_INFO.ID,
-                    IMPORT_INFO.IMPORTED_FILENAME,
-                    IMPORT_INFO.UPLOADED_UTC_MILLIS)
-                    .values(log.getId(),
-                            destFile.getAbsolutePath(),
-                            uploadedUtcMillis)
-                    .returning().fetchOne();
-            LOGGER.info("...Created entry in DB.");
-            LOGGER.info("Finished uploading import {} {}.", result.getId(), result.getImportedFilename());
-            return R2I.map(result);
-        } catch (SQLException ex) {
-            throw new AppServerException("Failed to create import: " + ex.getMessage(), ex);
-        }
+    public ImportInfo map(ImportInfoRecord record) {
+      if (record == null) {
+        return null;
+      }
+      return new ImportInfo(
+          record.getId(), record.getImportedFilename(), record.getUploadedUtcMillis());
     }
+  }
+
+  private static class ImportInfoRecordsToListHandler implements RecordHandler<ImportInfoRecord> {
+
+    private final List<ImportInfo> imports = new ArrayList<>();
 
     @Override
-    public ImportInfo get(long id) {
-        try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, dialect);
-            return context.selectFrom(IMPORT_INFO)
-                    .where(IMPORT_INFO.ID.eq(id))
-                    .fetchOne(R2I);
-        } catch (SQLException ex) {
-            throw new AppServerException("Cannot get import_id=" + id + " because: " + ex.getMessage(), ex);
-        }
+    public void next(ImportInfoRecord record) {
+      imports.add(R2I.map(record));
     }
 
-    @Override
-    public List<ImportInfo> list() {
-        try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, dialect);
-            ImportInfoRecordsToListHandler r2iHandler = new ImportInfoRecordsToListHandler();
-            return context.selectFrom(IMPORT_INFO).fetchInto(r2iHandler).getImports();
-        } catch (SQLException ex) {
-            throw new AppServerException("Cannot get imports list because: " + ex.getMessage(), ex);
-        }
+    public List<ImportInfo> getImports() {
+      return imports;
     }
-
-    @Override
-    public void delete(long id) {
-        try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, dialect);
-            LOGGER.debug("Deleting import_id={}...", id);
-            ImportInfo info = get(id);
-            if (info == null) {
-                LOGGER.info("No such import_id={} exists.", id);
-                return;
-            }
-            File file = new File(info.getImportedFilename());
-            if (!file.delete()) {
-                LOGGER.error("Unable to delete imported file {}.", file);
-            }
-            context.delete(IMPORT_INFO).where(IMPORT_INFO.ID.eq(id)).execute();
-            LOGGER.debug("...Deleted import_id={}.", id);
-        } catch (SQLException ex) {
-            throw new AppServerException("Failed to delete pendingimport_id=" + id
-                    + " because: " + ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public ImportInfo update(ImportInfo source) {
-        if (source == null) {
-            throw new NullPointerException("No import information was specified.");
-        }
-
-        LOGGER.debug("Updating entry in DB...");
-        try (Connection c = pool.getConnection()) {
-            DSLContext context = DSL.using(c, dialect);
-
-            UpdateSetMoreStep<ImportInfoRecord> up = context.update(IMPORT_INFO).set(IMPORT_INFO.ID, source.getId());
-            if (source.getImportedFilename() != null) {
-                up.set(IMPORT_INFO.IMPORTED_FILENAME, source.getImportedFilename());
-            }
-            if (source.getUploadedUtcMillis() != 0) {
-                up.set(IMPORT_INFO.UPLOADED_UTC_MILLIS, source.getUploadedUtcMillis());
-            }
-            ImportInfoRecord result = up.where(IMPORT_INFO.ID.eq(source.getId())).returning().fetchOne();
-            LOGGER.debug("...Updated entry in DB.");
-            return R2I.map(result);
-        } catch (SQLException ex) {
-            throw new AppServerException("Failed to update import: " + ex.getMessage(), ex);
-        }
-    }
-
-    private File createUploadFile() {
-        try {
-            return File.createTempFile("log-", ".tmp", uploadedLogsDir);
-        } catch (IOException ex) {
-            LOGGER.error("Exception when creating upload file.", ex);
-            throw new AppServerException("Failed to upload content.", ex);
-        }
-    }
-
-    final protected static char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
-
-    private static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
-    private static class RecordToImportMapper implements RecordMapper<ImportInfoRecord, ImportInfo> {
-
-        @Override
-        public ImportInfo map(ImportInfoRecord record) {
-            if (record == null) {
-                return null;
-            }
-            return new ImportInfo(record.getId(),
-                    record.getImportedFilename(),
-                    record.getUploadedUtcMillis()
-            );
-        }
-    }
-
-    private static class ImportInfoRecordsToListHandler implements RecordHandler<ImportInfoRecord> {
-
-        private final List<ImportInfo> imports = new ArrayList<>();
-
-        @Override
-        public void next(ImportInfoRecord record) {
-            imports.add(R2I.map(record));
-        }
-
-        public List<ImportInfo> getImports() {
-            return imports;
-        }
-    }
+  }
 }

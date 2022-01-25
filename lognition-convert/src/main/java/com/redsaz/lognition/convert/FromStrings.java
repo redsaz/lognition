@@ -22,27 +22,26 @@ package com.redsaz.lognition.convert;
  */
 /*package protected*/ class FromStrings {
 
-    // Don't instanciate Utility Classes.
-    private FromStrings() {
-    }
+  // Don't instanciate Utility Classes.
+  private FromStrings() {}
 
-    public static final FromString<Integer> INTEGER_FS = (String str) -> Integer.valueOf(str);
+  public static final FromString<Integer> INTEGER_FS = (String str) -> Integer.valueOf(str);
 
-    public static final FromString<Integer> INTEGER_FS_OR_ZERO = (String str) -> {
+  public static final FromString<Integer> INTEGER_FS_OR_ZERO =
+      (String str) -> {
         if (str == null) {
-            return 0;
+          return 0;
         }
         try {
-            return Integer.valueOf(str);
+          return Integer.valueOf(str);
         } catch (NumberFormatException ex) {
-            return 0;
+          return 0;
         }
-    };
+      };
 
-    public static final FromString<Long> LONG_FS = (String str) -> Long.valueOf(str);
+  public static final FromString<Long> LONG_FS = (String str) -> Long.valueOf(str);
 
-    public static final FromString<Boolean> BOOLEAN_FS = (String str) -> Boolean.valueOf(str);
+  public static final FromString<Boolean> BOOLEAN_FS = (String str) -> Boolean.valueOf(str);
 
-    public static final FromString<String> STRING_FS = (String str) -> str;
-
+  public static final FromString<String> STRING_FS = (String str) -> str;
 }

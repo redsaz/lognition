@@ -33,47 +33,46 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 @Path("/")
 public class LognitionResource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LognitionResource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(LognitionResource.class);
 
-    private LogsService logsSrv;
-    private ImportService importSrv;
-    private StatsService statsSrv;
-    private Templater cfg;
+  private LogsService logsSrv;
+  private ImportService importSrv;
+  private StatsService statsSrv;
+  private Templater cfg;
 
-    private static final Parser CM_PARSER = Parser.builder().build();
-    private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
+  private static final Parser CM_PARSER = Parser.builder().build();
+  private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
 
-    public LognitionResource() {
-    }
+  public LognitionResource() {}
 
-    @Inject
-    public LognitionResource(@Sanitizer LogsService logsService,
-            @Processor ImportService importService, StatsService statsService, Templater config) {
-        logsSrv = logsService;
-        importSrv = importService;
-        statsSrv = statsService;
-        cfg = config;
-    }
+  @Inject
+  public LognitionResource(
+      @Sanitizer LogsService logsService,
+      @Processor ImportService importService,
+      StatsService statsService,
+      Templater config) {
+    logsSrv = logsService;
+    importSrv = importService;
+    statsSrv = statsService;
+    cfg = config;
+  }
 
-    @GET
-    @Produces(MediaType.TEXT_HTML)
-    public Response home() {
-        String dist = "/dist";
-        List<Log> logs = logsSrv.list();
+  @GET
+  @Produces(MediaType.TEXT_HTML)
+  public Response home() {
+    String dist = "/dist";
+    List<Log> logs = logsSrv.list();
 
-        Map<String, Object> root = new HashMap<>();
-        root.put("briefs", logs);
-        root.put("base", "");
-        root.put("dist", dist);
-        root.put("title", "Lognition");
-        root.put("content", "home.ftl");
-        return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
-    }
-
+    Map<String, Object> root = new HashMap<>();
+    root.put("briefs", logs);
+    root.put("base", "");
+    root.put("dist", dist);
+    root.put("title", "Lognition");
+    root.put("content", "home.ftl");
+    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+  }
 }

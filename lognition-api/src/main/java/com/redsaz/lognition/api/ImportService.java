@@ -27,13 +27,14 @@ import java.util.List;
  */
 public interface ImportService {
 
-    public ImportInfo upload(InputStream raw, Log log, String importedFilename, long uploadedUtcMillis);
+  public ImportInfo upload(
+      InputStream raw, Log log, String importedFilename, long uploadedUtcMillis);
 
-    public ImportInfo get(long id);
+  public ImportInfo get(long id);
 
-    public List<ImportInfo> list();
+  public List<ImportInfo> list();
 
-    public ImportInfo update(ImportInfo source);
+  public ImportInfo update(ImportInfo source);
 
-    public void delete(long id);
+  public void delete(long id);
 }

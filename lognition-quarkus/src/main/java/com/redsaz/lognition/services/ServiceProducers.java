@@ -37,60 +37,63 @@ import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public class ServiceProducers {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
-    private static final String LOGS_DIR = "./lognition-data/logs";
-    private static final String ATTACHMENTS_DIR = "./lognition-data/attachmentsDir";
-    private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
-    private static final AttachmentsService SANITIZER_ATTACHMENTS_SERVICE = new SanitizerAttachmentsService(new JooqAttachmentsService(POOL, SQLDialect.HSQLDB, ATTACHMENTS_DIR));
-    private static final LogsService SANITIZER_LOGS_SERVICE = new SanitizerLogsService(new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR, SANITIZER_ATTACHMENTS_SERVICE));
-    private static final ReviewsService SANITIZER_REVIEWS_SERVICE = new SanitizerReviewsService(new JooqReviewsService(POOL, SQLDialect.HSQLDB, SANITIZER_ATTACHMENTS_SERVICE));
-    private static final ImportService SANITIZER_IMPORT_SERVICE = new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
-    private static final StatsService STATS_SERVICE = new JooqStatsService(POOL, SQLDialect.HSQLDB);
-    private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE = new ProcessorImportService(
-            SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, STATS_SERVICE, LOGS_DIR
-    );
+  private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
+  private static final String LOGS_DIR = "./lognition-data/logs";
+  private static final String ATTACHMENTS_DIR = "./lognition-data/attachmentsDir";
+  private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
+  private static final AttachmentsService SANITIZER_ATTACHMENTS_SERVICE =
+      new SanitizerAttachmentsService(
+          new JooqAttachmentsService(POOL, SQLDialect.HSQLDB, ATTACHMENTS_DIR));
+  private static final LogsService SANITIZER_LOGS_SERVICE =
+      new SanitizerLogsService(
+          new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR, SANITIZER_ATTACHMENTS_SERVICE));
+  private static final ReviewsService SANITIZER_REVIEWS_SERVICE =
+      new SanitizerReviewsService(
+          new JooqReviewsService(POOL, SQLDialect.HSQLDB, SANITIZER_ATTACHMENTS_SERVICE));
+  private static final ImportService SANITIZER_IMPORT_SERVICE =
+      new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
+  private static final StatsService STATS_SERVICE = new JooqStatsService(POOL, SQLDialect.HSQLDB);
+  private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE =
+      new ProcessorImportService(
+          SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, STATS_SERVICE, LOGS_DIR);
 
-    @Produces
-    @ApplicationScoped
-    @Sanitizer
-    public LogsService createSanitizerLogsService() {
-        return SANITIZER_LOGS_SERVICE;
-    }
+  @Produces
+  @ApplicationScoped
+  @Sanitizer
+  public LogsService createSanitizerLogsService() {
+    return SANITIZER_LOGS_SERVICE;
+  }
 
-    @Produces
-    @ApplicationScoped
-    @Sanitizer
-    public ReviewsService createSanitizerReviewsService() {
-        return SANITIZER_REVIEWS_SERVICE;
-    }
+  @Produces
+  @ApplicationScoped
+  @Sanitizer
+  public ReviewsService createSanitizerReviewsService() {
+    return SANITIZER_REVIEWS_SERVICE;
+  }
 
-    @Produces
-    @ApplicationScoped
-    @Processor
-    public ImportService createProcessorImportService() {
-        return PROCESSOR_IMPORT_SERVICE;
-    }
+  @Produces
+  @ApplicationScoped
+  @Processor
+  public ImportService createProcessorImportService() {
+    return PROCESSOR_IMPORT_SERVICE;
+  }
 
-    @Produces
-    @ApplicationScoped
-    public StatsService createStatsService() {
-        return STATS_SERVICE;
-    }
+  @Produces
+  @ApplicationScoped
+  public StatsService createStatsService() {
+    return STATS_SERVICE;
+  }
 
-    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        SANITIZER_LOGS_SERVICE.get(-1L); // Grab any non-existing item from the service
-        LOGGER.info("Started Lognition.");
-    }
+  public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+    SANITIZER_LOGS_SERVICE.get(-1L); // Grab any non-existing item from the service
+    LOGGER.info("Started Lognition.");
+  }
 
-    public void destroy(@Observes @Destroyed(ApplicationScoped.class) Object init) {
-        LOGGER.info("Shutting down Lognition.");
-        PROCESSOR_IMPORT_SERVICE.shutdown();
-    }
-
+  public void destroy(@Observes @Destroyed(ApplicationScoped.class) Object init) {
+    LOGGER.info("Shutting down Lognition.");
+    PROCESSOR_IMPORT_SERVICE.shutdown();
+  }
 }

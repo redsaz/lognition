@@ -29,65 +29,65 @@ import java.util.List;
  */
 public interface ReviewsService {
 
-    Review create(Review source);
+  Review create(Review source);
 
-    Review get(long id);
+  Review get(long id);
 
-    List<Review> list();
+  List<Review> list();
 
-    Review update(Review source);
+  Review update(Review source);
 
-    void delete(long id);
+  void delete(long id);
 
-    void setReviewLogs(long reviewId, Collection<Long> logIds);
+  void setReviewLogs(long reviewId, Collection<Long> logIds);
 
-    List<Log> getReviewLogs(long reviewId);
+  List<Log> getReviewLogs(long reviewId);
 
-    /**
-     * Adds a new attachment or replaces an existing attachment. If the reviewId+attachment.path
-     * combo already exist, then the attachment will be replaced.
-     *
-     * @param reviewId the owner of the attachment
-     * @param source details of the attachment
-     * @param data the attachment contents
-     * @return The resulting Attachment data
-     */
-    Attachment putAttachment(long reviewId, Attachment source, InputStream data);
+  /**
+   * Adds a new attachment or replaces an existing attachment. If the reviewId+attachment.path combo
+   * already exist, then the attachment will be replaced.
+   *
+   * @param reviewId the owner of the attachment
+   * @param source details of the attachment
+   * @param data the attachment contents
+   * @return The resulting Attachment data
+   */
+  Attachment putAttachment(long reviewId, Attachment source, InputStream data);
 
-    /**
-     * Updates any details of the attachment (name, description, etc, but not path or data). To move
-     * an attachment to a new path, use
-     * {@link #moveAttachment(long, java.lang.String, java.lang.String)}.
-     *
-     * @param reviewId the owner of the attachment
-     * @param source the updated details of the attachment, including a new attachment path
-     * @return The resulting Attachment data
-     */
-    Attachment updateAttachment(long reviewId, Attachment source);
+  /**
+   * Updates any details of the attachment (name, description, etc, but not path or data). To move
+   * an attachment to a new path, use {@link #moveAttachment(long, java.lang.String,
+   * java.lang.String)}.
+   *
+   * @param reviewId the owner of the attachment
+   * @param source the updated details of the attachment, including a new attachment path
+   * @return The resulting Attachment data
+   */
+  Attachment updateAttachment(long reviewId, Attachment source);
 
-    /**
-     * Moves an attachment from one path to another. If the target path is already used by another
-     * attachment, then the other attachment will be deleted and replaced by the the source
-     * attachment.
-     *
-     * @param reviewId the owner of the attachment
-     * @param sourcePath the original attachment path
-     * @param targetPath the destination attachment path
-     * @return The attachment that was moved
-     */
-    Attachment moveAttachment(long reviewId, String sourcePath, String targetPath);
+  /**
+   * Moves an attachment from one path to another. If the target path is already used by another
+   * attachment, then the other attachment will be deleted and replaced by the the source
+   * attachment.
+   *
+   * @param reviewId the owner of the attachment
+   * @param sourcePath the original attachment path
+   * @param targetPath the destination attachment path
+   * @return The attachment that was moved
+   */
+  Attachment moveAttachment(long reviewId, String sourcePath, String targetPath);
 
-    /**
-     * List all attachments for a single review.
-     *
-     * @param reviewId the owner of the attachments
-     * @return a list of attachments for the review, or an empty list if none exist
-     */
-    List<Attachment> listAttachments(long reviewId);
+  /**
+   * List all attachments for a single review.
+   *
+   * @param reviewId the owner of the attachments
+   * @return a list of attachments for the review, or an empty list if none exist
+   */
+  List<Attachment> listAttachments(long reviewId);
 
-    InputStream getAttachmentData(long reviewId, String attachmentPath);
+  InputStream getAttachmentData(long reviewId, String attachmentPath);
 
-    Attachment getAttachment(long reviewId, String attachmentPath);
+  Attachment getAttachment(long reviewId, String attachmentPath);
 
-    void deleteAttachment(long reviewId, String attachmentPath);
+  void deleteAttachment(long reviewId, String attachmentPath);
 }

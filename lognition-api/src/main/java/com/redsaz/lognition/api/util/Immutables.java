@@ -26,36 +26,35 @@ import java.util.List;
  */
 public class Immutables {
 
-    private Immutables() {
-    }
+  private Immutables() {}
 
-    /**
-     * Creates a new unmodifiable list from the original list with the same contents (not a deep
-     * copy), or null if the original list is null.
-     *
-     * @param <T>
-     * @param original Original list
-     * @return null if original list is null, or a new list if not.
-     */
-    public static <T> List<T> listOrNull(List<T> original) {
-        if (original == null) {
-            return original;
-        }
-        return Collections.unmodifiableList(new ArrayList<>(original));
+  /**
+   * Creates a new unmodifiable list from the original list with the same contents (not a deep
+   * copy), or null if the original list is null.
+   *
+   * @param <T>
+   * @param original Original list
+   * @return null if original list is null, or a new list if not.
+   */
+  public static <T> List<T> listOrNull(List<T> original) {
+    if (original == null) {
+      return original;
     }
+    return Collections.unmodifiableList(new ArrayList<>(original));
+  }
 
-    /**
-     * Creates a new unmodifiable list from the original list with the same contents (not a deep
-     * copy), or an empty list if the original was null.
-     *
-     * @param <T>
-     * @param original Original list
-     * @return empty list if original list is null, or a new list if not.
-     */
-    public static <T> List<T> listOrEmpty(List<T> original) {
-        if (original == null) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(new ArrayList<>(original));
+  /**
+   * Creates a new unmodifiable list from the original list with the same contents (not a deep
+   * copy), or an empty list if the original was null.
+   *
+   * @param <T>
+   * @param original Original list
+   * @return empty list if original list is null, or a new list if not.
+   */
+  public static <T> List<T> listOrEmpty(List<T> original) {
+    if (original == null) {
+      return Collections.emptyList();
     }
+    return Collections.unmodifiableList(new ArrayList<>(original));
+  }
 }

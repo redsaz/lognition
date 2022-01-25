@@ -27,49 +27,41 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 @Provider
 public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
 
-    @Context
-    HttpHeaders headers;
+  @Context HttpHeaders headers;
 
-    private Templater cfg;
+  private Templater cfg;
 
-    public NotFoundExceptionMapper() {
+  public NotFoundExceptionMapper() {}
+
+  @Inject
+  public NotFoundExceptionMapper(Templater templater) {
+    cfg = templater;
+  }
+
+  @Override
+  public Response toResponse(NotFoundException e) {
+    if (headers.getAcceptableMediaTypes().contains(MediaType.TEXT_HTML_TYPE)) {
+      return createHtmlResponse(e);
     }
+    return Response.status(404)
+        .entity(new ErrorMessage("NotFound", e.getMessage()))
+        .type(MediaType.APPLICATION_JSON)
+        .build();
+  }
 
-    @Inject
-    public NotFoundExceptionMapper(Templater templater) {
-        cfg = templater;
-    }
-
-    @Override
-    public Response toResponse(NotFoundException e) {
-        if (headers.getAcceptableMediaTypes().contains(MediaType.TEXT_HTML_TYPE)) {
-            return createHtmlResponse(e);
-        }
-        return Response.status(404)
-                .entity(new ErrorMessage("NotFound", e.getMessage()))
-                .type(MediaType.APPLICATION_JSON)
-                .build();
-    }
-
-    private Response createHtmlResponse(Throwable e) {
-        Map<String, Object> root = new HashMap<>();
-        String base = "";
-        String dist = base + "/dist";
-        root.put("base", base);
-        root.put("dist", dist);
-        root.put("title", "Not Found");
-        root.put("content", "error-404.ftl");
-        String body = cfg.buildFromTemplate(root, "page.ftl");
-        return Response.status(404)
-                .entity(body)
-                .type(MediaType.TEXT_HTML_TYPE)
-                .build();
-    }
+  private Response createHtmlResponse(Throwable e) {
+    Map<String, Object> root = new HashMap<>();
+    String base = "";
+    String dist = base + "/dist";
+    root.put("base", base);
+    root.put("dist", dist);
+    root.put("title", "Not Found");
+    root.put("content", "error-404.ftl");
+    String body = cfg.buildFromTemplate(root, "page.ftl");
+    return Response.status(404).entity(body).type(MediaType.TEXT_HTML_TYPE).build();
+  }
 }

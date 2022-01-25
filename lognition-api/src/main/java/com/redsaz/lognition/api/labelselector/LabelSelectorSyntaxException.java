@@ -24,12 +24,11 @@ import com.redsaz.lognition.api.exceptions.AppException;
  */
 public class LabelSelectorSyntaxException extends AppException {
 
-    public LabelSelectorSyntaxException() {
-        super();
-    }
+  public LabelSelectorSyntaxException() {
+    super();
+  }
 
-    public LabelSelectorSyntaxException(String message) {
-        super(message);
-    }
-
+  public LabelSelectorSyntaxException(String message) {
+    super(message);
+  }
 }

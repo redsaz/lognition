@@ -25,13 +25,12 @@ import java.io.IOException;
  */
 public interface SamplesWriter {
 
-    /**
-     * Converts samples into the final format.
-     *
-     * @param dest Destination of the final format
-     * @throws IOException If the input could not be read or the output could not be written.
-     * @return SHA256 of the resulting Avro file.
-     */
-    String write(Samples sourceSamples, File dest) throws IOException;
-
+  /**
+   * Converts samples into the final format.
+   *
+   * @param dest Destination of the final format
+   * @throws IOException If the input could not be read or the output could not be written.
+   * @return SHA256 of the resulting Avro file.
+   */
+  String write(Samples sourceSamples, File dest) throws IOException;
 }

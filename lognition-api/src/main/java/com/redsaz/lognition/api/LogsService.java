@@ -33,58 +33,57 @@ import java.util.List;
  */
 public interface LogsService {
 
-    Log create(Log source);
+  Log create(Log source);
 
-    InputStream getCsvContent(long id) throws IOException;
+  InputStream getCsvContent(long id) throws IOException;
 
-    File getAvroFile(long id) throws FileNotFoundException;
+  File getAvroFile(long id) throws FileNotFoundException;
 
-    Log get(long id);
+  Log get(long id);
 
-    List<Log> list();
+  List<Log> list();
 
-    List<Long> listIdsBySelector(LabelSelectorExpression labelSelector);
+  List<Long> listIdsBySelector(LabelSelectorExpression labelSelector);
 
-    Log update(Log source);
+  Log update(Log source);
 
-    void updateStatus(long id, Log.Status newStatus);
+  void updateStatus(long id, Log.Status newStatus);
 
-    void delete(long id);
+  void delete(long id);
 
-    List<Label> setLabels(long logId, Collection<Label> labels);
+  List<Label> setLabels(long logId, Collection<Label> labels);
 
-    List<Label> getLabels(long logId);
+  List<Label> getLabels(long logId);
 
-    /**
-     * Adds a new attachment or replaces an existing attachment. If the logId+attachment.path combo
-     * already exist, then the attachment will be replaced.
-     *
-     * @param logId the owner of the attachment
-     * @param source details of the attachment
-     * @param data the attachment contents
-     * @return The resulting Attachment data.
-     */
-    Attachment putAttachment(long logId, Attachment source, InputStream data);
+  /**
+   * Adds a new attachment or replaces an existing attachment. If the logId+attachment.path combo
+   * already exist, then the attachment will be replaced.
+   *
+   * @param logId the owner of the attachment
+   * @param source details of the attachment
+   * @param data the attachment contents
+   * @return The resulting Attachment data.
+   */
+  Attachment putAttachment(long logId, Attachment source, InputStream data);
 
-    /**
-     * Updates any details of the attachment (path, description, etc, but not data).
-     *
-     * @param logId the owner of the attachment
-     * @param source the updated details of the attachment
-     * @return The resulting Attachment data.
-     */
-    Attachment updateAttachment(long logId, Attachment source);
+  /**
+   * Updates any details of the attachment (path, description, etc, but not data).
+   *
+   * @param logId the owner of the attachment
+   * @param source the updated details of the attachment
+   * @return The resulting Attachment data.
+   */
+  Attachment updateAttachment(long logId, Attachment source);
 
-    /**
-     * List all attachments for a single log.
-     *
-     * @param logId the owner of the attachments
-     * @return a list of attachments for the review, or an empty list if none exist.
-     */
-    List<Attachment> listAttachments(long logId);
+  /**
+   * List all attachments for a single log.
+   *
+   * @param logId the owner of the attachments
+   * @return a list of attachments for the review, or an empty list if none exist.
+   */
+  List<Attachment> listAttachments(long logId);
 
-    InputStream getAttachmentData(long logId, String attachmentPath);
+  InputStream getAttachmentData(long logId, String attachmentPath);
 
-    void deleteAttachment(long logId, String attachmentPath);
-
+  void deleteAttachment(long logId, String attachmentPath);
 }

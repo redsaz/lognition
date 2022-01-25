@@ -19,20 +19,19 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
-import java.lang.annotation.Retention;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
- * Signifies that the bean to inject should be one for processing of tasks,
- * foreground, background, or both.
+ * Signifies that the bean to inject should be one for processing of tasks, foreground, background,
+ * or both.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 @Qualifier
 @Retention(RUNTIME)
 @Target({METHOD, FIELD, PARAMETER, TYPE})
-public @interface Processor {
-
-}
+public @interface Processor {}

@@ -17,8 +17,8 @@ package com.redsaz.lognition.convert;
 
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
-import com.redsaz.lognition.convert.model.HttpSample;
 import com.redsaz.lognition.api.model.Sample;
+import com.redsaz.lognition.convert.model.HttpSample;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -47,149 +47,158 @@ import org.slf4j.LoggerFactory;
  */
 public class AvroSamplesWriter implements SamplesWriter {
 
-    // Because we don't care about syncing, but DO care about repeatably
-    // creating the same output data given the same input data, we'll use
-    // our own sync marker rather than the randomly generated one that avro
-    // gives us.
-    private static final byte[] SYNC = new byte[16];
+  // Because we don't care about syncing, but DO care about repeatably
+  // creating the same output data given the same input data, we'll use
+  // our own sync marker rather than the randomly generated one that avro
+  // gives us.
+  private static final byte[] SYNC = new byte[16];
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AvroSamplesWriter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroSamplesWriter.class);
 
-    @Override
-    public String write(Samples sourceSamples, File dest) throws IOException {
-        String sha256Hash = null;
-        if (dest.exists()) {
-            LOGGER.debug("File \"{}\" already exists. It will be replaced.", dest);
+  @Override
+  public String write(Samples sourceSamples, File dest) throws IOException {
+    String sha256Hash = null;
+    if (dest.exists()) {
+      LOGGER.debug("File \"{}\" already exists. It will be replaced.", dest);
+    }
+    DatumWriter<HttpSample> httpSampleDatumWriter = new SpecificDatumWriter<>(HttpSample.class);
+    List<CharSequence> labels = createSortedList(sourceSamples.getLabels());
+    Map<CharSequence, Integer> labelLookup = createLookup(labels);
+    List<CharSequence> threadNames = createSortedList(sourceSamples.getThreadNames());
+    Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
+    try (HashingOutputStream hos =
+        new HashingOutputStream(
+            Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
+      try (DataFileWriter<HttpSample> dataFileWriter =
+          new DataFileWriter<>(httpSampleDatumWriter)) {
+        dataFileWriter.setMeta("earliest", sourceSamples.getEarliestMillis());
+        dataFileWriter.setMeta("latest", sourceSamples.getLatestMillis());
+        dataFileWriter.setMeta("numRows", sourceSamples.getSamples().size());
+
+        if (!labels.isEmpty()) {
+          writeMetaStringArray(dataFileWriter, "labels", labels);
         }
-        DatumWriter<HttpSample> httpSampleDatumWriter = new SpecificDatumWriter<>(HttpSample.class);
-        List<CharSequence> labels = createSortedList(sourceSamples.getLabels());
-        Map<CharSequence, Integer> labelLookup = createLookup(labels);
-        List<CharSequence> threadNames = createSortedList(sourceSamples.getThreadNames());
-        Map<CharSequence, Integer> threadNameLookup = createLookup(threadNames);
-        try (HashingOutputStream hos = new HashingOutputStream(Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
-            try (DataFileWriter<HttpSample> dataFileWriter = new DataFileWriter<>(httpSampleDatumWriter)) {
-                dataFileWriter.setMeta("earliest", sourceSamples.getEarliestMillis());
-                dataFileWriter.setMeta("latest", sourceSamples.getLatestMillis());
-                dataFileWriter.setMeta("numRows", sourceSamples.getSamples().size());
 
-                if (!labels.isEmpty()) {
-                    writeMetaStringArray(dataFileWriter, "labels", labels);
-                }
-
-                if (!threadNames.isEmpty()) {
-                    writeMetaStringArray(dataFileWriter, "threadNames", threadNames);
-                }
-
-                StatusCodeLookup statusCodeLookup = sourceSamples.getStatusCodeLookup();
-                List<CharSequence> codes = statusCodeLookup.getCustomCodes();
-                List<CharSequence> messages = statusCodeLookup.getCustomMessages();
-                if (codes != null && !codes.isEmpty()) {
-                    writeMetaStringArray(dataFileWriter, "codes", codes);
-                    writeMetaStringArray(dataFileWriter, "messages", messages);
-                }
-                dataFileWriter.create(HttpSample.getClassSchema(), hos, SYNC);
-
-                long numRowsWritten = 0;
-                long writeStartMs = System.currentTimeMillis();
-                for (Sample presample : sourceSamples.getSamples()) {
-                    HttpSample httpSample = convert(presample, labelLookup, threadNameLookup,
-                            statusCodeLookup);
-                    dataFileWriter.append(httpSample);
-                    ++numRowsWritten;
-                    if (numRowsWritten % 1000000L == 0) {
-                        LOGGER.debug("{}ms to write {} of {} rows so far.",
-                                System.currentTimeMillis() - writeStartMs,
-                                numRowsWritten, sourceSamples.getSamples().size());
-                    }
-                }
-            }
-            sha256Hash = hos.hash().toString();
+        if (!threadNames.isEmpty()) {
+          writeMetaStringArray(dataFileWriter, "threadNames", threadNames);
         }
-        return sha256Hash;
-    }
 
-    private static HttpSample createNewEmptyHttpSample() {
-        HttpSample hs = new HttpSample();
-        hs.setMillisElapsed(-1L);
-        hs.setResponseBytes(-1L);
-        return hs;
-    }
-
-    private static List<CharSequence> createSortedList(Collection<String> items) {
-        SortedSet<String> sortedSet = new TreeSet<>(items);
-        List<CharSequence> list = new ArrayList<>(sortedSet.size());
-        sortedSet.stream().forEach((item) -> {
-            list.add(new Utf8(item));
-        });
-        return list;
-    }
-
-    // This iterable better not change between when this is called and when
-    // the array is made, otherwise it'll be all sorts of messed up and you
-    // won't be able to know.
-    private static Map<CharSequence, Integer> createLookup(Iterable<CharSequence> items) {
-        Map<CharSequence, Integer> lookup = new HashMap<>();
-        Integer ref = 1;
-        for (CharSequence item : items) {
-            lookup.put(item.toString(), ref);
-            ++ref;
+        StatusCodeLookup statusCodeLookup = sourceSamples.getStatusCodeLookup();
+        List<CharSequence> codes = statusCodeLookup.getCustomCodes();
+        List<CharSequence> messages = statusCodeLookup.getCustomMessages();
+        if (codes != null && !codes.isEmpty()) {
+          writeMetaStringArray(dataFileWriter, "codes", codes);
+          writeMetaStringArray(dataFileWriter, "messages", messages);
         }
-        return lookup;
-    }
+        dataFileWriter.create(HttpSample.getClassSchema(), hos, SYNC);
 
-    private static void writeMetaStringArray(DataFileWriter<?> dataFileWriter, String name, Collection<CharSequence> items) throws IOException {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            Encoder enc = EncoderFactory.get().directBinaryEncoder(baos, null);
-            enc.writeArrayStart();
-            enc.setItemCount(items.size());
-            for (CharSequence item : items) {
-                enc.writeString(item);
-            }
-            enc.writeArrayEnd();
-            dataFileWriter.setMeta(name, baos.toByteArray());
+        long numRowsWritten = 0;
+        long writeStartMs = System.currentTimeMillis();
+        for (Sample presample : sourceSamples.getSamples()) {
+          HttpSample httpSample =
+              convert(presample, labelLookup, threadNameLookup, statusCodeLookup);
+          dataFileWriter.append(httpSample);
+          ++numRowsWritten;
+          if (numRowsWritten % 1000000L == 0) {
+            LOGGER.debug(
+                "{}ms to write {} of {} rows so far.",
+                System.currentTimeMillis() - writeStartMs,
+                numRowsWritten,
+                sourceSamples.getSamples().size());
+          }
         }
+      }
+      sha256Hash = hos.hash().toString();
     }
+    return sha256Hash;
+  }
 
-    private static HttpSample convert(Sample row,
-            Map<CharSequence, Integer> labelLookup,
-            Map<CharSequence, Integer> threadNameLookup,
-            StatusCodeLookup statusCodeLookup) {
-        HttpSample hs = createNewEmptyHttpSample();
-        hs.setResponseBytes(longOrDefault(row.getResponseBytes(), -1));
-        hs.setTotalThreads(intOrDefault(row.getTotalThreads(), 0));
-        int labelRef = labelLookup.getOrDefault(row.getLabel(), 0);
-        if (labelRef < 1) {
-            LOGGER.warn("Bad labelRef={}", labelRef);
-        }
-        hs.setLabelRef(labelRef);
-        hs.setMillisElapsed(longOrDefault(row.getDuration(), 0));
-        hs.setMillisOffset(row.getOffset());
-        hs.setResponseCodeRef(statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage()));
-        hs.setSuccess(booleanOrDefault(row.isSuccess(), true));
-        hs.setThreadNameRef(threadNameLookup.getOrDefault(row.getThreadName(), 0));
+  private static HttpSample createNewEmptyHttpSample() {
+    HttpSample hs = new HttpSample();
+    hs.setMillisElapsed(-1L);
+    hs.setResponseBytes(-1L);
+    return hs;
+  }
 
-        return hs;
+  private static List<CharSequence> createSortedList(Collection<String> items) {
+    SortedSet<String> sortedSet = new TreeSet<>(items);
+    List<CharSequence> list = new ArrayList<>(sortedSet.size());
+    sortedSet.stream()
+        .forEach(
+            (item) -> {
+              list.add(new Utf8(item));
+            });
+    return list;
+  }
+
+  // This iterable better not change between when this is called and when
+  // the array is made, otherwise it'll be all sorts of messed up and you
+  // won't be able to know.
+  private static Map<CharSequence, Integer> createLookup(Iterable<CharSequence> items) {
+    Map<CharSequence, Integer> lookup = new HashMap<>();
+    Integer ref = 1;
+    for (CharSequence item : items) {
+      lookup.put(item.toString(), ref);
+      ++ref;
     }
+    return lookup;
+  }
 
-    private static long longOrDefault(Long value, long defaultVal) {
-        if (value == null) {
-            return defaultVal;
-        }
-        return value;
+  private static void writeMetaStringArray(
+      DataFileWriter<?> dataFileWriter, String name, Collection<CharSequence> items)
+      throws IOException {
+    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+      Encoder enc = EncoderFactory.get().directBinaryEncoder(baos, null);
+      enc.writeArrayStart();
+      enc.setItemCount(items.size());
+      for (CharSequence item : items) {
+        enc.writeString(item);
+      }
+      enc.writeArrayEnd();
+      dataFileWriter.setMeta(name, baos.toByteArray());
     }
+  }
 
-    private static int intOrDefault(Integer value, int defaultVal) {
-        if (value == null) {
-            return defaultVal;
-        }
-        return value;
+  private static HttpSample convert(
+      Sample row,
+      Map<CharSequence, Integer> labelLookup,
+      Map<CharSequence, Integer> threadNameLookup,
+      StatusCodeLookup statusCodeLookup) {
+    HttpSample hs = createNewEmptyHttpSample();
+    hs.setResponseBytes(longOrDefault(row.getResponseBytes(), -1));
+    hs.setTotalThreads(intOrDefault(row.getTotalThreads(), 0));
+    int labelRef = labelLookup.getOrDefault(row.getLabel(), 0);
+    if (labelRef < 1) {
+      LOGGER.warn("Bad labelRef={}", labelRef);
     }
+    hs.setLabelRef(labelRef);
+    hs.setMillisElapsed(longOrDefault(row.getDuration(), 0));
+    hs.setMillisOffset(row.getOffset());
+    hs.setResponseCodeRef(statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage()));
+    hs.setSuccess(booleanOrDefault(row.isSuccess(), true));
+    hs.setThreadNameRef(threadNameLookup.getOrDefault(row.getThreadName(), 0));
 
-    private static boolean booleanOrDefault(Boolean value, boolean defaultVal) {
-        if (value == null) {
-            return defaultVal;
-        }
-        return value;
+    return hs;
+  }
+
+  private static long longOrDefault(Long value, long defaultVal) {
+    if (value == null) {
+      return defaultVal;
     }
+    return value;
+  }
 
+  private static int intOrDefault(Integer value, int defaultVal) {
+    if (value == null) {
+      return defaultVal;
+    }
+    return value;
+  }
+
+  private static boolean booleanOrDefault(Boolean value, boolean defaultVal) {
+    if (value == null) {
+      return defaultVal;
+    }
+    return value;
+  }
 }

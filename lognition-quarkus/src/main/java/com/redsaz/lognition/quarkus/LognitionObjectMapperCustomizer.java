@@ -15,10 +15,11 @@
  */
 package com.redsaz.lognition.quarkus;
 
+import static io.quarkus.jackson.ObjectMapperCustomizer.MINIMUM_PRIORITY;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.jackson.ObjectMapperCustomizer;
-import static io.quarkus.jackson.ObjectMapperCustomizer.MINIMUM_PRIORITY;
 import javax.inject.Singleton;
 
 /**
@@ -29,14 +30,14 @@ import javax.inject.Singleton;
 @Singleton
 public class LognitionObjectMapperCustomizer implements ObjectMapperCustomizer {
 
-    @Override
-    public int priority() {
-        return MINIMUM_PRIORITY;
-    }
+  @Override
+  public int priority() {
+    return MINIMUM_PRIORITY;
+  }
 
-    @Override
-    public void customize(ObjectMapper objectMapper) {
-        // Only include fields if they are non-null values.
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
+  @Override
+  public void customize(ObjectMapper objectMapper) {
+    // Only include fields if they are non-null values.
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+  }
 }

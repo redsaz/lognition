@@ -17,34 +17,22 @@ package com.redsaz.lognition.api.labelselector;
 
 import java.util.List;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public interface LabelSelectorExpressionListener {
 
-    default void finish() {
-    }
+  default void finish() {}
 
-    default void and() {
-    }
+  default void and() {}
 
-    default void exists(String labelName) {
-    }
+  default void exists(String labelName) {}
 
-    default void notExists(String labelName) {
-    }
+  default void notExists(String labelName) {}
 
-    default void equals(String labelName, String labelValue) {
-    }
+  default void equals(String labelName, String labelValue) {}
 
-    default void notEquals(String labelName, String labelValue) {
-    }
+  default void notEquals(String labelName, String labelValue) {}
 
-    default void in(String labelName, List<String> labelValues) {
-    }
+  default void in(String labelName, List<String> labelValues) {}
 
-    default void notIn(String labelName, List<String> labelValues) {
-    }
-
+  default void notIn(String labelName, List<String> labelValues) {}
 }

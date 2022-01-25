@@ -22,7 +22,7 @@ package com.redsaz.lognition.api;
  */
 public class LognitionMediaType {
 
-    public static final String LOGBRIEFS_V1_JSON = "application/x-lognition-v1-logbriefs+json";
-    public static final String LOGBRIEF_V1_JSON = "application/x-lognition-v1-logbrief+json";
-    public static final String REVIEW_V1_JSON = "application/x-lognition-v1-review+json";
+  public static final String LOGBRIEFS_V1_JSON = "application/x-lognition-v1-logbriefs+json";
+  public static final String LOGBRIEF_V1_JSON = "application/x-lognition-v1-logbrief+json";
+  public static final String REVIEW_V1_JSON = "application/x-lognition-v1-review+json";
 }

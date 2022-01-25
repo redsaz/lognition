@@ -26,356 +26,356 @@ import java.util.Map;
  * https://jmeter.apache.org/usermanual/listeners.html
  */
 /*package protected*/ enum JtlType {
-    // in milliseconds since 1/1/1970
-    TIMESTAMP("timeStamp", FromStrings.LONG_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setTimeStamp((Long) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setOffset((Long) convert(value));
-            return dest;
-        }
-    },
-    // in milliseconds
-    ELAPSED("elapsed", FromStrings.LONG_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setElapsed((Long) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setDuration((Long) convert(value));
-            return dest;
-        }
-    },
-    // sampler label
-    LABEL("label", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setLabel((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setLabel((String) convert(value));
-            return dest;
-        }
-    },
-    // e.g. 200, 404
-    RESPONSE_CODE("responseCode", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setResponseCode((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setStatusCode((String) convert(value));
-            return dest;
-        }
-    },
-    // e.g. OK
-    RESPONSE_MESSAGE("responseMessage", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setResponseMessage((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setStatusMessage((String) convert(value));
-            return dest;
-        }
-    },
-    // Name of thread
-    THREAD_NAME("threadName", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setThreadName((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setThreadName(value);
-            return dest;
-        }
-    },
-    // e.g. text
-    DATA_TYPE("dataType", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setDataType((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // true or false
-    SUCCESS("success", FromStrings.BOOLEAN_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setSuccess((Boolean) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setSuccess((Boolean) convert(value));
-            return dest;
-        }
-    },
-    // if any
-    FAILURE_MESSAGE("failureMessage", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setFailureMessage((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // number of bytes in the sample
-    BYTES("bytes", FromStrings.LONG_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setBytes((Long) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setResponseBytes((Long) convert(value));
-            return dest;
-        }
-    },
-    // number of bytes sent for the sample
-    SENT_BYTES("sentBytes", FromStrings.LONG_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setSentBytes((Long) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // number of active threads in this thread group
-    GRP_THREADS("grpThreads", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setGrpThreads((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // total number of active threads in all groups
-    ALL_THREADS("allThreads", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setAllThreads((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            dest.setTotalThreads((Integer) convert(value));
-            return dest;
-        }
-    },
-    // Uniform Resource Locator
-    URL("URL", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setURL((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // If Save Response to File was used
-    FILENAME("Filename", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setFilename((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // Time to first response
-    LATENCY("Latency", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setLatency((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            return dest;
-        }
-    },
-    // Time to establish connection
-    CONNECT("connect", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setConnect((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    ENCODING("encoding", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setEncoding((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // number of samples (1, unless multiple samples are aggregated)
-    SAMPLE_COUNT("SampleCount", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setSampleCount((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            return dest;
-        }
-    },
-    // ErrorCount - number of errors (0 or 1, unless multiple samples are aggregated)
-    ERROR_COUNT("ErrorCount", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setErrorCount((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // where the sample was generated
-    HOSTNAME("Hostname", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setHostname((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    // number of milliseconds of 'Idle' time (normally 0)
-    IDLE_TIME("IdleTime", FromStrings.INTEGER_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setIdleTime((Integer) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    },
-    //if specified
-    VARIABLES("Variables", FromStrings.STRING_FS) {
-        @Override
-        public CsvJtlRow putIn(CsvJtlRow dest, String value) {
-            dest.setVariables((String) convert(value));
-            return dest;
-        }
-
-        @Override
-        public Sample putIn(Sample dest, String value) {
-            // Do nothing, PreSample doesn't use this.
-            return dest;
-        }
-    };
-
-    private final String csvName;
-    private final FromString<?> fromStringer;
-    private static final Map<String, JtlType> header2Type = initMap();
-
-    JtlType(String inCsvName, FromString<?> inFromString) {
-        csvName = inCsvName;
-        fromStringer = inFromString;
+  // in milliseconds since 1/1/1970
+  TIMESTAMP("timeStamp", FromStrings.LONG_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setTimeStamp((Long) convert(value));
+      return dest;
     }
 
-    public Object convert(String str) {
-        return fromStringer.fromString(str);
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setOffset((Long) convert(value));
+      return dest;
+    }
+  },
+  // in milliseconds
+  ELAPSED("elapsed", FromStrings.LONG_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setElapsed((Long) convert(value));
+      return dest;
     }
 
-    public String csvName() {
-        return csvName;
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setDuration((Long) convert(value));
+      return dest;
+    }
+  },
+  // sampler label
+  LABEL("label", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setLabel((String) convert(value));
+      return dest;
     }
 
-    public abstract CsvJtlRow putIn(CsvJtlRow dest, String value);
-
-    public abstract Sample putIn(Sample dest, String value);
-
-    public static JtlType fromHeader(String header) {
-        return header2Type.get(header.toLowerCase(Locale.US));
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setLabel((String) convert(value));
+      return dest;
+    }
+  },
+  // e.g. 200, 404
+  RESPONSE_CODE("responseCode", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setResponseCode((String) convert(value));
+      return dest;
     }
 
-    private static Map<String, JtlType> initMap() {
-        Map<String, JtlType> map = new HashMap<>();
-        for (JtlType t : JtlType.values()) {
-            map.put(t.csvName.toLowerCase(Locale.US), t);
-        }
-        return map;
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setStatusCode((String) convert(value));
+      return dest;
     }
+  },
+  // e.g. OK
+  RESPONSE_MESSAGE("responseMessage", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setResponseMessage((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setStatusMessage((String) convert(value));
+      return dest;
+    }
+  },
+  // Name of thread
+  THREAD_NAME("threadName", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setThreadName((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setThreadName(value);
+      return dest;
+    }
+  },
+  // e.g. text
+  DATA_TYPE("dataType", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setDataType((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // true or false
+  SUCCESS("success", FromStrings.BOOLEAN_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setSuccess((Boolean) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setSuccess((Boolean) convert(value));
+      return dest;
+    }
+  },
+  // if any
+  FAILURE_MESSAGE("failureMessage", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setFailureMessage((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // number of bytes in the sample
+  BYTES("bytes", FromStrings.LONG_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setBytes((Long) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setResponseBytes((Long) convert(value));
+      return dest;
+    }
+  },
+  // number of bytes sent for the sample
+  SENT_BYTES("sentBytes", FromStrings.LONG_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setSentBytes((Long) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // number of active threads in this thread group
+  GRP_THREADS("grpThreads", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setGrpThreads((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // total number of active threads in all groups
+  ALL_THREADS("allThreads", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setAllThreads((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      dest.setTotalThreads((Integer) convert(value));
+      return dest;
+    }
+  },
+  // Uniform Resource Locator
+  URL("URL", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setURL((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // If Save Response to File was used
+  FILENAME("Filename", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setFilename((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // Time to first response
+  LATENCY("Latency", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setLatency((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      return dest;
+    }
+  },
+  // Time to establish connection
+  CONNECT("connect", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setConnect((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  ENCODING("encoding", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setEncoding((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // number of samples (1, unless multiple samples are aggregated)
+  SAMPLE_COUNT("SampleCount", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setSampleCount((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      return dest;
+    }
+  },
+  // ErrorCount - number of errors (0 or 1, unless multiple samples are aggregated)
+  ERROR_COUNT("ErrorCount", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setErrorCount((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // where the sample was generated
+  HOSTNAME("Hostname", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setHostname((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // number of milliseconds of 'Idle' time (normally 0)
+  IDLE_TIME("IdleTime", FromStrings.INTEGER_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setIdleTime((Integer) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  },
+  // if specified
+  VARIABLES("Variables", FromStrings.STRING_FS) {
+    @Override
+    public CsvJtlRow putIn(CsvJtlRow dest, String value) {
+      dest.setVariables((String) convert(value));
+      return dest;
+    }
+
+    @Override
+    public Sample putIn(Sample dest, String value) {
+      // Do nothing, PreSample doesn't use this.
+      return dest;
+    }
+  };
+
+  private final String csvName;
+  private final FromString<?> fromStringer;
+  private static final Map<String, JtlType> header2Type = initMap();
+
+  JtlType(String inCsvName, FromString<?> inFromString) {
+    csvName = inCsvName;
+    fromStringer = inFromString;
+  }
+
+  public Object convert(String str) {
+    return fromStringer.fromString(str);
+  }
+
+  public String csvName() {
+    return csvName;
+  }
+
+  public abstract CsvJtlRow putIn(CsvJtlRow dest, String value);
+
+  public abstract Sample putIn(Sample dest, String value);
+
+  public static JtlType fromHeader(String header) {
+    return header2Type.get(header.toLowerCase(Locale.US));
+  }
+
+  private static Map<String, JtlType> initMap() {
+    Map<String, JtlType> map = new HashMap<>();
+    for (JtlType t : JtlType.values()) {
+      map.put(t.csvName.toLowerCase(Locale.US), t);
+    }
+    return map;
+  }
 }

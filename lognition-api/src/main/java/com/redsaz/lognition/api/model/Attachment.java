@@ -1,15 +1,15 @@
 /**
  * Copyright 2021 Redsaz <redsaz@gmail.com>.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.redsaz.lognition.api.model;
 
@@ -25,114 +25,129 @@ import java.util.Objects;
  */
 public class Attachment {
 
-    private final long id;
-    private final String owner;
-    private final String path;
-    private final String name;
-    private final String description;
-    private final String mimeType;
-    private final long uploadedUtcMillis;
+  private final long id;
+  private final String owner;
+  private final String path;
+  private final String name;
+  private final String description;
+  private final String mimeType;
+  private final long uploadedUtcMillis;
 
-    @JsonCreator
-    @ConstructorProperties({"id", "owner", "path", "name", "description", "mimetype", "uploadedUtcMillis"})
-    public Attachment(
-            @JsonProperty("id") long id,
-            @JsonProperty("owner") String owner,
-            @JsonProperty("path") String path,
-            @JsonProperty("name") String name,
-            @JsonProperty("description") String description,
-            @JsonProperty("mimeType") String mimeType,
-            @JsonProperty("uploadedUtcMillis") long uploadedUtcMillis) {
-        this.id = id;
-        this.owner = owner;
-        this.path = path;
-        this.name = name;
-        this.description = description;
-        this.mimeType = mimeType;
-        this.uploadedUtcMillis = uploadedUtcMillis;
+  @JsonCreator
+  @ConstructorProperties({
+    "id",
+    "owner",
+    "path",
+    "name",
+    "description",
+    "mimetype",
+    "uploadedUtcMillis"
+  })
+  public Attachment(
+      @JsonProperty("id") long id,
+      @JsonProperty("owner") String owner,
+      @JsonProperty("path") String path,
+      @JsonProperty("name") String name,
+      @JsonProperty("description") String description,
+      @JsonProperty("mimeType") String mimeType,
+      @JsonProperty("uploadedUtcMillis") long uploadedUtcMillis) {
+    this.id = id;
+    this.owner = owner;
+    this.path = path;
+    this.name = name;
+    this.description = description;
+    this.mimeType = mimeType;
+    this.uploadedUtcMillis = uploadedUtcMillis;
+  }
+
+  public long getId() {
+    return id;
+  }
+
+  public String getOwner() {
+    return owner;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public String getMimeType() {
+    return mimeType;
+  }
+
+  public long getUploadedUtcMillis() {
+    return uploadedUtcMillis;
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    hash = 79 * hash + (int) (this.id ^ (this.id >>> 32));
+    hash = 79 * hash + Objects.hashCode(this.owner);
+    hash = 79 * hash + Objects.hashCode(this.path);
+    hash = 79 * hash + Objects.hashCode(this.description);
+    hash = 79 * hash + Objects.hashCode(this.mimeType);
+    hash = 79 * hash + (int) (this.uploadedUtcMillis ^ (this.uploadedUtcMillis >>> 32));
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    public long getId() {
-        return id;
+    if (obj == null) {
+      return false;
     }
-
-    public String getOwner() {
-        return owner;
+    if (getClass() != obj.getClass()) {
+      return false;
     }
-
-    public String getPath() {
-        return path;
+    final Attachment other = (Attachment) obj;
+    if (this.id != other.id) {
+      return false;
     }
-
-    public String getName() {
-        return name;
+    if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
+      return false;
     }
-
-    public String getDescription() {
-        return description;
+    if (!Objects.equals(this.owner, other.owner)) {
+      return false;
     }
-
-    public String getMimeType() {
-        return mimeType;
+    if (!Objects.equals(this.path, other.path)) {
+      return false;
     }
-
-    public long getUploadedUtcMillis() {
-        return uploadedUtcMillis;
+    if (!Objects.equals(this.mimeType, other.mimeType)) {
+      return false;
     }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 79 * hash + (int) (this.id ^ (this.id >>> 32));
-        hash = 79 * hash + Objects.hashCode(this.owner);
-        hash = 79 * hash + Objects.hashCode(this.path);
-        hash = 79 * hash + Objects.hashCode(this.description);
-        hash = 79 * hash + Objects.hashCode(this.mimeType);
-        hash = 79 * hash + (int) (this.uploadedUtcMillis ^ (this.uploadedUtcMillis >>> 32));
-        return hash;
+    if (!Objects.equals(this.description, other.description)) {
+      return false;
     }
+    return true;
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Attachment other = (Attachment) obj;
-        if (this.id != other.id) {
-            return false;
-        }
-        if (this.uploadedUtcMillis != other.uploadedUtcMillis) {
-            return false;
-        }
-        if (!Objects.equals(this.owner, other.owner)) {
-            return false;
-        }
-        if (!Objects.equals(this.path, other.path)) {
-            return false;
-        }
-        if (!Objects.equals(this.mimeType, other.mimeType)) {
-            return false;
-        }
-        if (!Objects.equals(this.description, other.description)) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "Attachment{" + "id=" + id
-                + ", owner=" + owner
-                + ", path=" + path
-                + ", description=" + description
-                + ", mimeType=" + mimeType
-                + ", uploadedUtcMillis=" + uploadedUtcMillis + '}';
-    }
-
+  @Override
+  public String toString() {
+    return "Attachment{"
+        + "id="
+        + id
+        + ", owner="
+        + owner
+        + ", path="
+        + path
+        + ", description="
+        + description
+        + ", mimeType="
+        + mimeType
+        + ", uploadedUtcMillis="
+        + uploadedUtcMillis
+        + '}';
+  }
 }

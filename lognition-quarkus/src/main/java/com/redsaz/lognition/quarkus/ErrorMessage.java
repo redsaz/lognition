@@ -19,27 +19,25 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.beans.ConstructorProperties;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public class ErrorMessage {
 
-    private final String error;
-    private final String message;
+  private final String error;
+  private final String message;
 
-    @JsonCreator
-    @ConstructorProperties({"error", "message"})
-    public ErrorMessage(@JsonProperty("error") String error, @JsonProperty("message") String message) {
-        this.error = error;
-        this.message = message;
-    }
+  @JsonCreator
+  @ConstructorProperties({"error", "message"})
+  public ErrorMessage(
+      @JsonProperty("error") String error, @JsonProperty("message") String message) {
+    this.error = error;
+    this.message = message;
+  }
 
-    public String getError() {
-        return error;
-    }
+  public String getError() {
+    return error;
+  }
 
-    public String getMessage() {
-        return message;
-    }
+  public String getMessage() {
+    return message;
+  }
 }

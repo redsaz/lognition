@@ -31,32 +31,32 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class FreemarkerTemplater implements Templater {
 
-    private Configuration cfg;
+  private Configuration cfg;
 
-    public FreemarkerTemplater() {
-        cfg = initConfig();
-    }
+  public FreemarkerTemplater() {
+    cfg = initConfig();
+  }
 
-    @Override
-    public String buildFromTemplate(Object dataModel, String templateName) {
-        try {
-            Template temp = cfg.getTemplate("page.ftl");
-            StringWriter sw = new StringWriter();
-            temp.process(dataModel, sw);
-            return sw.toString();
-        } catch (IOException ex) {
-            throw new RuntimeException("Cannot load template: " + ex.getMessage(), ex);
-        } catch (TemplateException ex) {
-            throw new RuntimeException("Cannot process template: " + ex.getMessage(), ex);
-        }
+  @Override
+  public String buildFromTemplate(Object dataModel, String templateName) {
+    try {
+      Template temp = cfg.getTemplate("page.ftl");
+      StringWriter sw = new StringWriter();
+      temp.process(dataModel, sw);
+      return sw.toString();
+    } catch (IOException ex) {
+      throw new RuntimeException("Cannot load template: " + ex.getMessage(), ex);
+    } catch (TemplateException ex) {
+      throw new RuntimeException("Cannot process template: " + ex.getMessage(), ex);
     }
+  }
 
-    private static Configuration initConfig() {
-        Configuration config = new Configuration(Configuration.VERSION_2_3_23);
-        config.setClassForTemplateLoading(FreemarkerTemplater.class, "templates");
-        config.setDefaultEncoding("UTF-8");
-        // DEBUG_HANDLER is better for debug, not production
-        config.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
-        return config;
-    }
+  private static Configuration initConfig() {
+    Configuration config = new Configuration(Configuration.VERSION_2_3_23);
+    config.setClassForTemplateLoading(FreemarkerTemplater.class, "templates");
+    config.setDefaultEncoding("UTF-8");
+    // DEBUG_HANDLER is better for debug, not production
+    config.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
+    return config;
+  }
 }

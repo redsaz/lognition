@@ -18,27 +18,25 @@ package com.redsaz.lognition.api.labelselector;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Redsaz <redsaz@gmail.com>
- */
+/** @author Redsaz <redsaz@gmail.com> */
 public class ComposibleLabelSelectorExpression implements LabelSelectorExpression {
 
-    List<LabelSelectorExpression> expressions = new ArrayList<>();
+  List<LabelSelectorExpression> expressions = new ArrayList<>();
 
-    @Override
-    public void consume(LabelSelectorExpressionListener listener) {
-        if (expressions.isEmpty()) {
-            listener.finish();
-            return;
-        }
-        expressions.stream().forEach((t) -> {
-            t.consume(listener);
-        });
+  @Override
+  public void consume(LabelSelectorExpressionListener listener) {
+    if (expressions.isEmpty()) {
+      listener.finish();
+      return;
     }
+    expressions.stream()
+        .forEach(
+            (t) -> {
+              t.consume(listener);
+            });
+  }
 
-    public void addExpression(LabelSelectorExpression expression) {
-        expressions.add(expression);
-    }
-
+  public void addExpression(LabelSelectorExpression expression) {
+    expressions.add(expression);
+  }
 }

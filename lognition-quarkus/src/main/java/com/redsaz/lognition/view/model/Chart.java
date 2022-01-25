@@ -22,31 +22,31 @@ package com.redsaz.lognition.view.model;
  */
 public class Chart {
 
-    private final String name;
-    private final String urlName;
-    private final String chartHtml;
-    private final String height;
+  private final String name;
+  private final String urlName;
+  private final String chartHtml;
+  private final String height;
 
-    public Chart(String inName, String inUrlName, String inChartHtml, String inHeight) {
-        name = inName;
-        urlName = inUrlName;
-        chartHtml = inChartHtml;
-        height = inHeight;
-    }
+  public Chart(String inName, String inUrlName, String inChartHtml, String inHeight) {
+    name = inName;
+    urlName = inUrlName;
+    chartHtml = inChartHtml;
+    height = inHeight;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public String getUrlName() {
-        return urlName;
-    }
+  public String getUrlName() {
+    return urlName;
+  }
 
-    public String getChartHtml() {
-        return chartHtml;
-    }
+  public String getChartHtml() {
+    return chartHtml;
+  }
 
-    public String getHeight() {
-        return height;
-    }
+  public String getHeight() {
+    return height;
+  }
 }

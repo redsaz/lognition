@@ -26,44 +26,44 @@ import java.util.List;
  */
 public interface AttachmentsService {
 
-    /**
-     * Adds or replaces an attachment. If the attachment's owner and path already exist then the
-     * attachment will be replaced with the new attachment. Otherwise the attachment will be added.
-     *
-     * @param source the original details of the attachment
-     * @param data the content of the attachment to store
-     * @return details of the new or updated attachment.
-     */
-    Attachment put(Attachment source, InputStream data);
+  /**
+   * Adds or replaces an attachment. If the attachment's owner and path already exist then the
+   * attachment will be replaced with the new attachment. Otherwise the attachment will be added.
+   *
+   * @param source the original details of the attachment
+   * @param data the content of the attachment to store
+   * @return details of the new or updated attachment.
+   */
+  Attachment put(Attachment source, InputStream data);
 
-    InputStream getData(String owner, String path);
+  InputStream getData(String owner, String path);
 
-    Attachment get(String owner, String path);
+  Attachment get(String owner, String path);
 
-    List<Attachment> listForOwner(String owner);
+  List<Attachment> listForOwner(String owner);
 
-    /**
-     * Updates the description and mimetype of the attachment.
-     *
-     * @param source contains the owner, new description, and new mimetype. Null values are ignored
-     * and will not be updated.
-     * @return The result of the updates.
-     */
-    Attachment update(Attachment source);
+  /**
+   * Updates the description and mimetype of the attachment.
+   *
+   * @param source contains the owner, new description, and new mimetype. Null values are ignored
+   *     and will not be updated.
+   * @return The result of the updates.
+   */
+  Attachment update(Attachment source);
 
-    /**
-     * Moves an attachment from one path to another. If the target path is already used by another
-     * attachment, then the other attachment will be deleted and replaced by the the source
-     * attachment.
-     *
-     * @param owner the owner of the attachment
-     * @param sourcePath the original attachment path
-     * @param targetPath the destination attachment path.
-     * @return The attachment that was moved.
-     */
-    Attachment move(String owner, String sourcePath, String targetPath);
+  /**
+   * Moves an attachment from one path to another. If the target path is already used by another
+   * attachment, then the other attachment will be deleted and replaced by the the source
+   * attachment.
+   *
+   * @param owner the owner of the attachment
+   * @param sourcePath the original attachment path
+   * @param targetPath the destination attachment path.
+   * @return The attachment that was moved.
+   */
+  Attachment move(String owner, String sourcePath, String targetPath);
 
-    void delete(String owner, String path);
+  void delete(String owner, String path);
 
-    void deleteForOwner(String owner);
+  void deleteForOwner(String owner);
 }

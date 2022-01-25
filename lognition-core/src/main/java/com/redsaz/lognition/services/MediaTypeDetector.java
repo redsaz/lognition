@@ -32,65 +32,63 @@ import org.apache.tika.mime.MediaType;
  */
 public class MediaTypeDetector {
 
-    private final TikaConfig tika;
+  private final TikaConfig tika;
 
-    public MediaTypeDetector() {
-        try {
-            tika = new TikaConfig();
-        } catch (TikaException | IOException ex) {
-            throw new AppServerException("Failed to initialize media type detector", ex);
-        }
+  public MediaTypeDetector() {
+    try {
+      tika = new TikaConfig();
+    } catch (TikaException | IOException ex) {
+      throw new AppServerException("Failed to initialize media type detector", ex);
+    }
+  }
+
+  public String detect(InputStream source, String filename) {
+    Metadata meta = new Metadata();
+    if (filename != null) {
+      meta.set(Metadata.RESOURCE_NAME_KEY, filename);
     }
 
-    public String detect(InputStream source, String filename) {
-        Metadata meta = new Metadata();
-        if (filename != null) {
-            meta.set(Metadata.RESOURCE_NAME_KEY, filename);
-        }
+    try (TikaInputStream tis = TikaInputStream.get(source)) {
+      return tika.getDetector().detect(tis, meta).getBaseType().toString();
+    } catch (IOException ex) {
+      throw new AppServerException(
+          "Error detecting media type for file=" + source + " filename=" + filename, ex);
+    }
+  }
 
-        try (TikaInputStream tis = TikaInputStream.get(source)) {
-            return tika.getDetector()
-                    .detect(tis, meta)
-                    .getBaseType()
-                    .toString();
-        } catch (IOException ex) {
-            throw new AppServerException("Error detecting media type for file=" + source
-                    + " filename=" + filename, ex);
-        }
-
+  public String detect(File source, String filename, String suggestedMimeType) {
+    Metadata meta = new Metadata();
+    if (filename != null) {
+      meta.set(Metadata.RESOURCE_NAME_KEY, filename);
+    }
+    if (suggestedMimeType != null) {
+      meta.set(Metadata.CONTENT_TYPE, suggestedMimeType);
     }
 
-    public String detect(File source, String filename, String suggestedMimeType) {
-        Metadata meta = new Metadata();
-        if (filename != null) {
-            meta.set(Metadata.RESOURCE_NAME_KEY, filename);
-        }
-        if (suggestedMimeType != null) {
-            meta.set(Metadata.CONTENT_TYPE, suggestedMimeType);
-        }
-
-        try (TikaInputStream tis = TikaInputStream.get(source)) {
-            return tika.getDetector()
-                    .detect(tis, meta)
-                    .getBaseType()
-                    .toString();
-        } catch (IOException ex) {
-            throw new AppServerException("Error detecting media type for file=" + source
-                    + " filename=" + filename + " suggestedMimeType=" + suggestedMimeType, ex);
-        }
-
+    try (TikaInputStream tis = TikaInputStream.get(source)) {
+      return tika.getDetector().detect(tis, meta).getBaseType().toString();
+    } catch (IOException ex) {
+      throw new AppServerException(
+          "Error detecting media type for file="
+              + source
+              + " filename="
+              + filename
+              + " suggestedMimeType="
+              + suggestedMimeType,
+          ex);
     }
+  }
 
-    /**
-     * Retrieves the basetype (the type and subtype) of the media type, leaving off anything after
-     * and including the first semicolon.
-     * <p>
-     * Example: image/jpeg;foo=bar becomes image/jpeg
-     *
-     * @param type the media type string as received from the header.
-     * @return the type and subtype
-     */
-    public String getBaseType(String type) {
-        return MediaType.parse(type).getBaseType().toString();
-    }
+  /**
+   * Retrieves the basetype (the type and subtype) of the media type, leaving off anything after and
+   * including the first semicolon.
+   *
+   * <p>Example: image/jpeg;foo=bar becomes image/jpeg
+   *
+   * @param type the media type string as received from the header.
+   * @return the type and subtype
+   */
+  public String getBaseType(String type) {
+    return MediaType.parse(type).getBaseType().toString();
+  }
 }

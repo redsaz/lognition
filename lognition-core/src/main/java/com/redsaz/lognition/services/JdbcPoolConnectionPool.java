@@ -27,14 +27,14 @@ import org.hsqldb.jdbc.JDBCPool;
  */
 public class JdbcPoolConnectionPool implements ConnectionPool {
 
-    private final JDBCPool pool;
+  private final JDBCPool pool;
 
-    public JdbcPoolConnectionPool(JDBCPool jdbcPool) {
-        pool = jdbcPool;
-    }
+  public JdbcPoolConnectionPool(JDBCPool jdbcPool) {
+    pool = jdbcPool;
+  }
 
-    @Override
-    public Connection getConnection() throws SQLException {
-        return pool.getConnection();
-    }
+  @Override
+  public Connection getConnection() throws SQLException {
+    return pool.getConnection();
+  }
 }

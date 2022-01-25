@@ -16,27 +16,26 @@
 package com.redsaz.lognition.api.exceptions;
 
 /**
- * The base exception type for exceptions from this application due to some
- * action on the server's part (misconfiguration, required service not found,
- * etc).
+ * The base exception type for exceptions from this application due to some action on the server's
+ * part (misconfiguration, required service not found, etc).
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 public class AppServerException extends AppException {
 
-    public AppServerException() {
-        super();
-    }
+  public AppServerException() {
+    super();
+  }
 
-    public AppServerException(String message) {
-        super(message);
-    }
+  public AppServerException(String message) {
+    super(message);
+  }
 
-    public AppServerException(String message, Throwable throwable) {
-        super(message, throwable);
-    }
+  public AppServerException(String message, Throwable throwable) {
+    super(message, throwable);
+  }
 
-    public AppServerException(Throwable throwable) {
-        super(throwable);
-    }
+  public AppServerException(Throwable throwable) {
+    super(throwable);
+  }
 }

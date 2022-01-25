@@ -15,33 +15,36 @@
  */
 package com.redsaz.logntion;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.mockito.Mockito.when;
+
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.view.Sanitizer;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import static io.restassured.RestAssured.given;
 import java.util.Arrays;
-import static org.hamcrest.CoreMatchers.containsString;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class LognitionResourceTest {
 
-    @Sanitizer
-    @InjectMock
-    LogsService logs;
+  @Sanitizer @InjectMock LogsService logs;
 
-    @Test
-    public void testHome() {
-        when(logs.list()).thenReturn(Arrays.asList(new Log(1, Log.Status.COMPLETE, "test", "Test Name", "test.hsqldb", "Test notes.")));
-        given()
-                .when().get("/logs")
-                .then()
-                .statusCode(200)
-                .body(containsString("Test Name"))
-                .body(containsString("Test notes."));
-    }
-
+  @Test
+  public void testHome() {
+    when(logs.list())
+        .thenReturn(
+            Arrays.asList(
+                new Log(
+                    1, Log.Status.COMPLETE, "test", "Test Name", "test.hsqldb", "Test notes.")));
+    given()
+        .when()
+        .get("/logs")
+        .then()
+        .statusCode(200)
+        .body(containsString("Test Name"))
+        .body(containsString("Test notes."));
+  }
 }

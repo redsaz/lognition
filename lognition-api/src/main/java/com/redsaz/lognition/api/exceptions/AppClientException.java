@@ -16,26 +16,26 @@
 package com.redsaz.lognition.api.exceptions;
 
 /**
- * The base exception type for exceptions from this application due to some
- * action on the client's part.
+ * The base exception type for exceptions from this application due to some action on the client's
+ * part.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
 public class AppClientException extends AppException {
 
-    public AppClientException() {
-        super();
-    }
+  public AppClientException() {
+    super();
+  }
 
-    public AppClientException(String message) {
-        super(message);
-    }
+  public AppClientException(String message) {
+    super(message);
+  }
 
-    public AppClientException(String message, Throwable throwable) {
-        super(message, throwable);
-    }
+  public AppClientException(String message, Throwable throwable) {
+    super(message, throwable);
+  }
 
-    public AppClientException(Throwable throwable) {
-        super(throwable);
-    }
+  public AppClientException(Throwable throwable) {
+    super(throwable);
+  }
 }

@@ -22,6 +22,5 @@ package com.redsaz.lognition.convert;
  */
 /*package protected*/ interface FromString<T> {
 
-    T fromString(String str);
-
+  T fromString(String str);
 }

@@ -29,28 +29,26 @@ import java.util.List;
  */
 public class Timeseries {
 
-    private final long spanMillis;
-    private final List<Stats> statsList;
+  private final long spanMillis;
+  private final List<Stats> statsList;
 
-    @JsonCreator
-    public Timeseries(
-            @JsonProperty("spanMillis") long spanMillis,
-            @JsonProperty("statsList") Collection<Stats> statsList
-    ) {
-        this.spanMillis = spanMillis;
-        if (statsList == null) {
-            this.statsList = null;
-        } else {
-            this.statsList = Collections.unmodifiableList(new ArrayList<Stats>(statsList));
-        }
+  @JsonCreator
+  public Timeseries(
+      @JsonProperty("spanMillis") long spanMillis,
+      @JsonProperty("statsList") Collection<Stats> statsList) {
+    this.spanMillis = spanMillis;
+    if (statsList == null) {
+      this.statsList = null;
+    } else {
+      this.statsList = Collections.unmodifiableList(new ArrayList<Stats>(statsList));
     }
+  }
 
-    public List<Stats> getStatsList() {
-        return statsList;
-    }
+  public List<Stats> getStatsList() {
+    return statsList;
+  }
 
-    public long getSpanMillis() {
-        return spanMillis;
-    }
-
+  public long getSpanMillis() {
+    return spanMillis;
+  }
 }
