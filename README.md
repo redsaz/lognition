@@ -9,7 +9,7 @@ To build Lognition, you need at least Java 11. Lognition comes with Maven Wrappe
 
     cd lognition
     ./mvnw clean install
-    cd lognition-quarkus
+    cd lognition-app
     ../mvnw quarkus:dev
 
 Once Lognition has started up, you can open http://localhost:8080 and start using Lognition.
@@ -23,7 +23,7 @@ Lognition uses [Quarkus](https://quarkus.io/), which allows [several different s
   * Quarkus dev mode: `../mvnw quarkus:dev -Dexample.item=Hello`
 * [Environment Variables](https://quarkus.io/guides/config-reference#environment-variables) must be upper-case alphanumeric and underscores using [conversion rules](https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources). They can be set in your `.bashrc` file, in a script that runs the app, or listed just before the command, shown below:
   * Lognition jar example: `EXAMPLE_ITEM1=Hello EXAMPLE_ITEM2=World java -jar lognition.jar`
-  * Quarkus dev mode: `EXAMPLE_ITEM1=Hello EXAMPLE_ITEM2=World ../mvnw quarkust:dev`
+  * Quarkus dev mode: `EXAMPLE_ITEM1=Hello EXAMPLE_ITEM2=World ../mvnw quarkus:dev`
 * [.env File](https://quarkus.io/guides/config-reference#env-file) in the working directory. The contents of the file follow the same naming conventions as environment variables, above.
 
 There are [quite a few config options](https://quarkus.io/guides/all-config) for Lognition that are provided through Quarkus, in addition to some Lognition specific options. The more common are listed below.

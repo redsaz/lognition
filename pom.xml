@@ -25,7 +25,7 @@
         <module>lognition-store-jooq</module>
         <module>lognition-convert</module>
         <module>lognition-core</module>
-        <module>lognition-quarkus</module>
+        <module>lognition-app</module>
     </modules>
     <properties>
         <version.jackson>2.12.1</version.jackson>
