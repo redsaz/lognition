@@ -5,11 +5,11 @@
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.0</version>
     </parent>
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-app</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <properties>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
