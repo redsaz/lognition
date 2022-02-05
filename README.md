@@ -49,3 +49,9 @@ Or in .env file:
     quarkus.http.ssl.certificate.key-store-password=example
 
 Either way, once configured and Lognition is started, visit https://localhost:8443 to make sure it works. (If you use https with port 8080, you might see an error in Firefox like `Error code: SSL_ERROR_RX_RECORD_TOO_LONG`
+
+#### Max File Upload Size
+
+By default, Lognition will not accept files bigger than 10 GiB. The response is 413 Request Entity Too Large. To change the maximum upload size:
+
+    quarkus.http.limits.max-body-size=10G
