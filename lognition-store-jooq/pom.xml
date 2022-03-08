@@ -31,7 +31,7 @@
     </parent>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.liquibase>3.5.1</version.liquibase>
+        <version.liquibase>4.8.0</version.liquibase>
         <temporaryBuildDbDriver>org.hsqldb.jdbcDriver</temporaryBuildDbDriver>
         <temporaryBuildDb>jdbc:hsqldb:file:${project.build.directory}/tempForJooqDb;shutdown=true</temporaryBuildDb>
         <temporaryBuildDbUser>SA</temporaryBuildDbUser>
