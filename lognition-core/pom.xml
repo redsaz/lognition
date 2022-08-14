@@ -20,12 +20,12 @@
 
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-core</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <packaging>jar</packaging>
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -41,7 +41,7 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>com.coveo</groupId>
+                <groupId>com.spotify.fmt</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
             </plugin>
         </plugins>

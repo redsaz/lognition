@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Redsaz <redsaz@gmail.com>.
+ * Copyright 2022 Redsaz <redsaz@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.lognition.api.labelselector;
 
-/**
- * @author Redsaz <redsaz@gmail.com>
- */
-public interface LabelSelectorExpression {
+module LognitionStoreJooq {
+  exports com.redsaz.lognition.store;
+  exports com.redsaz.lognition.model.tables.records;
 
-  void consume(LabelSelectorExpressionListener listener);
+  requires LognitionApi;
+  requires org.jooq;
+  requires liquibase.core;
+  requires java.naming;
 }

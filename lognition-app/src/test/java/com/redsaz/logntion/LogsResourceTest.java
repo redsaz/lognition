@@ -33,6 +33,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -104,7 +109,7 @@ public class LogsResourceTest {
   }
 
   @Test
-  public void testGetCsvContent() throws FileNotFoundException {
+  public void testGetCsvContent() throws FileNotFoundException, IOException, URISyntaxException {
     when(logs.getAvroFile(anyLong())).thenReturn(new File("src/test/resources/test.avro"));
 
     byte[] contentBytes =
@@ -117,6 +122,11 @@ public class LogsResourceTest {
             .extract()
             .asByteArray();
 
+    String expected =
+        Files.readString(
+            Paths.get(getClass().getResource("/test-expected-export.jtl").toURI()),
+            StandardCharsets.UTF_8);
+    assertEquals(expected, new String(contentBytes, StandardCharsets.UTF_8));
     // Note that we're hashing the body, but if necessary you can also look at the expected
     // content at src/test/resources/test-expected-export.jtl
     String actualHash = Hashing.sha256().hashBytes(contentBytes).toString();

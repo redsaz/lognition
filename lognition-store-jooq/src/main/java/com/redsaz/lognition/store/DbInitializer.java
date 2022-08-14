@@ -26,7 +26,9 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class DbInitializer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DbInitializer.class);

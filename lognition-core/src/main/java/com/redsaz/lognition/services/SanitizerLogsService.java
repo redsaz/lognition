@@ -243,7 +243,7 @@ public class SanitizerLogsService implements LogsService {
   }
 
   private static Slugify initSlug() {
-    return new Slugify();
+    return Slugify.builder().lowerCase(Boolean.TRUE).locale(Locale.US).build();
   }
 
   private static List<Label> sanitizeLabels(Collection<Label> labels) {

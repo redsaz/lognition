@@ -18,7 +18,9 @@ package com.redsaz.lognition.api.labelselector;
 import java.util.ArrayList;
 import java.util.List;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class ComposibleLabelSelectorExpression implements LabelSelectorExpression {
 
   List<LabelSelectorExpression> expressions = new ArrayList<>();

@@ -23,6 +23,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
 /**
@@ -45,7 +46,7 @@ public class MediaTypeDetector {
   public String detect(InputStream source, String filename) {
     Metadata meta = new Metadata();
     if (filename != null) {
-      meta.set(Metadata.RESOURCE_NAME_KEY, filename);
+      meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
     }
 
     try (TikaInputStream tis = TikaInputStream.get(source)) {
@@ -59,7 +60,7 @@ public class MediaTypeDetector {
   public String detect(File source, String filename, String suggestedMimeType) {
     Metadata meta = new Metadata();
     if (filename != null) {
-      meta.set(Metadata.RESOURCE_NAME_KEY, filename);
+      meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
     }
     if (suggestedMimeType != null) {
       meta.set(Metadata.CONTENT_TYPE, suggestedMimeType);

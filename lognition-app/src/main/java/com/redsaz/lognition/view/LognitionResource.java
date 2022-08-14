@@ -33,7 +33,9 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 @Path("/")
 public class LognitionResource {
 

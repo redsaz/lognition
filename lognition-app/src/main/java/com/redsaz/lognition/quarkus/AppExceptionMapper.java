@@ -28,7 +28,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 @Provider
 public class AppExceptionMapper implements ExceptionMapper<AppException> {
 

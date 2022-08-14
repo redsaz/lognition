@@ -43,6 +43,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -94,7 +95,8 @@ public class BrowserReviewsResource {
 
   private static final Parser CM_PARSER = Parser.builder().build();
   private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().escapeHtml(true).build();
-  private static final Slugify SLG = new Slugify();
+  private static final Slugify SLG =
+      Slugify.builder().lowerCase(Boolean.TRUE).locale(Locale.US).build();
   private static final MediaTypeDetector MEDIA_TYPE_DETECTOR = new MediaTypeDetector();
 
   private static final ThreadLocal<NumberFormat> PERC_FORMAT =
@@ -399,7 +401,7 @@ public class BrowserReviewsResource {
     It's possible to upload a bunch of images at once, and specify the paths for each.
     We should do that here, but also in the creation of the review itself.
     And in the edit screen for the review, those attachments should be listed? Right?
-     */
+         */
     try {
       ContentDispositionSubParts subParts = new ContentDispositionSubParts();
       String path = null;

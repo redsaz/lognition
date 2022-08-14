@@ -23,7 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class TestCodeCounts {
 
   @Test

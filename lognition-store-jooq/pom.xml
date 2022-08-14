@@ -21,17 +21,16 @@
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-store-jooq</artifactId>
 
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <packaging>jar</packaging>
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.liquibase>3.5.1</version.liquibase>
         <temporaryBuildDbDriver>org.hsqldb.jdbcDriver</temporaryBuildDbDriver>
         <temporaryBuildDb>jdbc:hsqldb:file:${project.build.directory}/tempForJooqDb;shutdown=true</temporaryBuildDb>
         <temporaryBuildDbUser>SA</temporaryBuildDbUser>
@@ -79,7 +78,7 @@
                     <dependency>
                         <groupId>org.hsqldb</groupId>
                         <artifactId>hsqldb</artifactId>
-                        <version>${version.hsqldb}</version>
+                        <version>2.7.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -108,7 +107,7 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>com.coveo</groupId>
+                <groupId>com.spotify.fmt</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
             </plugin>
         </plugins>
@@ -123,7 +122,6 @@
         <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
-            <version>${version.jooq}</version>
         </dependency>
         <dependency>
             <groupId>org.hsqldb</groupId>
@@ -132,7 +130,6 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-            <version>${version.liquibase}</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>

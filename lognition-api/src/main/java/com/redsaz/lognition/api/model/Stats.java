@@ -17,7 +17,9 @@ package com.redsaz.lognition.api.model;
 
 import com.univocity.parsers.annotations.Parsed;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class Stats {
 
   public static final String[] HEADERS = {

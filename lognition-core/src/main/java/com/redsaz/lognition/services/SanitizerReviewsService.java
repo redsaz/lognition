@@ -25,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,6 +200,6 @@ public class SanitizerReviewsService implements ReviewsService {
   }
 
   private static Slugify initSlug() {
-    return new Slugify();
+    return Slugify.builder().lowerCase(Boolean.TRUE).locale(Locale.US).build();
   }
 }

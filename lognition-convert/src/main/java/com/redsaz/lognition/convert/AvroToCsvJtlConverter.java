@@ -40,7 +40,7 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.util.Utf8;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +74,7 @@ public class AvroToCsvJtlConverter implements Converter {
     HttpSampleToCsvJtl h2j = new HttpSampleToCsvJtl(source);
     String sha256Hash = null;
 
-    DatumReader<HttpSample> userDatumReader = new SpecificDatumReader<>(HttpSample.class);
+    DatumReader<HttpSample> userDatumReader = new ReflectDatumReader<>(HttpSample.class);
     try (HashingOutputStream hos =
         new HashingOutputStream(
             Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest)))) {
@@ -111,7 +111,7 @@ public class AvroToCsvJtlConverter implements Converter {
     LOGGER.info("Converting {} to CSV stream...", source);
     HttpSampleToCsvJtl h2j = new HttpSampleToCsvJtl(source);
 
-    DatumReader<HttpSample> userDatumReader = new SpecificDatumReader<>(HttpSample.class);
+    DatumReader<HttpSample> userDatumReader = new ReflectDatumReader<>(HttpSample.class);
 
     final PipedOutputStream pos = new PipedOutputStream();
     final PipedInputStream pis = new PipedInputStream(pos);
@@ -134,6 +134,9 @@ public class AvroToCsvJtlConverter implements Converter {
                   "{}ms to convert {} rows in stream.",
                   (System.currentTimeMillis() - startMillis),
                   totalRows);
+            } catch (RuntimeException ex) {
+              LOGGER.error("Unexpected exception when converting to CSV.", ex);
+              throw ex;
             } finally {
               if (writer != null) {
                 writer.close();
@@ -161,7 +164,7 @@ public class AvroToCsvJtlConverter implements Converter {
     HttpSampleToCsvJtl(File source) {
       long startMillis = System.currentTimeMillis();
       LOGGER.debug("Initializing converter for {}", source);
-      DatumReader<HttpSample> httpSampleDatumReader = new SpecificDatumReader<>(HttpSample.class);
+      DatumReader<HttpSample> httpSampleDatumReader = new ReflectDatumReader<>(HttpSample.class);
       try (DataFileReader<HttpSample> dataFileReader =
           new DataFileReader<>(source, httpSampleDatumReader)) {
         earliestMillis = dataFileReader.getMetaLong("earliest");

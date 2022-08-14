@@ -35,7 +35,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class JooqStatsServiceTest {
 
   @Rule public TemporaryFolder connectionDir = new TemporaryFolder();

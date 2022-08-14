@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Redsaz <redsaz@gmail.com>.
+ * Copyright 2022 Redsaz <redsaz@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.lognition.api.labelselector;
 
-/**
- * @author Redsaz <redsaz@gmail.com>
- */
-public interface LabelSelectorExpression {
+module LognitionConvert {
+  exports com.redsaz.lognition.convert;
+  exports com.redsaz.lognition.convert.model;
+  exports com.redsaz.lognition.convert.model.jmeter;
 
-  void consume(LabelSelectorExpressionListener listener);
+  opens com.redsaz.lognition.convert.model;
+
+  requires LognitionApi;
+  requires org.apache.avro;
+  requires com.google.common;
+  requires org.slf4j;
 }

@@ -34,7 +34,9 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class ConverterBaseTest {
 
   private static ThreadLocal<File> tempTestMethodDir =

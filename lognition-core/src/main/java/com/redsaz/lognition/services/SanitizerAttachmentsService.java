@@ -22,7 +22,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class SanitizerAttachmentsService implements AttachmentsService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SanitizerAttachmentsService.class);

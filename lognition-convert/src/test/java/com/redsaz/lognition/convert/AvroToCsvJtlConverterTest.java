@@ -20,11 +20,13 @@ import static org.testng.Assert.assertEquals;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.redsaz.lognition.api.exceptions.AppException;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.testng.annotations.Test;
 
@@ -101,5 +103,19 @@ public class AvroToCsvJtlConverterTest extends ConverterBaseTest {
 
     try (InputStream coversionStream =
         conv.convertStreaming(new File("this-does-not-exist.avro"))) {}
+  }
+
+  @Test
+  public void testConvertStreaming2() throws IOException {
+    AvroToCsvJtlConverter conv = new AvroToCsvJtlConverter();
+    try (InputStream is = conv.convertStreaming(new File("src/test/resources/test.avro"));
+        BufferedInputStream bis = new BufferedInputStream(is)) {
+      byte[] csvBytes = bis.readAllBytes();
+      String actualHash = Hashing.sha256().hashBytes(csvBytes).toString();
+
+      System.out.println(new String(csvBytes, StandardCharsets.UTF_8));
+
+      assertEquals("39d2b0c0bb2fdf2de6a94a3ab30a88d289704a7b974ca8227c11dd3fe54bdf92", actualHash);
+    }
   }
 }

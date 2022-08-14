@@ -17,7 +17,9 @@ package com.redsaz.lognition.api.labelselector;
 
 import java.util.List;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public interface LabelSelectorExpressionListener {
 
   default void finish() {}

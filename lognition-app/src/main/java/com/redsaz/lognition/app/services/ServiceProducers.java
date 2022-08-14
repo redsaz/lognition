@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redsaz.lognition.services;
+package com.redsaz.lognition.app.services;
 
 import com.redsaz.lognition.api.AttachmentsService;
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
+import com.redsaz.lognition.services.ConnectionPoolInit;
+import com.redsaz.lognition.services.ProcessorImportService;
+import com.redsaz.lognition.services.SanitizerAttachmentsService;
+import com.redsaz.lognition.services.SanitizerImportService;
+import com.redsaz.lognition.services.SanitizerLogsService;
+import com.redsaz.lognition.services.SanitizerReviewsService;
 import com.redsaz.lognition.store.ConnectionPool;
 import com.redsaz.lognition.store.JooqAttachmentsService;
 import com.redsaz.lognition.store.JooqImportService;
@@ -37,7 +43,9 @@ import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author Redsaz <redsaz@gmail.com> */
+/**
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class ServiceProducers {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
