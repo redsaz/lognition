@@ -22,4 +22,5 @@ module LognitionStoreJooq {
   requires org.jooq;
   requires liquibase.core;
   requires java.naming;
+  requires java.xml.bind;
 }

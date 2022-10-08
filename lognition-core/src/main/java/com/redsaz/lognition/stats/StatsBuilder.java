@@ -334,6 +334,19 @@ public class StatsBuilder {
     return sha256Hash;
   }
 
+  private static final Comparator<String> STRING_COMPARATOR =
+      (String o1, String o2) -> {
+        if (o1 == o2) {
+          return 0;
+        } else if (o1 == null) {
+          return -1;
+        } else if (o2 == null) {
+          return 1;
+        }
+
+        return o1.compareTo(o2);
+      };
+
   public static final Comparator<Sample> TEMPORAL_COMPARATOR =
       (Sample o1, Sample o2) -> {
         if (o1 == o2) {
@@ -350,21 +363,12 @@ public class StatsBuilder {
           return -1;
         } else if (o1.getDuration() > o2.getDuration()) {
           return 1;
-        } else if (o1.getLabel() == null && o2.getLabel() != null) {
-          return -1;
-        } else if (o1.getLabel() != null && o2.getLabel() == null) {
-          return 1;
         }
-        int comp = o1.getLabel().compareTo(o2.getLabel());
+        int comp = STRING_COMPARATOR.compare(o1.getLabel(), o2.getLabel());
         if (comp != 0) {
           return comp;
         }
-        if (o1.getThreadName() == null && o2.getThreadName() != null) {
-          return -1;
-        } else if (o1.getThreadName() != null && o2.getThreadName() == null) {
-          return 1;
-        }
-        comp = o1.getThreadName().compareTo(o2.getThreadName());
+        comp = STRING_COMPARATOR.compare(o1.getThreadName(), o2.getThreadName());
         if (comp != 0) {
           return comp;
         }
@@ -377,7 +381,7 @@ public class StatsBuilder {
         if (comp != 0) {
           return comp;
         }
-        comp = o1.getStatusMessage().compareTo(o2.getStatusMessage());
+        comp = STRING_COMPARATOR.compare(o1.getStatusMessage(), o2.getStatusMessage());
         if (comp != 0) {
           return comp;
         }
@@ -405,12 +409,8 @@ public class StatsBuilder {
           return 1;
         } else if (o1 == null) {
           return -1;
-        } else if (o1.getLabel() == null && o2.getLabel() != null) {
-          return -1;
-        } else if (o1.getLabel() != null && o2.getLabel() == null) {
-          return 1;
         }
-        int comp = o1.getLabel().compareTo(o2.getLabel());
+        int comp = STRING_COMPARATOR.compare(o1.getLabel(), o2.getLabel());
         if (comp != 0) {
           return comp;
         }
@@ -422,12 +422,8 @@ public class StatsBuilder {
           return -1;
         } else if (o1.getDuration() > o2.getDuration()) {
           return 1;
-        } else if (o1.getThreadName() == null && o2.getThreadName() != null) {
-          return -1;
-        } else if (o1.getThreadName() != null && o2.getThreadName() == null) {
-          return 1;
         }
-        comp = o1.getThreadName().compareTo(o2.getThreadName());
+        comp = STRING_COMPARATOR.compare(o1.getThreadName(), o2.getThreadName());
         if (comp != 0) {
           return comp;
         }
@@ -440,7 +436,7 @@ public class StatsBuilder {
         if (comp != 0) {
           return comp;
         }
-        comp = o1.getStatusMessage().compareTo(o2.getStatusMessage());
+        comp = STRING_COMPARATOR.compare(o1.getStatusMessage(), o2.getStatusMessage());
         if (comp != 0) {
           return comp;
         }
@@ -476,21 +472,12 @@ public class StatsBuilder {
           return -1;
         } else if (o1.getOffset() > o2.getOffset()) {
           return 1;
-        } else if (o1.getLabel() == null && o2.getLabel() != null) {
-          return -1;
-        } else if (o1.getLabel() != null && o2.getLabel() == null) {
-          return 1;
         }
-        int comp = o1.getLabel().compareTo(o2.getLabel());
+        int comp = STRING_COMPARATOR.compare(o1.getLabel(), o2.getLabel());
         if (comp != 0) {
           return comp;
         }
-        if (o1.getThreadName() == null && o2.getThreadName() != null) {
-          return -1;
-        } else if (o1.getThreadName() != null && o2.getThreadName() == null) {
-          return 1;
-        }
-        comp = o1.getThreadName().compareTo(o2.getThreadName());
+        comp = STRING_COMPARATOR.compare(o1.getThreadName(), o2.getThreadName());
         if (comp != 0) {
           return comp;
         }
@@ -503,7 +490,7 @@ public class StatsBuilder {
         if (comp != 0) {
           return comp;
         }
-        comp = o1.getStatusMessage().compareTo(o2.getStatusMessage());
+        comp = STRING_COMPARATOR.compare(o1.getStatusMessage(), o2.getStatusMessage());
         if (comp != 0) {
           return comp;
         }
