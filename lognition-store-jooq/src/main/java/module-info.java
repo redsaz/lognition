@@ -19,6 +19,7 @@ module LognitionStoreJooq {
   exports com.redsaz.lognition.model.tables.records;
 
   requires LognitionApi;
+  requires org.slf4j;
   requires org.jooq;
   requires liquibase.core;
   requires java.naming;

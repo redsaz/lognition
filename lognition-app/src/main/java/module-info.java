@@ -30,10 +30,10 @@ module LognitionApp {
   requires java.ws.rs;
   requires jakarta.enterprise.cdi.api;
   requires jakarta.inject.api;
-  requires logback.classic;
   requires org.apache.commons.lang3;
   requires org.commonmark;
   requires org.jooq;
+  requires org.slf4j;
   requires quarkus.jackson;
   requires resteasy.multipart.provider;
   requires slugify;

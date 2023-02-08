@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-parent</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>lognition-api</module>
@@ -16,8 +16,6 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.jackson>2.13.3</version.jackson>
-        <version.snakeyaml>1.26</version.snakeyaml>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -52,19 +50,11 @@
                 <version>2.3.31</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${version.jackson}</version>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.14.2</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>com.github.slugify</groupId>
@@ -74,17 +64,17 @@
             <dependency>
                 <groupId>org.hsqldb</groupId>
                 <artifactId>hsqldb</artifactId>
-                <version>2.7.0</version>
+                <version>2.7.1</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.36.0.3</version>
+                <version>3.40.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.30</version>
+                <version>1.33</version>
             </dependency>
             <dependency>
                 <groupId>com.univocity</groupId>
@@ -119,12 +109,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.2.11</version>
+                <version>1.4.4</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.2.11</version>
+                <version>1.4.4</version>
             </dependency>
             <dependency>
                 <groupId>com.atlassian.commonmark</groupId>
@@ -149,28 +139,28 @@
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
-                <version>4.14.0</version>
+                <version>4.19.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
-                <version>2.4.1</version>
+                <version>2.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.8.4</version>
+                <version>1.1.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>4.5.1</version>
+                <version>5.1.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>7.6.1</version>
+                <version>7.7.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
