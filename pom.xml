@@ -15,7 +15,12 @@
     </modules>
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -129,12 +134,12 @@
             <dependency>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-meta</artifactId>
-                <version>3.15.12</version>
+                <version>3.18.0</version>
             </dependency>
             <dependency>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq</artifactId>
-                <version>3.15.12</version>
+                <version>3.18.0</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -189,7 +194,7 @@
                                         <version>3.8.8</version>
                                     </requireMavenVersion>
                                     <requireJavaVersion>
-                                        <version>11.0</version>
+                                        <version>17.0</version>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
@@ -200,8 +205,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <source>17</source>
+                        <target>17</target>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -214,7 +219,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.12.1</version>
+                    <version>4.0.0-M5</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -243,12 +248,12 @@
                 <plugin>
                     <groupId>org.jooq</groupId>
                     <artifactId>jooq-codegen-maven</artifactId>
-                    <version>3.15.12</version>
+                    <version>3.18.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro-maven-plugin</artifactId>
-                    <version>1.11.0</version>
+                    <version>1.11.1</version>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>

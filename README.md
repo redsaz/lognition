@@ -5,7 +5,7 @@ Efficiently import, store, view, and export JMeter test results.
 
 ## Building and Running
 
-To build Lognition, you need at least Java 11. Lognition comes with Maven Wrapper v3.8.1, but if you want to use your own Maven make sure it is at least that version. Once you clone the repo:
+To build Lognition, you need at least Java 17. Lognition comes with Maven Wrapper v3.8.1, but if you want to use your own Maven make sure it is at least that version. Once you clone the repo:
 
     cd lognition
     ./mvnw clean install
