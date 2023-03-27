@@ -1,0 +1,500 @@
+openapi: 3.1.0
+info:
+  title: Lognition Web UI
+  description: |-
+    Lognition lets you upload CSV data and view it. The API disclosed in this spec is intented only
+    for use in the Lognition Web UI itself and by browsers that visit it, but "can" be used by
+    non-browser clients if needed. However, it is much more likely for the HTML content (and even
+    some endpoints themselves) to change, compared to the HTTP API counterparts. Therefore, using
+    the Lognition HTTP API is recommended for clients requiring more stability of schema between
+    versions.
+
+    _This is still a work-in-progress and has not reached 1.0 yet. APIs are subject to change._
+    
+    Some useful links:
+    - [The Lognition repository](https://github.com/redsaz/lognition/)
+    - [The source API definition for Lognition](https://github.com/redsaz/lognition/blob/master/src/main/resources/openapi.yml)
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: redsaz@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.8.0
+externalDocs:
+  description: Find out more about Lognition
+  url: https://github.com/redsaz/lognition/
+tags:
+  - name: logsui
+    description: Log endpoints for browsers visiting the Web UI.
+  - name: reviewsui
+    description: Review endpoints for browsers visiting the Web UI.
+paths:
+  /logs:
+    post:
+      tags:
+        - logsui
+      summary: Commits new log contents
+      description: Commits the new log content and information.
+      operationId: importLogCommit
+      requestBody:
+        description: The data to commit
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: the actual content of the log data
+                name:
+                  type: string
+                  description: Name (a.k.a. title) of the log
+                notes:
+                  type: string
+                  description: A description or any information about the log, in commonmark.
+                labels:
+                  type: string
+                  description: The tags and/or labels belonging to the log.
+            encoding:
+              content:
+                headers:
+                  filename:
+                    description: Filename of the content being uploaded.
+                    schema:
+                      type: string
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+    get:
+      tags:
+        - logsui
+      summary: List log briefs
+      description: Presents a web page of LogBriefs.
+      operationId: listLogBriefs
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+  /logs/{logId}:
+    get:
+      tags:
+        - logsui
+      summary: Find log brief by ID
+      description: Redirect to a log brief with id and name.
+      operationId: getLogBrief
+      parameters:
+        - name: logId
+          in: path
+          description: Identifier of log brief to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '303':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '404':
+          description: Log not found
+    post:
+      tags:
+        - logsui
+      summary: Commit edited log details.
+      description: Commits the edited log details.
+      operationId: editLogCommit
+      requestBody:
+        description: The data to commit
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name (a.k.a. title) of the log
+                notes:
+                  type: string
+                  description: A description or any information about the log, in commonmark.
+                labels:
+                  type: string
+                  description: The tags and/or labels belonging to the log.
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+  /logs/{logId}/{urlName}:
+    get:
+      tags:
+        - logsui
+      summary: Find log brief by ID with name
+      description: Presents a web page for viewing a specific log brief.
+      operationId: getLogBriefWithName
+      parameters:
+        - name: logId
+          in: path
+          description: Identifier of log brief to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: urlName
+          in: path
+          description: URL-formatted name of user-friendly name of the log. This does not have to match the correct url-name, it can literally be a dash (-) or any other url-encoded string, in which case the page will redirect to the url with the correct name.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '303':
+          description: Log with ID found, but with wrong urlName
+        '404':
+          description: Log not found
+  /logs/delete:
+    post:
+      tags:
+        - logsui
+      summary: Delete a logs details and data.
+      description: Returns the outline/description of a log.
+      operationId: deleteLog
+      requestBody:
+        description: the ID of the log to delete.
+        content:
+           application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: identifier of the log
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+  /logs/import:
+    get:
+      tags:
+        - logsui
+      summary: Import log page
+      description: Presents a web page that allows a user to import a log.
+      operationId: importLog
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+  /logs/{logId}/edit:
+    get:
+      tags:
+        - logsui
+      summary: Edit log brief details
+      description: Presents a web page for editing a log.
+      operationId: editLogBrief
+      parameters:
+        - name: logId
+          in: path
+          description: Identifier of log brief to edit
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '404':
+          description: Log not found
+  /reviews:
+    post:
+      tags:
+        - reviewsui
+      summary: Commit new review
+      description: Commits a new review.
+      operationId: createReviewCommit
+      requestBody:
+        description: The data to commit
+        content: 
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name (a.k.a. title) of the review
+                description:
+                  type: string
+                  description: A description or any information about the review, in commonmark.
+                body:
+                  type: string
+                  description: The label selector that allows the review to choose which logs to view.
+        required: true
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+    get:
+      tags:
+        - reviewsui
+      summary: List all reviews
+      description: Presents a web page of reviews.
+      operationId: listReviews
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+  /reviews/{reviewId}:
+    get:
+      tags:
+        - reviewsui
+      summary: Find review by ID
+      description: Redirects to review with id and name.
+      operationId: getReview
+      parameters:
+        - name: reviewId
+          in: path
+          description: Identifier of review to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '303':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '404':
+          description: Log not found
+    post:
+      tags:
+        - reviewsui
+      summary: Commit edited review details.
+      description: Commits the edited review details.
+      operationId: editReviewCommit
+      requestBody:
+        description: The data to commit
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name (a.k.a. title) of the review
+                description:
+                  type: string
+                  description: A description or any information about the review, in commonmark.
+                body:
+                  type: string
+                  description: The label selector that allows the review to choose which logs to view.
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+  /reviews/{reviewId}/{urlName}:
+    get:
+      tags:
+        - reviewsui
+      summary: Find review by ID with name
+      description: Presents a web page for viewing a specific review.
+      operationId: getReviewWithName
+      parameters:
+        - name: logId
+          in: path
+          description: Identifier of review to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: urlName
+          in: path
+          description: URL-formatted name of user-friendly name of the review. This does not have to match the correct url-name, it can literally be a dash (-) or any other url-encoded string, in which case the page will redirect to the url with the correct name.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '303':
+          description: Review with ID found, but with wrong urlName
+        '404':
+          description: Review not found
+  /reviews/delete:
+    post:
+      tags:
+        - reviewsui
+      summary: Delete a review
+      description: Deletes a review and its attachments, but leaves the associated logs untouched.
+      operationId: deleteReview
+      requestBody:
+        description: the ID of the review to delete.
+        content:
+           application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: identifier of the review
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+  /reviews/create:
+    get:
+      tags:
+        - reviewsui
+      summary: Create review page
+      description: Presents a web page that allows a user to create a review.
+      operationId: createReview
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+  /reviews/{reviewId}/edit:
+    get:
+      tags:
+        - reviewsui
+      summary: Edit review
+      description: Presents a web page for editing a review.
+      operationId: editReview
+      parameters:
+        - name: reviewId
+          in: path
+          description: Identifier of review to edit
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '404':
+          description: Review not found
+  /reviews/{reviewId}/attachments:
+    post:
+      tags:
+        - reviewsui
+      summary: Upload new attachment
+      description: Uploads an attachment for a review. If the path matches a previous attachment path for the review, then previous attachment will be replaced.
+      operationId: uploadAttachment
+      parameters:
+        - name: reviewId
+          in: path
+          description: Identifier of review the attachment is for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: The data to commit
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: the actual content of the log data
+                path:
+                  type: string
+                  description: The sub-path of the attachment. For example, if path was "path1/file2.png", then if this was attached to review 1, the full path would be reviews/1/attachments/path1/file2.png. Optional. Default is whatever the filename was that was uploaded.
+                name:
+                  type: string
+                  description: Name (a.k.a. title) of the attachment. Optional.
+                description:
+                  type: string
+                  description: A description or any information about the attachment. Optional.
+            encoding:
+              content:
+                headers:
+                  filename:
+                    description: Filename of the content being uploaded.
+                    schema:
+                      type: string
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
+  /reviews/{reviewId}/attachments/{attachmentPath}:
+    get:
+      tags:
+        - reviewsui
+      summary: Get attachment content
+      description: Fetch the contents of the attachment specified by the attachment path for the review.
+      operationId: getAttachment
+      parameters:
+        - name: reviewId
+          in: path
+          description: Identifier of review to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attachmentPath
+          in: path
+          description: sub-path to attachment. This should technically work without percent-escaping the slashes, but OpenAPI spec does not allow this, see https://github.com/OAI/OpenAPI-Specification/issues/892
+          required: true
+          schema:
+            type: string
+      responses:
+        '303':
+          description: successful operation
+          content:
+            text/html:
+              example:
+                <html><body>(snip)</body></html>
+        '404':
+          description: Log not found
+  /reviews/{reviewId}/attachments/{attachmentPath}/delete:
+    post:
+      tags:
+        - reviewsui
+      summary: Delete attachment
+      description: Deletes an attachment from a review.
+      operationId: deleteAttachment
+      parameters:
+        - name: reviewId
+          in: path
+          description: Identifier of review the attachment is for
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: attachmentPath
+          in: path
+          description: sub-path to attachment. This should technically work without percent-escaping the slashes, but OpenAPI spec does not allow this, see https://github.com/OAI/OpenAPI-Specification/issues/892
+          required: true
+          schema:
+            type: string
+      responses:
+        '303':
+          description: Successful operation, POST/redirect/GET pattern
