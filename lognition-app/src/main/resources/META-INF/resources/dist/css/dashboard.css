@@ -114,3 +114,11 @@ body {
 .fcm .feather {
     color: inherit;
 }
+
+.left-align {
+    text-align: left;
+}
+
+.right-align {
+    text-align: right;
+}

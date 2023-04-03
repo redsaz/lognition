@@ -157,8 +157,8 @@ public class BrowserLogsResourceTest {
               @Override
               public void describeTo(Description description) {}
             })
-        .body(containsString("<th>overall</th>"))
-        .body(containsString("<th>GET</th>"));
+        .body(containsString(">overall<"))
+        .body(containsString(">GET<"));
   }
 
   @Test

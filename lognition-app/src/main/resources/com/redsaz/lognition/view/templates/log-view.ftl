@@ -66,37 +66,39 @@
         <table class="table table-hover">
           <thead>
           <tr>
-            <th>Label</th>
-            <th># Samples</th>
-            <th>Min</th>
-            <th>25% line</th>
-            <th>50% line</th>
-            <th>75% line</th>
-            <th>90% line</th>
-            <th>95% line</th>
-            <th>99% line</th>
-            <th>Max</th>
-            <th>Average</th>
-            <th>Total Response Bytes</th>
-            <th># Errors</th>
+            <th class="left-align">Label</th>
+            <th class="right-align"># Samples</th>
+            <th class="right-align">Min</th>
+            <th class="right-align">25% line</th>
+            <th class="right-align">50% line</th>
+            <th class="right-align">75% line</th>
+            <th class="right-align">90% line</th>
+            <th class="right-align">95% line</th>
+            <th class="right-align">99% line</th>
+            <th class="right-align">Max</th>
+            <th class="right-align">Average</th>
+            <th class="right-align">Total Response Bytes</th>
+            <th class="right-align"># Errors</th>
+            <th class="right-align">Error%</th>
           </tr>
           </thead>
           <tbody>
         <#list aggregates as a>
           <tr>
-            <th>${sampleLabels[a?index]}</th>
-            <td>${a.numSamples}</td>
-            <td>${a.min}</td>
-            <td>${a.p25}</td>
-            <td>${a.p50}</td>
-            <td>${a.p75}</td>
-            <td>${a.p90}</td>
-            <td>${a.p95}</td>
-            <td>${a.p99}</td>
-            <td>${a.max}</td>
-            <td>${a.avg}</td>
-            <td>${a.totalResponseBytes}</td>
-            <td>${a.numErrors}</td>
+            <th class="left-align">${sampleLabels[a?index]}</th>
+            <td class="right-align">${a.numSamples}</td>
+            <td class="right-align">${a.min}</td>
+            <td class="right-align">${a.p25}</td>
+            <td class="right-align">${a.p50}</td>
+            <td class="right-align">${a.p75}</td>
+            <td class="right-align">${a.p90}</td>
+            <td class="right-align">${a.p95}</td>
+            <td class="right-align">${a.p99}</td>
+            <td class="right-align">${a.max}</td>
+            <td class="right-align">${a.avg}</td>
+            <td class="right-align">${a.totalResponseBytes}</td>
+            <td class="right-align">${a.numErrors}</td>
+            <td class="right-align">${a.errorRatio?string["0.00%;; multiplier=100"]}</td>
           </tr>
         </#list>
           </tbody>
@@ -109,18 +111,18 @@
         <table class="table table-hover">
           <thead>
           <tr>
-            <th>Label</th>
+            <th class="left-align">Label</th>
 <#list aggregateCodes as code>
-            <th>${code}</th>
+            <th class="right-align">${code}</th>
 </#list>
           </tr>
           </thead>
           <tbody>
 <#list aggregateCodeCounts as a>
           <tr>
-            <th>${sampleLabels[a?index]}</th>
+            <th class="left-align">${sampleLabels[a?index]}</th>
 <#list a.getCounts()[0] as codeCount>
-            <td>${codeCount}</td>
+            <td class="right-align">${codeCount}</td>
 </#list>
           </tr>
 </#list>

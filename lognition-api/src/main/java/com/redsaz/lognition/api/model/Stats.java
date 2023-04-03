@@ -51,6 +51,7 @@ public class Stats {
   @Parsed private final long numSamples;
   @Parsed private final long totalResponseBytes;
   @Parsed private final long numErrors;
+  private final double errorRatio;
 
   /**
    * Creates stats based on the provided samples which should already be ordered from shortest
@@ -65,7 +66,7 @@ public class Stats {
    * @param p90 value at 90th percentile
    * @param p95 value at 95th percentile
    * @param p99 value at 99th percentile
-   * @param max largest recored value
+   * @param max largest recorded value
    * @param avg mean of all recorded values
    * @param numSamples number of samples that these stats were taken from
    * @param totalResponseBytes total bytes given across all samples
@@ -98,6 +99,11 @@ public class Stats {
     this.numSamples = numSamples;
     this.totalResponseBytes = totalResponseBytes;
     this.numErrors = numErrors;
+    if (this.numSamples > 0) {
+      this.errorRatio = (double) numErrors / (double) numSamples;
+    } else {
+      this.errorRatio = 0;
+    }
   }
 
   public Long getOffsetMillis() {
@@ -150,5 +156,9 @@ public class Stats {
 
   public long getNumErrors() {
     return numErrors;
+  }
+
+  public double getErrorRatio() {
+    return errorRatio;
   }
 }
