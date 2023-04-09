@@ -14,12 +14,18 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="container">
-        <form action="${base}/reviews/${review.id}" method="POST" enctype="multipart/form-data">
-          <input type="text" class="form-control" name="name" placeholder="Name" value="${review.name!}"/><br/>
-          <textarea class="form-control" rows="10" name="description">${review.description!}</textarea>
-          <input type="text" class="form-control" name="body" placeholder="Label Selector (ex: key1 in (value1, value2)" value="${review.body!}"/>
-          <button type="submit" class="btn btn-primary">Save</button>
+        <form class="pure-form pure-form-stacked" action="${base}/reviews/${review.id}" method="POST" enctype="multipart/form-data">
+          <fieldset>
+            <div class="pure-g">
+              <legend class="pure-u-1">Edit Review</legend>
+              <label class="pure-u-1" for="name">Name</label>
+              <input class="pure-u-1" type="text" name="name" placeholder="Review" value="${review.name!}"/>
+              <label class="pure-u-1" for="description">Description</label>
+              <textarea class="pure-u-1" rows="10" name="description">${review.description!}</textarea>
+              <label class="pure-u-1" for="body">Label Selector</label>
+              <input class="pure-u-1" type="text" name="body" placeholder="key1 in (value1, value2)" value="${review.body!}"/>
+              <button class="pure-button pure-button-primary pure-u-1 pure-u-sm-1-4 pure-u-lg-1-8" type="submit"><i class="fa fa-save"></i> Save</button>
+            </div>
+          </fieldset>
         </form>
-      </div>
 </#escape>

@@ -63,7 +63,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     root.put("dist", dist);
     root.put("title", "Not Found");
     root.put("content", "error-404.ftl");
-    String body = cfg.buildFromTemplate(root, "page.ftl");
+    String body = cfg.buildFromTemplate(root, "base.ftl");
     return Response.status(404).entity(body).type(MediaType.TEXT_HTML_TYPE).build();
   }
 }

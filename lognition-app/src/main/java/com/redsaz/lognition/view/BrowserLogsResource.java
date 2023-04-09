@@ -120,7 +120,7 @@ public class BrowserLogsResource {
     root.put("dist", dist);
     root.put("title", "Logs");
     root.put("content", "log-list.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   /**
@@ -276,7 +276,7 @@ public class BrowserLogsResource {
     root.put("dist", dist);
     root.put("title", "Import Log");
     root.put("content", "log-import.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   /**
@@ -312,7 +312,7 @@ public class BrowserLogsResource {
     root.put("dist", dist);
     root.put("title", "Edit Log");
     root.put("content", "log-edit.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   @POST
@@ -481,11 +481,12 @@ public class BrowserLogsResource {
       root.put("aggregateCodeCounts", aggregateCodeCounts);
     }
     root.put("timeseriesCodeCountsGraphs", timeseriesCodeCountGraphs);
+    root.put("stylesheets", List.of(dist + "/css/dygraph.css"));
     root.put("base", "");
     root.put("dist", dist);
     root.put("title", log.getName());
     root.put("content", "log-view.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   private void calculateAllReviewLogs() {

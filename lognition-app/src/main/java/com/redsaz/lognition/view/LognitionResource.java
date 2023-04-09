@@ -75,6 +75,6 @@ public class LognitionResource {
     root.put("dist", dist);
     root.put("title", "Lognition");
     root.put("content", "home.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 }

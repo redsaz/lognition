@@ -1,0 +1,230 @@
+/*
+ Copyright 2023 Redsaz <redsaz@gmail.com>.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
+body {
+  font-size: 1rem;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+
+.main {
+    padding: 2em;
+    color: black;
+}
+
+.form-control-dark {
+  color: #fff;
+  background-color: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .1);
+}
+
+.form-control-dark:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
+}
+
+.graph {
+    width: 100%;
+}
+.fcm {
+    border-bottom: 1px solid #eee;
+}
+.fcm-parent {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    border-top: 1px solid #eee;
+    border-left: 1px solid #0000;
+}
+.fcm-parent:hover {
+    box-shadow: 0 0 0.33rem -0.05rem #000;
+    border-left: 1px solid gray;
+}
+.fcm-child-item {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0.4rem 0rem 0.4rem 0.5rem;
+}
+.fcm-child-item-title {
+    font-weight: bold;
+}
+.fcm-child-actions {
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 0.4rem 0rem 0.4rem 0.5rem;
+    display: none;
+}
+.fcm-child-actions ul {
+    display: flex;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+}
+.fcm-child-actions li {
+    display: inline-flex;
+    padding: 0 4px 0 4px;
+    color: gray;
+}
+.fcm-child-actions li:hover {
+    display: inline-flex;
+    color: black;
+}
+.fcm a {
+    text-decoration: none !important;
+    color: black !important;
+}
+.fcm .feather {
+    color: inherit;
+}
+
+.left-align {
+    text-align: left;
+}
+
+.right-align {
+    text-align: right;
+}
+
+.pure-menu-horizontal {
+    white-space: normal;
+}
+
+.pure-menu-link {
+    color: #444;
+}
+
+.pure-menu-link:hover {
+    background-color: #bbb;
+}
+
+.pure-menu-link:focus {
+    background-color: #ccc;
+}
+
+.pure-menu-selected>.pure-menu-link,.pure-menu-selected>.pure-menu-link:visited {
+    color: #000;
+    background-color: #ddd;
+}
+
+.pure-table-striped tbody tr:nth-child(2n-1) th, .pure-table-striped tbody tr:nth-child(2n-1) td {
+    background-color: #f2f2f2;
+}
+
+.pure-table tbody tr:hover th, .pure-table tbody tr:hover td {
+    background-color: #ccc;
+}
+
+.custom-menu-link {
+    color: #fff;
+}
+
+.custom-menu-link:hover {
+    background-color: #666;
+}
+
+.custom-menu-link:focus{
+    background-color: #888;
+}
+
+/* pure.css customizations */
+.custom-wrapper {
+    background-color: #000;
+    margin-bottom: 1em;
+    -webkit-font-smoothing: antialiased;
+    height: 2.1em;
+    overflow: hidden;
+    -webkit-transition: height 0.5s;
+    -moz-transition: height 0.5s;
+    -ms-transition: height 0.5s;
+    transition: height 0.5s;
+}
+
+.custom-wrapper.open {
+    height: 14em;
+}
+
+.custom-menu-3 {
+    text-align: right;
+}
+
+.custom-toggle {
+    width: 34px;
+    height: 34px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: none;
+}
+
+.custom-toggle .bar {
+    background-color: #777;
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 100px;
+    position: absolute;
+    top: 18px;
+    right: 7px;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+    -ms-transition: all 0.5s;
+    transition: all 0.5s;
+}
+
+.custom-toggle .bar:first-child {
+    -webkit-transform: translateY(-6px);
+    -moz-transform: translateY(-6px);
+    -ms-transform: translateY(-6px);
+    transform: translateY(-6px);
+}
+
+.custom-toggle.x .bar {
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+.custom-toggle.x .bar:first-child {
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.custom-brand {
+    text-transform: none;
+    color: #fff;
+}
+
+.content-pane-inactive {
+    display: none;
+}
+
+@media (max-width: 47.999em) {
+
+    .custom-menu-3 {
+        text-align: left;
+    }
+
+    .custom-toggle {
+        display: block;
+    }
+
+}

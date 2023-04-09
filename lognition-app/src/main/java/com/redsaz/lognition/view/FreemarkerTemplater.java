@@ -40,7 +40,7 @@ public class FreemarkerTemplater implements Templater {
   @Override
   public String buildFromTemplate(Object dataModel, String templateName) {
     try {
-      Template temp = cfg.getTemplate("page.ftl");
+      Template temp = cfg.getTemplate(templateName);
       StringWriter sw = new StringWriter();
       temp.process(dataModel, sw);
       return sw.toString();

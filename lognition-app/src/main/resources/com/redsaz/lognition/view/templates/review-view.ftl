@@ -14,48 +14,40 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="container">
+        <script src="${dist}/js/app.js"></script>
         <h2>${review.name}</h2>
         <div>
           <#noescape>${descriptionHtml}</#noescape>
         </div>
-        <h3>Applicable Logs</h3>
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <#list briefs as brief>
-              <tr>
-                <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.name}</a></td>
-                <td><a href="${base}/logs/${brief.id}/${brief.uriName}">${brief.notes}</a></td>
-              </tr>
-              </#list>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="container">
-        <ul class="nav nav-tabs" role="tablist">
-        <#list reviewGraphs as g>
-          <li role="presentation" class="nav-item"><a class="graph-nav nav-link<#if g?is_first> active</#if>" href="#${g.urlName}" aria-controls="${g.name}" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">${g.name}</a></li>
-        </#list>
-        <#if imageAttachments?has_content>
-          <#list imageAttachments as a>
-          <li role="presentation" class="nav-item"><a class="graph-nav nav-link" href="#attachment-${a?counter}" aria-controls="attachment-${a?counter}" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">${a.name}</a></li>
+        <h3 style="margin-top: 3em">Applicable Logs</h3>
+        <div class="fcm" style="margin-bottom: 3em">
+          <#list briefs as brief>
+          <div class="fcm-parent">
+            <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
+              <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
+            </a>
+          </div>
           </#list>
-        </#if>
-        <#if attachments?has_content>
-          <li role="presentation" class="nav-item"><a class="graph-nav nav-link" href="#attachments" aria-controls="attachments" role="tab" data-toggle="tab" onclick="switchActiveNav('graph-nav', this)">Attachments</a></li>
-        </#if>
-        </ul>
-        <div class="tab-content" style="width: 100%">
+        </div>
+
+        <div class="pure-menu pure-menu-horizontal">
+            <ul class="pure-menu-list">
+            <#list reviewGraphs as g>
+                <li class="pure-menu-item<#if g?is_first> pure-menu-selected</#if>"><a href="#${g.urlName}" class="pure-menu-link">${g.name}</a></li>
+            </#list>
+            <#if imageAttachments?has_content>
+              <#list imageAttachments as a>
+                <li class="pure-menu-item"><a href="#attachment-${a?counter}" class="pure-menu-link">${a.name}</a></li>
+              </#list>
+            </#if>
+            <#if attachments?has_content>
+                <li class="pure-menu-item"><a href="#attachments" class="pure-menu-link">Attachments</a></li>
+            </#if>
+            </ul>
+        </div>
+
         <#list reviewGraphs as g>
-          <div role="tabpanel" class="tab-pane <#if g?is_first>active</#if>" id="${g.urlName}" style="width: 100%">
+          <div class="content-pane" id="${g.urlName}" style="width: 100%">
             <h2>${g.name}</h2>
             <div class="graph" style="width: 100%">
               <div class="ct-chart" id="graphdiv${g?index}" style="width: 100%;<#if g.height??> height: ${g.height}</#if>"></div>
@@ -64,7 +56,7 @@
         </#list>
         <#if imageAttachments?has_content>
           <#list imageAttachments as a>
-          <div role="tabpanel" class="tab-pane" id="attachment-${a?counter}" style="width: 100%">
+          <div class="content-pane" id="attachment-${a?counter}" style="width: 100%">
             <h2>${a.name}</h2>
             <div class="attachment" style="width: 100%">
               <img src="attachments/${a.path}"/>
@@ -73,7 +65,7 @@
           </#list>
         </#if>
         <#if attachments?has_content>
-          <div role="tabpanel" class="tab-pane" id="attachments" style="width: 100%">
+          <div class="content-pane" id="attachments" style="width: 100%">
             <h2>Attachments</h2>
             <div class="table-responsive">
               <table class="table table-striped">
@@ -99,8 +91,6 @@
             </div>
           </div>
         </#if>
-        </div>
-      </div>
       <script src="${dist}/js/chartist.min.js"></script>
       <script src="${dist}/js/chartist-plugin-tooltip.min.js"></script>
       <script src="${dist}/js/chartist-plugin-legend.min.js"></script>

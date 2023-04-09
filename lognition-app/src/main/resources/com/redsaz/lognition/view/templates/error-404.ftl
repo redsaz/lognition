@@ -14,7 +14,6 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="container">
         <h1>Not Found</h1>
         <p>
         Sorry, we couldn't find what you wanted. Would you like to:
@@ -23,5 +22,4 @@
           <li><a href="${base}/logs/create">Create</a> a new log?</li>
           <li><a href="javascript:history.back()">Go Back</a>?</li>
         </ul>
-      </div>
 </#escape>

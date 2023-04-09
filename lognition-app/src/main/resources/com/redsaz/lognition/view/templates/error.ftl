@@ -14,7 +14,6 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <div class="container">
         <h1>${title}</h1>
         <p>
           ${message}
@@ -22,5 +21,4 @@
         <p>
           <#noescape>${action}</#noescape>
         </p>
-      </div>
 </#escape>

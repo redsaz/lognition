@@ -140,7 +140,7 @@ public class BrowserReviewsResource {
     root.put("dist", dist);
     root.put("title", "Reviews");
     root.put("content", "review-list.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   /**
@@ -258,7 +258,7 @@ public class BrowserReviewsResource {
     root.put("dist", dist);
     root.put("title", "Create Review");
     root.put("content", "review-create.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   /**
@@ -286,7 +286,7 @@ public class BrowserReviewsResource {
     root.put("dist", dist);
     root.put("title", "Edit Review");
     root.put("content", "review-edit.ftl");
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   @POST
@@ -566,13 +566,20 @@ public class BrowserReviewsResource {
     root.put("briefs", briefs);
     root.put("base", "");
     root.put("dist", dist);
+    root.put(
+        "stylesheets",
+        List.of(
+            dist + "/css/dygraph.css",
+            dist + "/css/chartist.min.css",
+            dist + "/css/chartist-plugin-tooltip.css",
+            dist + "/css/chartist-plugin-legend.css"));
     root.put("title", review.getName());
     root.put("descriptionHtml", commonMarkToHtml(review.getDescription()));
     root.put("content", "review-view.ftl");
     root.put("reviewGraphs", reviewGraphs);
     addAttachments(root, reviewId);
 
-    return Response.ok(cfg.buildFromTemplate(root, "page.ftl")).build();
+    return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
   }
 
   private void addAttachments(Map<String, Object> root, long reviewId) {

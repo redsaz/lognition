@@ -14,54 +14,52 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-      <script>
-        function deleteReview(reviewId) {
-            var xhr = new XMLHttpRequest();
-            var url = '${base}/reviews/' + reviewId;
-            xhr.open('DELETE', url, true);
-            xhr.addEventListener('load', function() {
-                window.location.href = "${base}/reviews";
-            });
-            xhr.addEventListener('error', function() {
-                console.error("Could not delete reviewId=" + reviewId);
-            });
-            xhr.send();
-        }
-        function editReview(reviewId) {
-            window.location.href='${base}/reviews/' + reviewId + '/edit';
-        }
-      </script>
-      <div class="container">
-        <h1>Reviews</h1>
-        <div>
-          <a href="reviews/create" class="btn btn-outline-dark">Create</a>
-          <div class="fcm">
-            <#list reviews as review>
-            <div class="fcm-parent">
-              <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
-                <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
-              </a>
-              <span class="fcm-child-actions">
-                <ul style="display: flex;">
-                  <li onclick="editReview(${review.id})"><span data-feather="edit"></span></li>
-                  <li onclick="deleteReview(${review.id})"><span data-feather="trash"></span></li>
-                </ul>
-              </span>
-            </div>
-            </#list>
-          </div>
+    <script>
+      function deleteReview(reviewId) {
+          var xhr = new XMLHttpRequest();
+          var url = '${base}/reviews/' + reviewId;
+          xhr.open('DELETE', url, true);
+          xhr.addEventListener('load', function() {
+              window.location.href = "${base}/reviews";
+          });
+          xhr.addEventListener('error', function() {
+              console.error("Could not delete reviewId=" + reviewId);
+          });
+          xhr.send();
+      }
+      function editReview(reviewId) {
+          window.location.href='${base}/reviews/' + reviewId + '/edit';
+      }
+    </script>
+    <h1>Reviews</h1>
+    <div>
+      <a href="reviews/create" class="pure-button"><i class="fa fa-file"></i> Create</a>
+      <div class="fcm">
+        <#list reviews as review>
+        <div class="fcm-parent">
+          <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
+            <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
+          </a>
+          <span class="fcm-child-actions">
+            <ul style="display: flex;">
+              <li onclick="editReview(${review.id})"><span data-feather="edit"></span></li>
+              <li onclick="deleteReview(${review.id})"><span data-feather="trash"></span></li>
+            </ul>
+          </span>
         </div>
+        </#list>
       </div>
-<script>
-  Array.prototype.slice.call( document.getElementsByClassName("fcm-parent")).forEach(
-    function(fcmparent) {
-      fcmparent.addEventListener("mouseenter", function( event ) {
-        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "flex";
-      }, false);
-      fcmparent.addEventListener("mouseleave", function( event ) {
-        event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "none";
-      }, false);
-    }
-  );
-</script>
+    </div>
+    <script>
+      Array.prototype.slice.call( document.getElementsByClassName("fcm-parent")).forEach(
+        function(fcmparent) {
+          fcmparent.addEventListener("mouseenter", function( event ) {
+            event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "flex";
+          }, false);
+          fcmparent.addEventListener("mouseleave", function( event ) {
+            event.target.getElementsByClassName("fcm-child-actions")[0].style.display = "none";
+          }, false);
+        }
+      );
+    </script>
 </#escape>

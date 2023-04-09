@@ -78,7 +78,7 @@ public class AppExceptionMapper implements ExceptionMapper<AppException> {
           "action",
           "Please <a href=\"javascript:history.back()\">go back</a> and try again. If the problem persists, contact the application team.");
     }
-    String body = cfg.buildFromTemplate(root, "page.ftl");
+    String body = cfg.buildFromTemplate(root, "base.ftl");
     resp.entity(body).type(MediaType.TEXT_HTML_TYPE);
     return resp.build();
   }
