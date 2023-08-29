@@ -23,7 +23,7 @@
         <div class="fcm" style="margin-bottom: 3em">
           <#list briefs as brief>
           <div class="fcm-parent">
-            <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
+            <a class="fcm-child-item" href="${base}/logs/#{brief.id}/${brief.uriName}">
               <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
             </a>
           </div>

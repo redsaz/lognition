@@ -37,13 +37,13 @@
       <div class="fcm">
         <#list reviews as review>
         <div class="fcm-parent">
-          <a class="fcm-child-item" href="${base}/reviews/${review.id}/${review.uriName}">
+          <a class="fcm-child-item" href="${base}/reviews/#{review.id}/${review.uriName}">
             <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
           </a>
           <span class="fcm-child-actions">
             <ul style="display: flex;">
-              <li onclick="editReview(${review.id})"><span data-feather="edit"></span></li>
-              <li onclick="deleteReview(${review.id})"><span data-feather="trash"></span></li>
+              <li onclick="editReview(#{review.id})"><span data-feather="edit"></span></li>
+              <li onclick="deleteReview(#{review.id})"><span data-feather="trash"></span></li>
             </ul>
           </span>
         </div>

@@ -37,13 +37,13 @@
       <div class="fcm">
         <#list briefs as brief>
         <div class="fcm-parent">
-          <a class="fcm-child-item" href="${base}/logs/${brief.id}/${brief.uriName}">
+          <a class="fcm-child-item" href="${base}/logs/#{brief.id}/${brief.uriName}">
             <span class="fcm-child-item-title">${brief.name}</span> - ${brief.notes}
           </a>
           <span class="fcm-child-actions">
             <ul style="display: flex;">
-              <li onclick="editLog(${brief.id})"><i class="fa fa-edit"></i></li>
-              <li onclick="deleteLog(${brief.id})"><i class="fa fa-trash"></i></li>
+              <li onclick="editLog(#{brief.id})"><i class="fa fa-edit"></i></li>
+              <li onclick="deleteLog(#{brief.id})"><i class="fa fa-trash"></i></li>
             </ul>
           </span>
         </div>

@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 <#escape x as x?html>
-        <form class="pure-form pure-form-stacked" action="${base}/reviews/${review.id}" method="POST" enctype="multipart/form-data">
+        <form class="pure-form pure-form-stacked" action="${base}/reviews/#{review.id}" method="POST" enctype="multipart/form-data">
           <fieldset>
             <div class="pure-g">
               <legend class="pure-u-1">Edit Review</legend>
