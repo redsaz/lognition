@@ -42,8 +42,8 @@
           </a>
           <span class="fcm-child-actions">
             <ul style="display: flex;">
-              <li onclick="editReview(#{review.id})"><span data-feather="edit"></span></li>
-              <li onclick="deleteReview(#{review.id})"><span data-feather="trash"></span></li>
+              <li onclick="editReview(#{review.id})"><i class="fa fa-edit"></i></li>
+              <li onclick="deleteReview(#{review.id})"><i class="fa fa-trash"></i></li>
             </ul>
           </span>
         </div>
