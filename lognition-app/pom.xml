@@ -13,13 +13,14 @@
     <packaging>jar</packaging>
     <properties>
         <skipITs>true</skipITs>
+        <quarkus.version>3.6.4</quarkus.version>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-bom</artifactId>
-                <version>2.16.5.Final</version>
+                <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -49,6 +50,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>com.redsaz.lognition</groupId>
@@ -103,12 +108,32 @@
             <artifactId>HdrHistogram</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.atlassian.commonmark</groupId>
+            <groupId>org.commonmark</groupId>
             <artifactId>commonmark</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>10.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-hsqldb</artifactId>
+            <version>10.4.1</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -131,7 +156,7 @@
             <plugin>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>2.16.5.Final</version>
+                <version>${quarkus.version}</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -159,6 +184,8 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
+                    <argLine>--add-modules org.hsqldb</argLine>
+                    <argLine>--add-opens org.hsqldb/org.hsqldb=flyway.core</argLine>
                 </configuration>
             </plugin>
             <plugin>

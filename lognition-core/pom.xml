@@ -91,7 +91,7 @@
             <artifactId>HdrHistogram</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.atlassian.commonmark</groupId>
+            <groupId>org.commonmark</groupId>
             <artifactId>commonmark</artifactId>
         </dependency>
         <dependency>

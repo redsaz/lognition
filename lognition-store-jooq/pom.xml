@@ -45,6 +45,14 @@
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>--add-modules org.hsqldb</argLine>
+                    <argLine>--add-opens org.hsqldb/org.hsqldb=flyway.core</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
                 <configuration>
@@ -121,8 +129,14 @@
             <artifactId>hsqldb</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>10.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-hsqldb</artifactId>
+            <version>10.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
