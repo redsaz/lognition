@@ -25,16 +25,20 @@ module LognitionApp {
   requires commons.math3;
   requires freemarker;
   requires io.vertx.core;
-  requires java.activation;
+  requires jakarta.activation;
   requires java.desktop;
-  requires java.ws.rs;
-  requires jakarta.enterprise.cdi.api;
-  requires jakarta.inject.api;
-  requires org.apache.commons.lang3;
+  requires jakarta.ws.rs;
+  requires jakarta.cdi;
+  requires jakarta.inject;
+  requires microprofile.config.api;
   requires org.commonmark;
+  requires org.hsqldb;
   requires org.jooq;
   requires org.slf4j;
   requires quarkus.jackson;
   requires resteasy.multipart.provider;
   requires slugify;
+  requires flyway.core;
+
+  uses org.hsqldb.jdbc.JDBCDriver;
 }

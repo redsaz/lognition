@@ -15,93 +15,81 @@
  */
 package com.redsaz.lognition.app.services;
 
-import com.redsaz.lognition.api.AttachmentsService;
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
 import com.redsaz.lognition.api.StatsService;
-import com.redsaz.lognition.services.ConnectionPoolInit;
-import com.redsaz.lognition.services.ProcessorImportService;
-import com.redsaz.lognition.services.SanitizerAttachmentsService;
-import com.redsaz.lognition.services.SanitizerImportService;
-import com.redsaz.lognition.services.SanitizerLogsService;
-import com.redsaz.lognition.services.SanitizerReviewsService;
-import com.redsaz.lognition.store.ConnectionPool;
-import com.redsaz.lognition.store.JooqAttachmentsService;
-import com.redsaz.lognition.store.JooqImportService;
-import com.redsaz.lognition.store.JooqLogsService;
-import com.redsaz.lognition.store.JooqReviewsService;
-import com.redsaz.lognition.store.JooqStatsService;
+import com.redsaz.lognition.services.Services;
 import com.redsaz.lognition.view.Processor;
 import com.redsaz.lognition.view.Sanitizer;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Destroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Produces;
-import org.jooq.SQLDialect;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Redsaz <redsaz@gmail.com>
  */
-public class ServiceProducers {
+@Singleton
+public class ServiceProducers implements AutoCloseable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProducers.class);
-  private static final String LOGS_DIR = "./lognition-data/logs";
-  private static final String ATTACHMENTS_DIR = "./lognition-data/attachmentsDir";
-  private static final ConnectionPool POOL = ConnectionPoolInit.initPool();
-  private static final AttachmentsService SANITIZER_ATTACHMENTS_SERVICE =
-      new SanitizerAttachmentsService(
-          new JooqAttachmentsService(POOL, SQLDialect.HSQLDB, ATTACHMENTS_DIR));
-  private static final LogsService SANITIZER_LOGS_SERVICE =
-      new SanitizerLogsService(
-          new JooqLogsService(POOL, SQLDialect.HSQLDB, LOGS_DIR, SANITIZER_ATTACHMENTS_SERVICE));
-  private static final ReviewsService SANITIZER_REVIEWS_SERVICE =
-      new SanitizerReviewsService(
-          new JooqReviewsService(POOL, SQLDialect.HSQLDB, SANITIZER_ATTACHMENTS_SERVICE));
-  private static final ImportService SANITIZER_IMPORT_SERVICE =
-      new SanitizerImportService(new JooqImportService(POOL, SQLDialect.HSQLDB));
-  private static final StatsService STATS_SERVICE = new JooqStatsService(POOL, SQLDialect.HSQLDB);
-  private static final ProcessorImportService PROCESSOR_IMPORT_SERVICE =
-      new ProcessorImportService(
-          SANITIZER_IMPORT_SERVICE, SANITIZER_LOGS_SERVICE, STATS_SERVICE, LOGS_DIR);
+  private static final Logger LOG = LoggerFactory.getLogger(ServiceProducers.class);
+  private final Services services;
+
+  public ServiceProducers(
+      @ConfigProperty(name = "lognition.data.embeddeddb.location") String embeddedDbPath,
+      @ConfigProperty(name = "lognition.data.embeddeddb.autoinit") boolean autoinit) {
+    services = new Services(embeddedDbPath, autoinit);
+  }
 
   @Produces
   @ApplicationScoped
   @Sanitizer
   public LogsService createSanitizerLogsService() {
-    return SANITIZER_LOGS_SERVICE;
+    return services.sanitizerLogsService();
   }
 
   @Produces
   @ApplicationScoped
   @Sanitizer
   public ReviewsService createSanitizerReviewsService() {
-    return SANITIZER_REVIEWS_SERVICE;
+    return services.sanitizerReviewsService();
   }
 
   @Produces
   @ApplicationScoped
   @Processor
   public ImportService createProcessorImportService() {
-    return PROCESSOR_IMPORT_SERVICE;
+    return services.processorImportService();
   }
 
   @Produces
   @ApplicationScoped
   public StatsService createStatsService() {
-    return STATS_SERVICE;
+    return services.statsService();
   }
 
-  public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
-    SANITIZER_LOGS_SERVICE.get(-1L); // Grab any non-existing item from the service
-    LOGGER.info("Started Lognition.");
+  public void init() {
+    LOG.info("Started up Lognition.");
   }
 
-  public void destroy(@Observes @Destroyed(ApplicationScoped.class) Object init) {
-    LOGGER.info("Shutting down Lognition.");
-    PROCESSOR_IMPORT_SERVICE.shutdown();
+  @Override
+  public void close() throws Exception {
+    LOG.info("Shutting down Lognition.");
+    services.close();
+  }
+
+  public void onStart(@Observes @Initialized(ApplicationScoped.class) Object init) {
+    init();
+  }
+
+  public void onStop(@Observes @Destroyed(ApplicationScoped.class) Object destroy)
+      throws Exception {
+    close();
   }
 }

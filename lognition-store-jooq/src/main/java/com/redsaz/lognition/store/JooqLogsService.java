@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep3;
@@ -75,7 +76,7 @@ public class JooqLogsService implements LogsService {
   private static final RecordToLogMapper R2L = new RecordToLogMapper();
   private static final RecordToLabelMapper R2LABEL = new RecordToLabelMapper();
 
-  private final ConnectionPool pool;
+  private final DataSource dataSource;
   private final SQLDialect dialect;
   private final String logsDir;
   private final AttachmentsService attSvc;
@@ -83,16 +84,16 @@ public class JooqLogsService implements LogsService {
   /**
    * Create a new LogsService backed by a data store.
    *
-   * @param jdbcPool opens connections to database
+   * @param jdbcDataSource opens connections to database
    * @param sqlDialect the type of SQL database that we should speak
    * @param logsDirectory the directory containing the logs
    */
   public JooqLogsService(
-      ConnectionPool jdbcPool,
+      DataSource jdbcDataSource,
       SQLDialect sqlDialect,
       String logsDirectory,
       AttachmentsService attachmentsService) {
-    pool = jdbcPool;
+    dataSource = jdbcDataSource;
     dialect = sqlDialect;
     logsDir = logsDirectory;
     attSvc = attachmentsService;
@@ -113,7 +114,7 @@ public class JooqLogsService implements LogsService {
     }
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       LogRecord result =
@@ -152,7 +153,7 @@ public class JooqLogsService implements LogsService {
 
   @Override
   public Log get(long id) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context.selectFrom(LOG).where(LOG.ID.eq(id)).fetchOne(R2L);
     } catch (SQLException ex) {
@@ -162,7 +163,7 @@ public class JooqLogsService implements LogsService {
 
   @Override
   public List<Log> list() {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       RecordsToListHandler<LogRecord, Log> r2lHandler = new RecordsToListHandler<>(R2L);
       return context.selectFrom(LOG).orderBy(LOG.ID.desc()).fetchInto(r2lHandler).getValues();
@@ -173,7 +174,7 @@ public class JooqLogsService implements LogsService {
 
   @Override
   public List<Long> listIdsBySelector(LabelSelectorExpression labelSelector) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       LabelSelectorToSelect ls2s = new LabelSelectorToSelect(context);
       labelSelector.consume(ls2s);
@@ -194,7 +195,7 @@ public class JooqLogsService implements LogsService {
     // Only delete the log record after all log resources are properly cleaned up.
     attSvc.deleteForOwner(toOwner(id));
 
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context.delete(LOG).where(LOG.ID.eq(id)).execute();
@@ -211,7 +212,7 @@ public class JooqLogsService implements LogsService {
     }
 
     LOGGER.info("Updating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       UpdateQuery<LogRecord> uq = context.updateQuery(LOG);
@@ -247,7 +248,7 @@ public class JooqLogsService implements LogsService {
   @Override
   public void updateStatus(long id, Status newStatus) {
     LOGGER.info("Updating log id={} status={}...", id, newStatus);
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context.update(LOG).set(LOG.STATUS, newStatus.ordinal()).where(LOG.ID.eq(id)).execute();
@@ -267,7 +268,7 @@ public class JooqLogsService implements LogsService {
     }
 
     LOGGER.info("Creating/Updating/Deleting labels in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       List<Label> toAdds = new ArrayList<>();
       List<Label> toChanges = new ArrayList<>();
@@ -338,7 +339,7 @@ public class JooqLogsService implements LogsService {
 
   @Override
   public List<Label> getLabels(long logId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       RecordsToListHandler<LabelRecord, Label> r2lHandler = new RecordsToListHandler<>(R2LABEL);
       List<Label> labels =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Redsaz <redsaz@gmail.com>.
+ * Copyright 2024 Redsaz <redsaz@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,42 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.redsaz.lognition.store;
 
 import com.redsaz.lognition.api.exceptions.AppServerException;
-import java.sql.Connection;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.exception.LiquibaseException;
-import liquibase.resource.ClassLoaderResourceAccessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
+import org.hsqldb.jdbc.JDBCDataSource;
 
 /**
- * @author Redsaz <redsaz@gmail.com>
+ * Initializes and migrates the database schema as necessary.
+ *
+ * @author redsaz
  */
 public class DbInitializer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbInitializer.class);
-
-  // Don't allow util classes to be created.
+  // do not allow utility class to be constructed
   private DbInitializer() {}
 
-  public static void initDb(Connection c) {
+  public static void init(Path hsqldbFilepath, String url, String user, String password)
+      throws SQLException {
     try {
-      LOGGER.info("Initing DB...");
-      // If the database doesn't exist, create it according to the spec.
-      Database database =
-          DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(c));
-      Liquibase liquibase =
-          new Liquibase("lognition-db.yaml", new ClassLoaderResourceAccessor(), database);
-      // Update the database if it does exist, if needed.
-      liquibase.update((String) null);
-    } catch (LiquibaseException ex) {
+      Files.createDirectories(hsqldbFilepath.getParent());
+    } catch (IOException ex) {
+      throw new SQLException("Could not create directories for " + hsqldbFilepath);
+    }
+
+    try {
+      JDBCDataSource ds = new JDBCDataSource();
+      ds.setUrl(url);
+      ds.setUser(user);
+      ds.setPassword(password);
+      Flyway flyway = Flyway.configure().baselineOnMigrate(true).dataSource(ds).load();
+      flyway.migrate();
+    } catch (FlywayException ex) {
       throw new AppServerException("Cannot initialize database: " + ex.getMessage(), ex);
     }
-    LOGGER.info("...Finish Initing DB.");
   }
 }

@@ -30,10 +30,6 @@ import com.redsaz.lognition.convert.Samples;
 import com.redsaz.lognition.convert.SamplesWriter;
 import com.redsaz.lognition.stats.StatsBuilder;
 import com.redsaz.lognition.stats.StatsBuilder.StatsItems;
-import com.redsaz.lognition.store.ConnectionPool;
-import com.redsaz.lognition.store.JooqImportService;
-import com.redsaz.lognition.store.JooqLogsService;
-import com.redsaz.lognition.store.JooqStatsService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +40,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.jooq.SQLDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,26 +65,6 @@ public class ProcessorImportService implements ImportService {
   private final String convertedDir;
   private final Importer importer;
   private final Thread importerThread;
-
-  public static void main(String[] args) throws Exception {
-    final ConnectionPool pool = ConnectionPoolInit.initPool();
-    final ImportService saniImportSrv =
-        new SanitizerImportService(new JooqImportService(pool, SQLDialect.HSQLDB));
-    final String convertedDir = "jtls/target/logs";
-    final LogsService saniLogSrv =
-        new SanitizerLogsService(new JooqLogsService(pool, SQLDialect.HSQLDB, convertedDir, null));
-    final StatsService jooqStatsSrv = new JooqStatsService(pool, SQLDialect.HSQLDB);
-    final long now = System.currentTimeMillis();
-
-    Importer imp = new Importer(saniImportSrv, saniLogSrv, jooqStatsSrv, convertedDir);
-    Thread impThread = new Thread(imp, "LogImporter-" + System.identityHashCode(imp));
-    impThread.start();
-
-    ImportInfo ii = new ImportInfo(now, "jtls/target/real-without-header.jtl", now);
-    imp.addJob(ii);
-
-    imp.shutdown();
-  }
 
   public ProcessorImportService(
       ImportService importService,

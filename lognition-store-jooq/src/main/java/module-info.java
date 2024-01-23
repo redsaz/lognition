@@ -18,10 +18,15 @@ module LognitionStoreJooq {
   exports com.redsaz.lognition.store;
   exports com.redsaz.lognition.model.tables.records;
 
+  opens db.migration;
+
   requires LognitionApi;
+  requires transitive org.hsqldb;
   requires org.slf4j;
   requires org.jooq;
-  requires liquibase.core;
   requires java.naming;
-  requires java.xml.bind;
+  requires flyway.core;
+
+  uses org.hsqldb.jdbc.JDBCDriver;
+  uses org.flywaydb.core.extensibility.Plugin;
 }

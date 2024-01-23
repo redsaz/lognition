@@ -35,6 +35,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.InsertFinalStep;
 import org.jooq.RecordMapper;
@@ -56,21 +57,20 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   private static final RecordToAttachmentMapper R2A = new RecordToAttachmentMapper();
 
-  private final ConnectionPool pool;
+  private final DataSource dataSource;
   private final SQLDialect dialect;
   private final File attachmentsDir;
 
   /**
    * Create a new AttachmentsService backed by a data store.
    *
-   * @param jdbcPool opens connections to database
+   * @param jdbcDataSource opens connections to database
    * @param sqlDialect the type of SQL database that we should speak
    * @param attachmentsDirectory where all of the attachments will be stored.
    */
   public JooqAttachmentsService(
-      ConnectionPool jdbcPool, SQLDialect sqlDialect, String attachmentsDirectory) {
-    LOGGER.info("Using given Connection Pool.");
-    pool = jdbcPool;
+      DataSource jdbcDataSource, SQLDialect sqlDialect, String attachmentsDirectory) {
+    dataSource = jdbcDataSource;
     dialect = sqlDialect;
     attachmentsDir = new File(attachmentsDirectory);
     try {
@@ -87,7 +87,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
     File uploadDestFile = writeTempDataFile(data);
 
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       boolean exists =
@@ -178,7 +178,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   @Override
   public Attachment get(String owner, String path) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return get(context, owner, path);
     } catch (SQLException ex) {
@@ -205,7 +205,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   @Override
   public List<Attachment> listForOwner(String owner) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context.selectFrom(ATTACHMENT).where(ATTACHMENT.OWNER.eq(owner)).fetch(R2A);
     } catch (SQLException ex) {
@@ -215,7 +215,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   @Override
   public void delete(String owner, String path) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       Attachment attachment = get(context, owner, path);
       if (attachment == null) {
@@ -244,7 +244,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   @Override
   public Attachment update(Attachment source) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       UpdateQuery<AttachmentRecord> query = context.updateQuery(ATTACHMENT);
@@ -276,7 +276,7 @@ public class JooqAttachmentsService implements AttachmentsService {
 
   @Override
   public Attachment move(String owner, String sourcePath, String targetPath) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       boolean sourceExists =

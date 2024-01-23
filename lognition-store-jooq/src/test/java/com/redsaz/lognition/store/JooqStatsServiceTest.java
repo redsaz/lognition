@@ -18,18 +18,15 @@ package com.redsaz.lognition.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.CodeCounts;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Log.Status;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import org.hsqldb.jdbc.JDBCPool;
 import org.jooq.SQLDialect;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,7 +45,7 @@ public class JooqStatsServiceTest {
 
   @Test
   public void testCreateOrUpdateCodeCounts() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       // Given a log with a label,
       JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
       JooqLogsService logSvc =
@@ -70,7 +67,7 @@ public class JooqStatsServiceTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testCreateOrUpdateCodeCounts_badLogId() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
 
       // Given a bad log ID (an ID of 0 or below),
@@ -85,7 +82,7 @@ public class JooqStatsServiceTest {
 
   @Test(expected = NullPointerException.class)
   public void testCreateOrUpdateCodeCounts_nullCounts() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
 
       // Given a null CodeCounts,
@@ -98,7 +95,7 @@ public class JooqStatsServiceTest {
 
   @Test
   public void testGetCodeCounts_bogusLogId() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
 
       // Given a non-existing log ID,
@@ -160,7 +157,7 @@ public class JooqStatsServiceTest {
             .commitBin() // Second 15s bin
             .build();
 
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       JooqStatsService unit = new JooqStatsService(cp, SQLDialect.HSQLDB);
       JooqLogsService logSvc =
           new JooqLogsService(cp, SQLDialect.HSQLDB, connectionDir.newFolder().toString(), null);
@@ -208,40 +205,8 @@ public class JooqStatsServiceTest {
     }
   }
 
-  private CloseableConnectionPool createConnectionPool() throws IOException {
+  private ConnectionPool createConnectionPool() throws IOException, SQLException {
     File hsqldbFile = connectionDir.newFile();
-    JDBCPool jdbc = new JDBCPool();
-    jdbc.setUrl(
-        "jdbc:hsqldb:"
-            + hsqldbFile.toURI()
-            + ";shutdown=true;hsqldb.lob_file_scale=4;hsqldb.lob_compressed=true");
-    jdbc.setUser("SA");
-    jdbc.setPassword("SA");
-
-    try (Connection c = jdbc.getConnection()) {
-      DbInitializer.initDb(c);
-    } catch (SQLException ex) {
-      throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
-    }
-    return new CloseableConnectionPool(jdbc);
-  }
-
-  private class CloseableConnectionPool implements ConnectionPool, AutoCloseable {
-
-    private final JDBCPool pool;
-
-    public CloseableConnectionPool(JDBCPool jdbcPool) {
-      pool = jdbcPool;
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-      return pool.getConnection();
-    }
-
-    @Override
-    public void close() throws SQLException {
-      pool.close(1);
-    }
+    return HsqldbConnectionPool.initAndOpen(hsqldbFile.toPath());
   }
 }

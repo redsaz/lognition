@@ -16,16 +16,16 @@
 package com.redsaz.lognition.quarkus;
 
 import com.redsaz.lognition.view.Templater;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 
 /**
  * @author Redsaz <redsaz@gmail.com>

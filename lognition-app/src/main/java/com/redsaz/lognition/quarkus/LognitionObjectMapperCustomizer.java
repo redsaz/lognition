@@ -20,7 +20,7 @@ import static io.quarkus.jackson.ObjectMapperCustomizer.MINIMUM_PRIORITY;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.jackson.ObjectMapperCustomizer;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Configures the Quarkus Jackson ObjectMapper.

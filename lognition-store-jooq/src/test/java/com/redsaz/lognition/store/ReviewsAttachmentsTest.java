@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.redsaz.lognition.api.exceptions.AppClientException;
-import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.Attachment;
 import com.redsaz.lognition.api.model.Review;
 import java.io.BufferedInputStream;
@@ -36,10 +35,8 @@ import java.nio.file.Files;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import org.hsqldb.jdbc.JDBCPool;
 import org.jooq.SQLDialect;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,7 +53,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testCreateAndDownloadAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -108,7 +105,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testCreateAttachment_existingName() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream preData = attachmentData();
         DigestInputStream data = attachmentData("gray.jpg")) {
       File attachDir = attachTempDir.newFolder();
@@ -172,7 +169,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testCreateAttachment_samePathDifferentReviews() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data1 = attachmentData();
         DigestInputStream data2 = attachmentData("gray.jpg")) {
       File attachDir = attachTempDir.newFolder();
@@ -250,7 +247,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testUpdateAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -308,7 +305,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testUpdateAttachment_nullsShouldNotChange() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -367,7 +364,7 @@ public class ReviewsAttachmentsTest {
   @Test
   public void testUpdateAttachment_cannotUpdateUnchangeableFields()
       throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -416,7 +413,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testMoveAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -476,7 +473,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testMoveAttachment_overwritesOtherAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data1 = attachmentData();
         DigestInputStream data2 = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
@@ -552,7 +549,7 @@ public class ReviewsAttachmentsTest {
 
   @Test(expected = AppClientException.class)
   public void testMoveAttachment_noSourceAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
           new JooqAttachmentsService(cp, SQLDialect.HSQLDB, attachDir.toString());
@@ -579,7 +576,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testDeleteAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -628,7 +625,7 @@ public class ReviewsAttachmentsTest {
 
   @Test(expected = AppClientException.class)
   public void testDeleteAttachment_noAttachment() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
           new JooqAttachmentsService(cp, SQLDialect.HSQLDB, attachDir.toString());
@@ -657,7 +654,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testDeleteReview() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -708,7 +705,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testListAttachments() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool();
+    try (ConnectionPool cp = createConnectionPool();
         DigestInputStream data = attachmentData()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
@@ -743,7 +740,7 @@ public class ReviewsAttachmentsTest {
 
   @Test
   public void testListAttachments_empty() throws IOException, SQLException {
-    try (CloseableConnectionPool cp = createConnectionPool()) {
+    try (ConnectionPool cp = createConnectionPool()) {
       File attachDir = attachTempDir.newFolder();
       JooqAttachmentsService attSvc =
           new JooqAttachmentsService(cp, SQLDialect.HSQLDB, attachDir.toString());
@@ -800,40 +797,8 @@ public class ReviewsAttachmentsTest {
         actual.getMessageDigest().digest());
   }
 
-  private CloseableConnectionPool createConnectionPool() throws IOException {
+  private ConnectionPool createConnectionPool() throws IOException, SQLException {
     File hsqldbFile = attachTempDir.newFile();
-    JDBCPool jdbc = new JDBCPool();
-    jdbc.setUrl(
-        "jdbc:hsqldb:"
-            + hsqldbFile.toURI()
-            + ";shutdown=true;hsqldb.lob_file_scale=4;hsqldb.lob_compressed=true");
-    jdbc.setUser("SA");
-    jdbc.setPassword("SA");
-
-    try (Connection c = jdbc.getConnection()) {
-      DbInitializer.initDb(c);
-    } catch (SQLException ex) {
-      throw new AppServerException("Cannot initialize logs service: " + ex.getMessage(), ex);
-    }
-    return new CloseableConnectionPool(jdbc);
-  }
-
-  private class CloseableConnectionPool implements ConnectionPool, AutoCloseable {
-
-    private final JDBCPool pool;
-
-    public CloseableConnectionPool(JDBCPool jdbcPool) {
-      pool = jdbcPool;
-    }
-
-    @Override
-    public Connection getConnection() throws SQLException {
-      return pool.getConnection();
-    }
-
-    @Override
-    public void close() throws SQLException {
-      pool.close(1);
-    }
+    return HsqldbConnectionPool.initAndOpen(hsqldbFile.toPath());
   }
 }

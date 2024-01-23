@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep3;
 import org.jooq.RecordMapper;
@@ -79,18 +80,18 @@ public class JooqStatsService implements StatsService {
   private static final RecordToSampleLabelMapper R2SAMPLE_LABEL = new RecordToSampleLabelMapper();
   private static final RecordToStatsMapper R2STATS = new RecordToStatsMapper();
 
-  private final ConnectionPool pool;
+  private final DataSource dataSource;
   private final SQLDialect dialect;
 
   /**
    * Create a new LogsService backed by a data store.
    *
-   * @param jdbcPool opens connections to database
+   * @param jdbcDataSource opens connections to database
    * @param sqlDialect the type of SQL database that we should speak
    * @param logsDirectory the directory containing the logs
    */
-  public JooqStatsService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
-    pool = jdbcPool;
+  public JooqStatsService(DataSource jdbcDataSource, SQLDialect sqlDialect) {
+    dataSource = jdbcDataSource;
     dialect = sqlDialect;
   }
 
@@ -103,7 +104,7 @@ public class JooqStatsService implements StatsService {
     }
 
     LOGGER.info("Creating sample labels in DB for logId={}...", logId);
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       InsertValuesStep3<SampleLabelRecord, Long, Long, String> inserts =
@@ -122,7 +123,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public List<String> getSampleLabels(long logId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(SAMPLE_LABEL)
@@ -137,7 +138,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public Stats getAggregate(long logId, long labelId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(AGGREGATE)
@@ -158,7 +159,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public Timeseries getTimeseries(long logId, long labelId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(TIMESERIES)
@@ -174,7 +175,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public Histogram getHistogram(long logId, long labelId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(HISTOGRAM)
@@ -195,7 +196,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public Percentiles getPercentiles(long logId, long labelId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(PERCENTILE)
@@ -216,7 +217,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public CodeCounts getCodeCounts(long logId, long labelId, long spanMillis) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(CODE_COUNT)
@@ -240,7 +241,7 @@ public class JooqStatsService implements StatsService {
 
   @Override
   public Map<Long, CodeCounts> getCodeCountsForLog(long logId, long spanMillis) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context
           .selectFrom(CODE_COUNT)
@@ -268,7 +269,7 @@ public class JooqStatsService implements StatsService {
     }
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context
@@ -325,7 +326,7 @@ public class JooqStatsService implements StatsService {
     byte[] statsBytes = convertToSeriesData(timeseries);
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context
@@ -358,7 +359,7 @@ public class JooqStatsService implements StatsService {
     byte[] statsBytes = convertToSeriesData(histogram);
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context
@@ -388,7 +389,7 @@ public class JooqStatsService implements StatsService {
     byte[] statsBytes = convertToSeriesData(percentiles);
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context
@@ -406,12 +407,15 @@ public class JooqStatsService implements StatsService {
     if (logId < 1L) {
       throw new IllegalArgumentException("Bad log id");
     } else if (codeCounts == null) {
-      throw new NullPointerException("No code counts were given.");
+      throw new NullPointerException("Null code counts given.");
+    } else if (codeCounts.getCodes().isEmpty()) {
+      LOGGER.info("No code counts were given.");
+      return;
     }
     byte[] countBytes = convertToCodeCountData(codeCounts);
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context

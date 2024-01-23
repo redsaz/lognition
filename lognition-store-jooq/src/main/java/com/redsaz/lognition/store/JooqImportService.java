@@ -36,6 +36,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.RecordHandler;
 import org.jooq.RecordMapper;
@@ -56,19 +57,18 @@ public class JooqImportService implements ImportService {
 
   private static final RecordToImportMapper R2I = new RecordToImportMapper();
 
-  private final ConnectionPool pool;
+  private final DataSource dataSource;
   private final SQLDialect dialect;
   private final File uploadedLogsDir;
 
   /**
    * Create a new ImportService backed by a data store.
    *
-   * @param jdbcPool opens connections to database
+   * @param jdbcDataSource opens connections to database
    * @param sqlDialect the type of SQL database that we should speak
    */
-  public JooqImportService(ConnectionPool jdbcPool, SQLDialect sqlDialect) {
-    LOGGER.info("Using given Connection Pool.");
-    pool = jdbcPool;
+  public JooqImportService(DataSource jdbcDataSource, SQLDialect sqlDialect) {
+    dataSource = jdbcDataSource;
     dialect = sqlDialect;
     uploadedLogsDir = new File("./lognition-data/uploaded-logs");
     try {
@@ -113,7 +113,7 @@ public class JooqImportService implements ImportService {
 
     LOGGER.info("Creating entry in DB...");
     LOGGER.info("Import for log id={}", log.getId());
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       // TODO make relative to storage.
@@ -137,7 +137,7 @@ public class JooqImportService implements ImportService {
 
   @Override
   public ImportInfo get(long id) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context.selectFrom(IMPORT_INFO).where(IMPORT_INFO.ID.eq(id)).fetchOne(R2I);
     } catch (SQLException ex) {
@@ -148,7 +148,7 @@ public class JooqImportService implements ImportService {
 
   @Override
   public List<ImportInfo> list() {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       ImportInfoRecordsToListHandler r2iHandler = new ImportInfoRecordsToListHandler();
       return context.selectFrom(IMPORT_INFO).fetchInto(r2iHandler).getImports();
@@ -159,7 +159,7 @@ public class JooqImportService implements ImportService {
 
   @Override
   public void delete(long id) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       LOGGER.debug("Deleting import_id={}...", id);
       ImportInfo info = get(id);
@@ -186,7 +186,7 @@ public class JooqImportService implements ImportService {
     }
 
     LOGGER.debug("Updating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       UpdateSetMoreStep<ImportInfoRecord> up =

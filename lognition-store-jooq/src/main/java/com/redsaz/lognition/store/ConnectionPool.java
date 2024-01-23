@@ -15,15 +15,15 @@
  */
 package com.redsaz.lognition.store;
 
-import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 /**
  * Interface for DB connection pools.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public interface ConnectionPool {
+public interface ConnectionPool extends AutoCloseable, DataSource {
 
-  Connection getConnection() throws SQLException;
+  void close() throws SQLException;
 }

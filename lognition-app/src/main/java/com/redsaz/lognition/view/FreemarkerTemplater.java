@@ -19,9 +19,9 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.io.StringWriter;
-import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Holds the {@link Configuration} since it cannot be directly proxied by CDI.

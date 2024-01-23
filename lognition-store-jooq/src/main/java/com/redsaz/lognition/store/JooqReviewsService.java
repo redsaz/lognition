@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep2;
 import org.jooq.Record;
@@ -61,19 +62,19 @@ public class JooqReviewsService implements ReviewsService {
   private static final LogRecordToLogMapper LR2L = new LogRecordToLogMapper();
   private static final RecordToLogMapper R2L = new RecordToLogMapper();
 
-  private final ConnectionPool pool;
+  private final DataSource dataSource;
   private final SQLDialect dialect;
   private final AttachmentsService attSvc;
 
   /**
    * Create a new ReviewsService backed by a data store.
    *
-   * @param jdbcPool opens connections to database
+   * @param jdbcDataSource opens connections to database
    * @param sqlDialect the type of SQL database that we should speak
    */
   public JooqReviewsService(
-      ConnectionPool jdbcPool, SQLDialect sqlDialect, AttachmentsService attachmentsService) {
-    pool = jdbcPool;
+      DataSource jdbcDataSource, SQLDialect sqlDialect, AttachmentsService attachmentsService) {
+    dataSource = jdbcDataSource;
     dialect = sqlDialect;
     attSvc = attachmentsService;
   }
@@ -93,7 +94,7 @@ public class JooqReviewsService implements ReviewsService {
     }
 
     LOGGER.info("Creating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       ReviewRecord result =
@@ -124,7 +125,7 @@ public class JooqReviewsService implements ReviewsService {
 
   @Override
   public Review get(long id) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       return context.selectFrom(REVIEW).where(REVIEW.ID.eq(id)).fetchOne(R2R);
     } catch (SQLException ex) {
@@ -135,7 +136,7 @@ public class JooqReviewsService implements ReviewsService {
 
   @Override
   public List<Review> list() {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       RecordsToListHandler<ReviewRecord, Review> r2lHandler = new RecordsToListHandler<>(R2R);
       return context
@@ -154,7 +155,7 @@ public class JooqReviewsService implements ReviewsService {
     attSvc.deleteForOwner(toOwner(id));
 
     // Now delete the review.
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       context.delete(REVIEW).where(REVIEW.ID.eq(id)).execute();
@@ -171,7 +172,7 @@ public class JooqReviewsService implements ReviewsService {
     }
 
     LOGGER.info("Updating entry in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       UpdateQuery<ReviewRecord> uq = context.updateQuery(REVIEW);
@@ -209,7 +210,7 @@ public class JooqReviewsService implements ReviewsService {
     }
 
     LOGGER.info("Creating/Updating/Deleting logs with reviews in DB...");
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       Set<Long> existingLogRefs =
@@ -255,7 +256,7 @@ public class JooqReviewsService implements ReviewsService {
 
   @Override
   public List<Log> getReviewLogs(long reviewId) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
       RecordsToListHandler<Record, Log> r2lHandler = new RecordsToListHandler<>(R2L);
       List<Log> logs =
@@ -275,7 +276,7 @@ public class JooqReviewsService implements ReviewsService {
 
   @Override
   public Attachment putAttachment(long reviewId, Attachment source, InputStream data) {
-    try (Connection c = pool.getConnection()) {
+    try (Connection c = dataSource.getConnection()) {
       DSLContext context = DSL.using(c, dialect);
 
       // Only put the attachment if the review exists.

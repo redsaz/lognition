@@ -15,6 +15,7 @@
  */
 package com.redsaz.lognition.store;
 
+import java.io.PrintWriter;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -25,6 +26,7 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
@@ -35,6 +37,7 @@ import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
 
 /**
  * For databases which only allow one connection (such as SQLite), this connection pool will let
@@ -53,6 +56,16 @@ public class SingletonConnectionPool implements ConnectionPool {
   }
 
   @Override
+  public void close() throws SQLException {
+    try {
+      queue.take().close();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new SQLException("Interrupted before acquiring connection.");
+    }
+  }
+
+  @Override
   public Connection getConnection() throws SQLException {
     try {
       return new SingletonConnection(queue.take());
@@ -60,6 +73,95 @@ public class SingletonConnectionPool implements ConnectionPool {
       Thread.currentThread().interrupt();
       throw new SQLException("Interrupted before acquiring connection.");
     }
+  }
+
+  /**
+   * Calls getConnection, username and password is ignored since only a single connection is used.
+   *
+   * @param username ignored
+   * @param password ignored
+   * @return the connection.
+   * @throws SQLException if error getting connection.
+   */
+  @Override
+  public Connection getConnection(String username, String password) throws SQLException {
+    return getConnection();
+  }
+
+  /**
+   * Unused, returns null.
+   *
+   * @return null
+   * @throws SQLException never
+   */
+  @Override
+  public PrintWriter getLogWriter() throws SQLException {
+    return null;
+  }
+
+  /**
+   * Unused.
+   *
+   * @param out ignored
+   * @throws SQLException never
+   */
+  @Override
+  public void setLogWriter(PrintWriter out) throws SQLException {}
+
+  /**
+   * Unused.
+   *
+   * @param seconds ignored
+   * @throws SQLException never
+   */
+  @Override
+  public void setLoginTimeout(int seconds) throws SQLException {}
+
+  /**
+   * Unused.
+   *
+   * @return 0
+   * @throws SQLException never
+   */
+  @Override
+  public int getLoginTimeout() throws SQLException {
+    return 0;
+  }
+
+  /**
+   * Unused.
+   *
+   * @return nothing
+   * @throws SQLFeatureNotSupportedException
+   */
+  @Override
+  public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+    throw new SQLFeatureNotSupportedException("Not supported.");
+  }
+
+  /**
+   * Returns this.
+   *
+   * @param <T>
+   * @param iface
+   * @return
+   * @throws SQLException
+   */
+  @Override
+  public <T> T unwrap(Class<T> iface) throws SQLException {
+    return (T) this;
+  }
+
+  /**
+   * Not a wrapper, always return false.
+   *
+   * @param iface
+   * @return
+   * @throws SQLException
+   */
+  @Override
+  public boolean isWrapperFor(Class<?> iface) throws SQLException {
+    return false;
   }
 
   private class SingletonConnection implements Connection {
@@ -73,7 +175,8 @@ public class SingletonConnectionPool implements ConnectionPool {
     @Override
     public void close() throws SQLException {
       // Don't close, but instead add it back into the queue, and swap in a closed connection
-      // instead, incase somebody tries to do a use-after-close.
+      // instead, that way if somebody tries to do a use-after-close, they'll get an SQLException
+      // stating that the connection is already closed.
       queue.add(c);
       c = CLOSED_CONNECTION;
     }

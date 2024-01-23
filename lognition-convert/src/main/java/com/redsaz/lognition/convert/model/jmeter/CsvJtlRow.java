@@ -130,6 +130,7 @@ public class CsvJtlRow extends org.apache.avro.specific.SpecificRecordBase
   public org.apache.avro.Schema getSchema() {
     return SCHEMA$;
   }
+
   // Used by DatumWriter.  Applications should not call.
   public java.lang.Object get(int field$) {
     switch (field$) {
