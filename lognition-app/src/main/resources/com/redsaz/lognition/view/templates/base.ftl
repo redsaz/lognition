@@ -28,7 +28,9 @@
   <meta name="apple-mobile-web-app-title" content="Lognition">
   <meta name="application-name" content="Lognition">
   <meta name="msapplication-TileColor" content="#da532c">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="white" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="black" />
+  <meta name="color-scheme" content="dark light">
 
   <title>${title} - lognition</title>
 
@@ -41,24 +43,36 @@
   <link href="${dist}/fontawesome/css/fontawesome.min.css" rel="stylesheet">
   <link href="${dist}/fontawesome/css/solid.min.css" rel="stylesheet">
   <link href="${dist}/css/app.css" rel="stylesheet">
+  <script src="${dist}/js/theme.js"></script>
 </head>
 <body>
     <header class="custom-wrapper pure-g" id="menu">
-        <div class="pure-u-1 pure-u-md-1-6">
+        <div class="pure-u-1 pure-u-sm-4-24">
             <div class="pure-menu">
                 <a href="${base}/" class="pure-menu-heading custom-brand">lognition</a>
                 <a href="#" class="custom-toggle" id="toggle"><s class="bar"></s><s class="bar"></s></a>
             </div>
         </div>
-        <nav class="pure-u-1 pure-u-md-1-6">
-            <div class="pure-menu pure-menu-horizontal custom-can-transform">
+        <div class="pure-u-1 pure-u-sm-16-24">
+            <nav class="pure-menu pure-menu-horizontal custom-can-transform">
                 <ul class="pure-menu-list">
                     <li class="pure-menu-item"><a href="${base}/logs" class="custom-menu-link pure-menu-link">Logs</a></li>
                     <li class="pure-menu-item"><a href="${base}/reviews" class="custom-menu-link pure-menu-link">Reviews</a></li>
                     <#if brief??><li class="pure-menu-item custom-menu-item"><a href="${base}/logs/#{brief.id}/edit" class="custom-menu-link pure-menu-link">Edit</a></li></#if>
                 </ul>
+            </nav>
+        </div>
+        <div class="pure-u-1 pure-u-sm-4-24">
+            <div class="pure-menu pure-menu-horizontal custom-menu-3 custom-can-transform">
+                <ul class="pure-menu-list">
+                    <li class="pure-menu-item">
+                        <a href="javascript:applyTheme('dark');" class="theme-selector theme-selector-auto custom-menu-link pure-menu-link"><i class="fa-solid fa-circle-half-stroke"></i> auto</a>
+                        <a href="javascript:applyTheme('light');" class="theme-selector theme-selector-dark custom-menu-link pure-menu-link"><i class="fa-regular fa-moon"></i> dark</a>
+                        <a href="javascript:applyTheme('auto');" class="theme-selector theme-selector-light custom-menu-link pure-menu-link"><i class="fa-regular fa-sun"></i> light</a>
+                    </li>
+                </ul>
             </div>
-        </nav>
+        </div>
     </header>
   <script>
   (function (window, document) {
@@ -107,7 +121,6 @@
 
   window.addEventListener(WINDOW_CHANGE_EVENT, closeMenu);
   })(this, this.document);
-
   </script>
 
   <main role="main" class="main">
