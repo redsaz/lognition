@@ -128,7 +128,8 @@ public class CsvJtlSource implements Samples {
       parser.beginParsing(br);
       String[] row = parser.parseNext();
       if (row == null) {
-        throw new RuntimeException("JTL (CSV) contained no data.");
+        LOGGER.debug("JTL (CSV) contained no data.");
+        return;
       }
       JtlTypeColumns jtc = new JtlTypeColumns(row);
       if (jtc.headerAbsent()) {

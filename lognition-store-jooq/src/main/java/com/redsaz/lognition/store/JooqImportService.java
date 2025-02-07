@@ -18,7 +18,6 @@ package com.redsaz.lognition.store;
 import static com.redsaz.lognition.model.tables.ImportInfo.IMPORT_INFO;
 
 import com.redsaz.lognition.api.ImportService;
-import com.redsaz.lognition.api.exceptions.AppClientException;
 import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Log;
@@ -104,10 +103,6 @@ public class JooqImportService implements ImportService {
     } catch (IOException | NoSuchAlgorithmException ex) {
       LOGGER.error("Exception when uploading log.", ex);
       throw new AppServerException("Failed to upload content.", ex);
-    }
-    if (bytesRead == 0) {
-      destFile.delete();
-      throw new AppClientException("No data was uploaded.");
     }
     LOGGER.info("...Stored {} bytes into file {}.", bytesRead, destFile.getAbsolutePath());
 

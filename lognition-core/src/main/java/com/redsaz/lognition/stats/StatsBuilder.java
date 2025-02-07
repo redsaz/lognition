@@ -109,13 +109,13 @@ public class StatsBuilder {
   }
 
   public static StatsItems calcHistogram(List<Sample> samples) {
-    long maxValue = -1L;
-    for (Sample sample : samples) {
-      if (maxValue < sample.getDuration()) {
-        maxValue = sample.getDuration();
-      }
-    }
-    AbstractHistogram hist = new IntCountsHistogram(maxValue, 5);
+    // Find the longest duration to use for the histogram. Minimum is 2 for HdrHistogram.
+    // Though, if we're wanting to be able to directly compare histograms across logs, it might be
+    // better to have a single, static, very large max duration, rather than a custom one for each
+    // log.
+    long maxDuration =
+        samples.stream().map(Sample::getDuration).reduce(2L, (a, b) -> Math.max(a, b));
+    AbstractHistogram hist = new IntCountsHistogram(maxDuration, 5);
     for (Sample sample : samples) {
       hist.recordValue(sample.getDuration());
     }
@@ -167,6 +167,9 @@ public class StatsBuilder {
    * @return the timeseries code counts.
    */
   public static CodeCounts calcTimeseriesCounts(List<Sample> offsetSortedSamples, long spanMillis) {
+    if (offsetSortedSamples.isEmpty()) {
+      return new CodeCounts(0, List.of(), List.of());
+    }
     // Find sublists (bins) for each segment of time, and calculate the code counts for each.
     double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();
     int numBins = (int) Math.ceil((double) lastOffset / spanMillis);
@@ -193,8 +196,10 @@ public class StatsBuilder {
    * @return the timeseries.
    */
   public static Timeseries calcTimeseriesStats(List<Sample> offsetSortedSamples, long spanMillis) {
-    // Find sublists (bins) for each segment of time, and calculate the
-    // stats for each.
+    if (offsetSortedSamples.isEmpty()) {
+      return new Timeseries(0, List.of());
+    }
+    // Find sublists (bins) for each segment of time, and calculate the stats for each.
     double lastOffset = offsetSortedSamples.get(offsetSortedSamples.size() - 1).getOffset();
     int numBins = (int) Math.ceil((double) lastOffset / spanMillis);
     List<Stats> statsList = createStatsList(offsetSortedSamples, numBins, spanMillis);
@@ -216,6 +221,9 @@ public class StatsBuilder {
   public static Map<String, List<Sample>> sortAndSplitByLabel(List<Sample> samples) {
     Collections.sort(samples, LABEL_OFFSET_COMPARATOR);
     Map<String, List<Sample>> labelLists = new TreeMap<>();
+    if (samples.isEmpty()) {
+      return labelLists;
+    }
     int startIndex = 0;
     String currentLabel = samples.get(0).getLabel();
     for (int i = 0; i < samples.size(); ++i) {

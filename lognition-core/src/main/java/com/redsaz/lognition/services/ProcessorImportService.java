@@ -194,7 +194,11 @@ public class ProcessorImportService implements ImportService {
 
       importSrv.delete(source.getId());
 
-      eagerCalculateStats(source, sourceSamples);
+      if (!sourceSamples.getSamples().isEmpty()) {
+        eagerCalculateStats(source, sourceSamples);
+      } else {
+        LOGGER.info("log id={} has no samples, will not eagerly calculate stats.", source.getId());
+      }
     }
 
     private void eagerCalculateStats(ImportInfo source, Samples sourceSamples) {

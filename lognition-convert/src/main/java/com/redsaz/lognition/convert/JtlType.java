@@ -368,6 +368,9 @@ import java.util.Map;
   public abstract Sample putIn(Sample dest, String value);
 
   public static JtlType fromHeader(String header) {
+    if (header == null) {
+      return null;
+    }
     return header2Type.get(header.toLowerCase(Locale.US));
   }
 
