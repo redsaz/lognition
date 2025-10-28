@@ -40,10 +40,13 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -121,6 +124,79 @@ public class BrowserLogsResource {
     root.put("title", "Logs");
     root.put("content", "log-list.ftl");
     return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
+  }
+
+  @Path("test")
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testThings(
+      @Context HttpHeaders headers,
+      @QueryParam("status") Integer status,
+      @QueryParam("delay") Integer delay,
+      @QueryParam("delayrange") Integer delayRange) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("headers:\n");
+    headers
+        .getRequestHeaders()
+        .forEach(
+            (key, value) -> {
+              sb.append(key).append(":").append(" ").append(value).append("\n");
+            });
+
+    LOGGER.info(sb.toString());
+    if (delay != null) {
+      if (delayRange != null) {
+        delay = delay + (int) ((Math.random() * delayRange) - (delayRange / 2));
+      }
+      try {
+        LOGGER.info("Delaying by {}ms", delay);
+        if (delay > 0) {
+          Thread.sleep(delay);
+        }
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    if (status != null) {
+      return Response.status(status).entity(headers).build();
+    }
+    return Response.ok(headers).build();
+  }
+
+  @Path("test")
+  @PUT
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testPutThings(@Context HttpHeaders headers, String body) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("data:\n").append(body).append("\n");
+    sb.append("headers:\n");
+    headers
+        .getRequestHeaders()
+        .forEach(
+            (key, value) -> {
+              sb.append(key).append(":").append(" ").append(value).append("\n");
+            });
+
+    LOGGER.info(sb.toString());
+    return Response.ok(headers).build();
+  }
+
+  @Path("test")
+  @POST
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testPostThings(@Context HttpHeaders headers, String body) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("data:\n").append(body).append("\n");
+    sb.append("headers:\n");
+    headers
+        .getRequestHeaders()
+        .forEach(
+            (key, value) -> {
+              sb.append(key).append(":").append(" ").append(value).append("\n");
+            });
+
+    LOGGER.info(sb.toString());
+    return Response.ok(headers).build();
   }
 
   /**
