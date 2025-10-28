@@ -40,6 +40,7 @@ module LognitionApp {
   requires slugify;
   requires flyway.core;
   requires io.smallrye.common.annotation;
+  requires jakarta.servlet;
 
   uses org.hsqldb.jdbc.JDBCDriver;
 }

@@ -15,6 +15,8 @@
  */
 package com.redsaz.lognition.view;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redsaz.lognition.api.ImportService;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.ReviewsService;
@@ -40,12 +42,15 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -54,10 +59,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -121,6 +129,98 @@ public class BrowserLogsResource {
     root.put("title", "Logs");
     root.put("content", "log-list.ftl");
     return Response.ok(cfg.buildFromTemplate(root, "base.ftl")).build();
+  }
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  private record Kv(String k, String v) {}
+
+  private record ResponseDeets(
+      String path, List<Kv> headers, List<Kv> params, String method, String data) {
+    @Override
+    public String toString() {
+      try {
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+      } catch (JsonProcessingException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+
+  private static Response delayRequestedResponse(
+      UriInfo uriInfo, HttpHeaders headers, String method, String body) {
+    Function<Entry<String, List<String>>, Stream<Kv>> multiMapToKvs =
+        param -> param.getValue().stream().map(v -> new Kv(param.getKey(), v));
+    List<Kv> params =
+        uriInfo.getQueryParameters().entrySet().stream().flatMap(multiMapToKvs).toList();
+    List<Kv> headerVals =
+        headers.getRequestHeaders().entrySet().stream().flatMap(multiMapToKvs).toList();
+    ResponseDeets rd = new ResponseDeets(uriInfo.getPath(), headerVals, params, method, body);
+
+    LOGGER.info(rd.toString());
+    delayResponse(uriInfo);
+    return requestedResponse(uriInfo, rd);
+  }
+
+  private static void delayResponse(UriInfo uriInfo) {
+    long delay =
+        uriInfo.getQueryParameters().getOrDefault("delay", List.of()).stream()
+            .findFirst()
+            .map(Long::valueOf)
+            .orElse(0L);
+    if (delay > 0L) {
+      long delayRange =
+          uriInfo.getQueryParameters().getOrDefault("delayrange", List.of()).stream()
+              .findFirst()
+              .map(Long::valueOf)
+              .orElse(0L);
+      delay = delay + (int) ((Math.random() * delayRange) - ((double) delayRange / 2.0D));
+      try {
+        LOGGER.info("Delaying by {}ms", delay);
+        if (delay > 0) {
+          Thread.sleep(delay);
+        }
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  private static Response requestedResponse(UriInfo uriInfo, ResponseDeets rd) {
+    int status =
+        uriInfo.getQueryParameters().getOrDefault("status", List.of()).stream()
+            .findFirst()
+            .map(Integer::valueOf)
+            .orElse(200);
+    if (status != 200) {
+      return Response.status(status).entity(rd).build();
+    }
+    return Response.ok(rd).build();
+  }
+
+  @Path("test")
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testThings(@Context HttpHeaders headers, @Context UriInfo uriInfo) {
+    return delayRequestedResponse(uriInfo, headers, "GET", null);
+  }
+
+  @Path("test")
+  @PUT
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testPutThings(
+      @Context UriInfo uriInfo, @Context HttpHeaders headers, String body) {
+    Function<Entry<String, List<String>>, Stream<Kv>> multiMapToKvs =
+        param -> param.getValue().stream().map(v -> new Kv(param.getKey(), v));
+    return delayRequestedResponse(uriInfo, headers, "PUT", body);
+  }
+
+  @Path("test")
+  @POST
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response testPostThings(
+      @Context UriInfo uriInfo, @Context HttpHeaders headers, String body) {
+    return delayRequestedResponse(uriInfo, headers, "POST", body);
   }
 
   /**
