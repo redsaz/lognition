@@ -20,12 +20,12 @@
 
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-convert</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
     <packaging>jar</packaging>
     <parent>
         <groupId>com.redsaz.lognition</groupId>
         <artifactId>lognition-parent</artifactId>
-        <version>0.15.0</version>
+        <version>0.16.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -86,6 +86,10 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+        </dependency>            
         <dependency>
             <groupId>org.xerial.snappy</groupId>
             <artifactId>snappy-java</artifactId>

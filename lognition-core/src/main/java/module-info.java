@@ -20,6 +20,7 @@ module LognitionCore {
   requires LognitionStoreJooq;
   requires HdrHistogram;
   requires java.sql;
+  requires com.google.common;
   requires org.slf4j;
   requires org.apache.tika.core;
   requires org.jooq;

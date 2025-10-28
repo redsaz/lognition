@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.view.Sanitizer;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
