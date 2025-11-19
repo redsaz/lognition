@@ -327,4 +327,28 @@ public class Sample implements Comparable<Sample> {
     }
     return true;
   }
+
+  @Override
+  public String toString() {
+    return "Sample{"
+        + "offset="
+        + offset
+        + ", duration="
+        + duration
+        + ", label="
+        + label
+        + ", threadName="
+        + threadName
+        + ", statusCode="
+        + statusCode
+        + ", statusMessage="
+        + statusMessage
+        + ", success="
+        + success
+        + ", responseBytes="
+        + responseBytes
+        + ", totalThreads="
+        + totalThreads
+        + '}';
+  }
 }

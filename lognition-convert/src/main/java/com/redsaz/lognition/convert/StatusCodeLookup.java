@@ -25,7 +25,7 @@ import java.util.Map;
 
 /**
  * Defines a condensed form of all standard status codes. These are so common that they can be
- * hard0coded. For the weird web servers that do not follow these standard response codes, they will
+ * hard-coded. For the weird web servers that do not follow these standard response codes, they will
  * be added to a custom lookup. This mapping will need stored along with the sample data in order to
  * be successfully retrieved.
  *
