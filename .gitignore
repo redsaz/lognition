@@ -18,6 +18,9 @@ lognition-app/config
 hs_err_pid*
 /**/target/
 
+# IntelliJ specific
+.idea
+
 # NetBeans specific #
 nbproject/private/
 build/

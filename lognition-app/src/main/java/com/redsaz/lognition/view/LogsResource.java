@@ -24,8 +24,11 @@ import com.redsaz.lognition.api.labelselector.LabelSelectorSyntaxException;
 import com.redsaz.lognition.api.model.Label;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Review;
-import com.redsaz.lognition.convert.AvroToCsvJtlConverter;
+import com.redsaz.lognition.api.model.Sample;
+import com.redsaz.lognition.convert.AvroSamplesReader;
+import com.redsaz.lognition.convert.CsvJtlSamplesWriter;
 import com.redsaz.lognition.services.LabelSelectorParser;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -39,9 +42,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +52,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +71,6 @@ public class LogsResource {
   private LogsService logsSrv;
   private ImportService importSrv;
   private static final ExecutorService REVIEWS_CALC_EXEC = Executors.newSingleThreadExecutor();
-  private static final AvroToCsvJtlConverter CONVERTER = new AvroToCsvJtlConverter();
 
   public LogsResource() {}
 
@@ -111,7 +114,24 @@ public class LogsResource {
   @GET
   @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
   @Path("{id}")
-  public Response getLogBrief(@PathParam("id") long id) {
+  public Response getLogBriefNoUrlName(@PathParam("id") long id) {
+    return getLogBrief(id);
+  }
+
+  /**
+   * Get the note contents with urlName.
+   *
+   * @param id The id of the note.
+   * @return Note.
+   */
+  @GET
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  @Path("{id}/{urlName}")
+  public Response getLogBriefWithUrlName(@PathParam("id") long id) {
+    return getLogBrief(id);
+  }
+
+  private Response getLogBrief(long id) {
     Log brief = logsSrv.get(id);
     if (brief == null) {
       throw new NotFoundException("Could not find log brief id=" + id);
@@ -120,18 +140,27 @@ public class LogsResource {
   }
 
   /**
-   * Download the log data in CSV form.
+   * Allow a client to download the log data in CSV form.
    *
    * @param id The id of the log.
    * @return log data.
    */
   @GET
-  @Produces({"text/csv"})
-  @Path("{id}/content")
-  public Response getCsvContent(@PathParam("id") long id) throws IOException {
+  @Produces({"text/csv", "*/*"})
+  @Path("{id}/{urlName}/content")
+  @RunOnVirtualThread
+  public Response getCsvContent(@PathParam("id") long id) {
     try {
       File file = logsSrv.getAvroFile(id);
-      return Response.ok(CONVERTER.convertStreaming(file), "text/csv").build();
+      StreamingOutput streamOut =
+          os -> {
+            try (Stream<Sample> samples = AvroSamplesReader.sampleStream(file.toPath())) {
+              CsvJtlSamplesWriter.outputStreamWriter(samples).accept(os);
+            }
+          };
+      return Response.ok(streamOut, "text/csv")
+          .header("Content-Disposition", "attachment; filename=\"" + id + "-content.csv\"")
+          .build();
     } catch (FileNotFoundException ex) {
       throw new NotFoundException(ex.getMessage());
     }

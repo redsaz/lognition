@@ -24,7 +24,7 @@ import com.redsaz.lognition.api.model.Sample;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.api.model.Timeseries;
 import com.redsaz.lognition.convert.AvroSamplesWriter;
-import com.redsaz.lognition.convert.CsvJtlSource;
+import com.redsaz.lognition.convert.CsvSamplesReader;
 import com.redsaz.lognition.convert.Samples;
 import com.redsaz.lognition.convert.SamplesWriter;
 import com.univocity.parsers.common.processor.BeanWriterProcessor;
@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -65,11 +66,11 @@ public class StatsBuilder {
 
     //        File source = new File("../lognition/jtls/target/real-without-header.jtl");
     //        File dest = new File("../lognition/jtls/target/converted/real-without-header.avro");
-    File source = new File("../lognition/jtls/target/real-550cps-1hour.jtl");
+    Path source = Path.of("../lognition/jtls/target/real-550cps-1hour.jtl");
     File dest = new File("../lognition/jtls/target/converted/real-550cps-1hour.avro");
     File statsFile = new File("../lognition/jtls/target/converted/real-550cps-1hour-stats-60s.csv");
 
-    Samples sourceSamples = new CsvJtlSource(source);
+    Samples sourceSamples = CsvSamplesReader.readSamples(source);
     SamplesWriter writer = new AvroSamplesWriter();
     writer.write(sourceSamples, dest);
     StatsBuilder.calcHistogram(sourceSamples.getSamples());

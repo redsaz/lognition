@@ -80,8 +80,8 @@
                 <tbody>
                 <#list attachments as a>
                   <tr>
-                    <td><a href="attachments/${a.path}">${a.name}</a></td>
-                    <td><a href="attachments/${a.path}">${a.path}</a></td>
+                    <td><a href="${base}/reviews/#{review.id}/${review.uriName!'-'}/attachments/${a.path}">${a.name}</a></td>
+                    <td><a href="${base}/reviews/#{review.id}/${review.uriName!'-'}/attachments/${a.path}">${a.path}</a></td>
                     <td>${a.description}</td>
                     <td>${a.mimeType}</td>
                   </tr>

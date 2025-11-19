@@ -22,10 +22,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Defines a condensed form of all standard status codes. These are so common that they can be
- * hard0coded. For the weird web servers that do not follow these standard response codes, they will
+ * hard-coded. For the weird web servers that do not follow these standard response codes, they will
  * be added to a custom lookup. This mapping will need stored along with the sample data in order to
  * be successfully retrieved.
  *
@@ -223,5 +224,19 @@ class StatusCodeLookup {
 
   private static String calcCodeAndMessage(CharSequence code, CharSequence message) {
     return code.toString() + " " + message.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof StatusCodeLookup that)) {
+      return false;
+    }
+    return Objects.equals(getCustomCodes(), that.getCustomCodes())
+        && Objects.equals(getCustomMessages(), that.getCustomMessages());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCustomCodes(), getCustomMessages());
   }
 }

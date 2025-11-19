@@ -86,7 +86,24 @@ public class ReviewsResource {
   @GET
   @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
   @Path("{id}")
-  public Response getReview(@PathParam("id") long id) {
+  public Response getReviewNoUrlName(@PathParam("id") long id) {
+    return getReview(id);
+  }
+
+  /**
+   * Get a review by id.
+   *
+   * @param id The id of the review.
+   * @return a review.
+   */
+  @GET
+  @Produces({LognitionMediaType.REVIEW_V1_JSON, MediaType.APPLICATION_JSON})
+  @Path("{id}/{urlName}")
+  public Response getReviewWithUrlName(@PathParam("id") long id) {
+    return getReview(id);
+  }
+
+  private Response getReview(long id) {
     Review review = reviewsSrv.get(id);
     if (review == null) {
       throw new NotFoundException("Could not find review id=" + id);

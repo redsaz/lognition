@@ -15,6 +15,7 @@
  */
 package com.redsaz.lognition.services;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,12 +34,18 @@ import com.redsaz.lognition.api.LogsService;
 import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Log;
+import com.redsaz.lognition.api.model.Sample;
+import com.redsaz.lognition.convert.AvroSamplesReader;
+import com.redsaz.lognition.convert.Samples;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -86,8 +93,31 @@ public class ProcessorImportServiceTest {
     await(lastStatsComplete);
 
     // Then an avro file should be in the imported dir with the log id,
-    assertTrue(Files.exists(Paths.get(importDirStr, log.getId() + ".avro")));
-    // and the stats should be eagerly calculated.
+    Path avroFile = Paths.get(importDirStr, log.getId() + ".avro");
+    assertTrue(avroFile + " should exist after import.", Files.exists(avroFile));
+    // and the avro file contains the expected contents,
+    Samples actual = AvroSamplesReader.readSamples(avroFile);
+    Samples expected = AvroSamplesReader.readSamples(Path.of("src/test/resources/expected.avro"));
+    List<Sample> actualSamples = actual.getSamples();
+    List<Sample> expectedSamples = expected.getSamples();
+    assertEquals("num Samples", expectedSamples.size(), actualSamples.size());
+    IntStream.range(0, expectedSamples.size())
+        .forEach(
+            i -> {
+              Sample act = actualSamples.get(i);
+              Sample exp = expectedSamples.get(i);
+              assertEquals(exp.getDuration(), act.getDuration());
+              assertEquals(exp.getLabel(), act.getLabel());
+              assertEquals(exp.getOffset(), act.getOffset());
+              assertEquals(exp.getResponseBytes(), act.getResponseBytes());
+              assertEquals(exp.getStatusCode(), act.getStatusCode());
+              assertEquals(exp.getStatusMessage(), act.getStatusMessage());
+              assertEquals(exp.getThreadName(), act.getThreadName());
+              assertEquals(exp.getTotalThreads(), act.getTotalThreads());
+              assertEquals(exp.isSuccess(), act.isSuccess());
+            });
+
+    // and the stats should be eagerly calculated,
     verify(statsSvc).createSampleLabels(eq(log.getId()), any());
 
     for (long i = 0; i <= lastLabelId; ++i) {

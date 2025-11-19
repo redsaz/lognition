@@ -1,18 +1,3 @@
-/*
- * Copyright 2017 Redsaz <redsaz@gmail.com>.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.redsaz.lognition.convert;
 
 import static org.testng.Assert.assertEquals;
@@ -23,77 +8,47 @@ import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.convert.model.HttpSample;
 import difflib.DiffUtils;
 import difflib.Patch;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.specific.SpecificDatumReader;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 
-/**
- * @author Redsaz <redsaz@gmail.com>
- */
-public class ConverterBaseTest {
+public class TestUtil {
 
-  private static ThreadLocal<File> tempTestMethodDir =
-      new ThreadLocal<File>() {
-        @Override
-        protected File initialValue() {
-          try {
-            File temp =
-                new File(
-                    File.createTempFile("test", ".md").getParentFile(),
-                    "test-dir-" + Math.random() * 0x7FFFFFFF);
-            boolean success = temp.mkdirs();
-            if (!success) {
-              throw new IOException("Could not create temp dir " + tempTestMethodDir);
-            }
-            return temp;
-          } catch (IOException ex) {
-            throw new RuntimeException("Could not create temp directory.");
-          }
-        }
-      };
+  // Do not instantiate utility classes.
+  private TestUtil() {}
 
-  @BeforeMethod
-  public void createTempFolder() {
-    tempTestMethodDir.get();
-  }
-
-  @AfterMethod
-  public void deleteTempFolder() {
-    if (tempTestMethodDir.get().exists()) {
-      recurseDelete(tempTestMethodDir.get());
+  public static List<String> stringLines(String stringWithNewLines) {
+    try (BufferedReader br = new BufferedReader(new StringReader(stringWithNewLines))) {
+      return br.lines().toList();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 
-  public File getTempFolder() {
-    return tempTestMethodDir.get();
-  }
-
-  public File createTempFile(String prefix, String suffix) {
-    try {
-      return File.createTempFile(prefix, suffix, getTempFolder());
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);
-    }
-  }
-
-  public static void assertBytesEquals(File actual, File expected, String message) {
-    try {
-      byte[] expectedBytes = Files.readAllBytes(expected.toPath());
-      byte[] actualBytes = Files.readAllBytes(actual.toPath());
-      assertEquals(actualBytes.length, expectedBytes.length, "File length is incorrect.");
-      for (int i = 0; i < expectedBytes.length; ++i) {
-        assertEquals(
-            actualBytes[i], expectedBytes[i], message + " Byte at pos=" + i + " is incorrect.");
-      }
-    } catch (IOException ex) {
-      fail(ex.getMessage(), ex);
+  public static void assertContentEquals(
+      String actualLinesStr, String expectedLinesStr, String message) {
+    List<String> actualLines = stringLines(actualLinesStr);
+    List<String> expectedLines = stringLines(expectedLinesStr);
+    Patch<String> patch = DiffUtils.diff(expectedLines, actualLines);
+    if (!patch.getDeltas().isEmpty()) {
+      List<String> diff =
+          DiffUtils.generateUnifiedDiff("expected", "actual", expectedLines, patch, 3);
+      StringBuilder sb = new StringBuilder(message);
+      sb.append(" Contents do not match.\n");
+      diff.stream()
+          .forEach(
+              (diffLine) -> {
+                sb.append(diffLine).append("\n");
+              });
+      fail(sb.toString());
     }
   }
 
@@ -144,16 +99,6 @@ public class ConverterBaseTest {
       assertFalse(aIter.hasNext(), "Actual content has too many entries.");
     } catch (RuntimeException | IOException ex) {
       throw new AppServerException("Unable to convert file.", ex);
-    }
-  }
-
-  private static void recurseDelete(File dir) {
-    for (File file : dir.listFiles()) {
-      if (file.isDirectory()) {
-        recurseDelete(file);
-      } else {
-        file.delete();
-      }
     }
   }
 

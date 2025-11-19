@@ -269,7 +269,7 @@ public class BrowserReviewsResource {
    */
   @GET
   @Produces(MediaType.TEXT_HTML)
-  @Path("{id}/edit")
+  @Path("{id}/{urlName}/edit")
   public Response editReview(@PathParam("id") long reviewId) {
     String dist = "/dist";
 
@@ -371,7 +371,7 @@ public class BrowserReviewsResource {
   }
 
   @GET
-  @Path("{id}/attachments/{attachmentPath:.*}")
+  @Path("{id}/{urlName}/attachments/{attachmentPath:.*}")
   @Produces(MediaType.WILDCARD)
   public Response getAttachment(
       @PathParam("id") long id, @PathParam("attachmentPath") String attachmentPath) {
@@ -535,7 +535,6 @@ public class BrowserReviewsResource {
    * depends on the review id, the URL name is optional. If the given URL name doesn't match the
    * real URL name of the review with the id, then a redirect will happen.
    *
-   * @param req The request for the page.
    * @param reviewId The id of the review.
    * @param uriName The optional review URI name. May be null.
    * @return Review view page if the urlName matches the real urlName for the review with the id.
