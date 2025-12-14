@@ -25,12 +25,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -41,74 +38,31 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class CsvLoadySource implements Samples {
+public class CsvLoadySource {
 
   private static final Logger LOG = LoggerFactory.getLogger(CsvLoadySource.class);
 
-  private final List<Sample> samples = new ArrayList<>();
-  private long earliestMillis = Long.MAX_VALUE;
-  private Sample earliest = null;
-  private long latestMillis = Long.MIN_VALUE;
-  private Sample latest = null;
-  private final List<String> labels = new ArrayList<>();
-  private final List<String> threadNames = new ArrayList<>();
-  private final StatusCodeLookup statusCodeLookup = new StatusCodeLookup();
+  // Do not instantiate util class.
+  private CsvLoadySource() {}
 
-  public CsvLoadySource(File source) {
+  public static Samples readLoadyFile(File source) {
     try {
       long startMillis = System.currentTimeMillis();
       LOG.info("Loading samples from LoadyMcLoadface results log \"{}\"", source);
-      readCsvFile(source, labels, threadNames);
-      LOG.info("Read {} rows in {}ms.", System.currentTimeMillis() - startMillis, samples.size());
+      ListSamples.Builder builder = ListSamples.builder();
+      readCsvFile(source, builder);
+      Samples samples = builder.build();
+      LOG.info(
+          "Read {} rows in {}ms.",
+          System.currentTimeMillis() - startMillis,
+          samples.getSamples().size());
+      return samples;
     } catch (RuntimeException | IOException ex) {
       throw new AppServerException("Unable to load from " + source, ex);
     }
   }
 
-  @Override
-  public List<Sample> getSamples() {
-    return samples;
-  }
-
-  @Override
-  public long getEarliestMillis() {
-    return earliestMillis;
-  }
-
-  @Override
-  public long getLatestMillis() {
-    return latestMillis;
-  }
-
-  @Override
-  public Sample getEarliestSample() {
-    return earliest;
-  }
-
-  @Override
-  public Sample getLatestSample() {
-    return latest;
-  }
-
-  @Override
-  public List<String> getLabels() {
-    return Collections.unmodifiableList(labels);
-  }
-
-  @Override
-  public List<String> getThreadNames() {
-    return Collections.unmodifiableList(threadNames);
-  }
-
-  @Override
-  public StatusCodeLookup getStatusCodeLookup() {
-    return statusCodeLookup;
-  }
-
-  private void readCsvFile(File source, List<String> outLabels, List<String> outThreadNames)
-      throws IOException {
-    Set<String> readLabels = new HashSet<>();
-    Set<String> readThreadNames = new HashSet<>();
+  private static void readCsvFile(File source, ListSamples.Builder builder) throws IOException {
     try (BufferedReader br = new BufferedReader(new FileReader(source))) {
       CsvParserSettings settings = new CsvParserSettings();
       CsvParser parser = new CsvParser(settings);
@@ -122,61 +76,14 @@ public class CsvLoadySource implements Samples {
       while ((row = parser.parseNext()) != null) {
         Sample psRow = jtc.convert(row);
         if (psRow != null) {
-          update(psRow);
-          readLabels.add(psRow.getLabel());
-          readThreadNames.add(psRow.getThreadName());
+          builder.add(psRow);
         }
       }
+      // Loady has a constant number of threads for the entirety of its operation. So get count of
+      // unique thread names, then adjust allThreads count.
+      int numThreads = builder.getThreadNames().size();
+      builder.forEach(sample -> sample.setTotalThreads(numThreads));
       parser.stopParsing();
-    }
-    normalizeOffset();
-    outLabels.addAll(readLabels);
-    Collections.sort(outLabels);
-    updateSampleThreadTotals();
-    outThreadNames.addAll(readThreadNames);
-    Collections.sort(outThreadNames);
-  }
-
-  private void updateSampleThreadTotals() {
-    int totalThreads = (int) samples.stream().map(Sample::getThreadName).distinct().count();
-    samples.forEach(sample -> sample.setTotalThreads(totalThreads));
-  }
-
-  private void update(Sample row) {
-    samples.add(row);
-    calcMinMax(row);
-    statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage());
-    if (samples.size() % 1000000L == 0) {
-      LOG.debug("\tRunning row total: {}", samples.size());
-    }
-  }
-
-  private void calcMinMax(Sample row) {
-    long timestamp = row.getOffset();
-    if (timestamp < earliestMillis) {
-      earliest = row;
-      earliestMillis = timestamp;
-    }
-    if (timestamp > latestMillis) {
-      latest = row;
-      latestMillis = timestamp;
-    }
-    long duration = row.getDuration();
-    long timeMillis = timestamp + duration;
-    if (timeMillis > latestMillis) {
-      latest = row;
-      latestMillis = timeMillis;
-    }
-  }
-
-  /**
-   * At this point, all of the samples offsets are still in "timestamp" form. This will subtract the
-   * earliest timestamp from all of the timestamps, so that they become 0-based offsets, 0 being
-   * when the test began, rather than the UNIX epoch.
-   */
-  private void normalizeOffset() {
-    for (Sample sample : samples) {
-      sample.setOffset(sample.getOffset() - earliestMillis);
     }
   }
 
@@ -321,11 +228,6 @@ public class CsvLoadySource implements Samples {
                 + missingRequired
                 + " missing from LoadyMcLoadface results file.");
       }
-      ;
-    }
-
-    public boolean canConvert() {
-      return true;
     }
 
     /**

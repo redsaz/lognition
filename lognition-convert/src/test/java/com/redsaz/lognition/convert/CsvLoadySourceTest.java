@@ -39,7 +39,7 @@ public class CsvLoadySourceTest {
         """;
 
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvLoadySource(tc.file());
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 3);
       Sample first = samples.getSamples().getFirst();
@@ -100,7 +100,7 @@ public class CsvLoadySourceTest {
         """;
 
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvLoadySource(tc.file());
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 3);
       Sample first = samples.getSamples().getFirst();
@@ -158,7 +158,7 @@ public class CsvLoadySourceTest {
         """;
 
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvLoadySource(tc.file());
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
       assertEquals(samples.getSamples().size(), 0);
     }
   }
@@ -168,7 +168,7 @@ public class CsvLoadySourceTest {
     String content = "";
 
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvLoadySource(tc.file());
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
       assertEquals(samples.getSamples().size(), 0);
     }
   }
@@ -183,7 +183,7 @@ public class CsvLoadySourceTest {
         """;
 
     try (TempContent tc = TempContent.of(content)) {
-      expectThrows(AppServerException.class, () -> new CsvLoadySource(tc.file()));
+      expectThrows(AppServerException.class, () -> CsvLoadySource.readLoadyFile(tc.file()));
     }
   }
 
@@ -196,7 +196,7 @@ public class CsvLoadySourceTest {
         """;
 
     try (TempContent tc = TempContent.of(content)) {
-      expectThrows(AppServerException.class, () -> new CsvLoadySource(tc.file()));
+      expectThrows(AppServerException.class, () -> CsvLoadySource.readLoadyFile(tc.file()));
     }
   }
 }

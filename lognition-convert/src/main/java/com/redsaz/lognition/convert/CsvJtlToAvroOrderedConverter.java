@@ -49,7 +49,7 @@ public class CsvJtlToAvroOrderedConverter implements Converter {
     try {
       long startMillis = System.currentTimeMillis();
       LOGGER.debug("Converting {} to {}...", source, dest);
-      Samples sourceSamples = new CsvJtlSource(source);
+      Samples sourceSamples = CsvJtlSource.readJtlFile(source);
       Collections.sort(sourceSamples.getSamples());
       long totalRows = sourceSamples.getSamples().size();
       LOGGER.debug(

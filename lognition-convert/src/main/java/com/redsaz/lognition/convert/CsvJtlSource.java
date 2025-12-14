@@ -25,10 +25,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class CsvJtlSource implements Samples {
+public class CsvJtlSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlSource.class);
 
@@ -55,73 +53,27 @@ public class CsvJtlSource implements Samples {
           JtlType.BYTES,
           JtlType.ALL_THREADS);
 
-  private final List<Sample> samples = new ArrayList<>();
-  private long earliestMillis = Long.MAX_VALUE;
-  private Sample earliest = null;
-  private long latestMillis = Long.MIN_VALUE;
-  private Sample latest = null;
-  private final List<String> labels = new ArrayList<>();
-  private final List<String> threadNames = new ArrayList<>();
-  private final StatusCodeLookup statusCodeLookup = new StatusCodeLookup();
+  // Do not instantiate utility classes
+  private CsvJtlSource() {}
 
-  public CsvJtlSource(File source) {
+  public static Samples readJtlFile(File source) {
     try {
       long startMillis = System.currentTimeMillis();
       LOGGER.debug("Loading samples from file {}...", source);
-      readCsvFile(source, labels, threadNames);
+      ListSamples.Builder builder = ListSamples.builder();
+      readCsvFile(source, builder);
+      Samples samples = builder.build();
       LOGGER.debug(
           "...took {}ms to read {} rows.",
           System.currentTimeMillis() - startMillis,
-          samples.size());
+          samples.getSamples().size());
+      return samples;
     } catch (RuntimeException | IOException ex) {
       throw new AppServerException("Unable to convert file.", ex);
     }
   }
 
-  @Override
-  public List<Sample> getSamples() {
-    return samples;
-  }
-
-  @Override
-  public long getEarliestMillis() {
-    return earliestMillis;
-  }
-
-  @Override
-  public long getLatestMillis() {
-    return latestMillis;
-  }
-
-  @Override
-  public Sample getEarliestSample() {
-    return earliest;
-  }
-
-  @Override
-  public Sample getLatestSample() {
-    return latest;
-  }
-
-  @Override
-  public List<String> getLabels() {
-    return Collections.unmodifiableList(labels);
-  }
-
-  @Override
-  public List<String> getThreadNames() {
-    return Collections.unmodifiableList(threadNames);
-  }
-
-  @Override
-  public StatusCodeLookup getStatusCodeLookup() {
-    return statusCodeLookup;
-  }
-
-  private void readCsvFile(File source, List<String> outLabels, List<String> outThreadNames)
-      throws IOException {
-    Set<String> readLabels = new HashSet<>();
-    Set<String> readThreadNames = new HashSet<>();
+  private static void readCsvFile(File source, ListSamples.Builder builder) throws IOException {
     try (BufferedReader br = new BufferedReader(new FileReader(source))) {
       CsvParserSettings settings = new CsvParserSettings();
       CsvParser parser = new CsvParser(settings);
@@ -133,65 +85,17 @@ public class CsvJtlSource implements Samples {
       }
       JtlTypeColumns jtc = new JtlTypeColumns(row);
       if (jtc.headerAbsent()) {
+        // If no header then the first row needs to be read as a regular sample.
         Sample psRow = jtc.convert(row);
-        if (psRow != null) {
-          update(psRow);
-          readLabels.add(psRow.getLabel());
-          readThreadNames.add(psRow.getThreadName());
-        }
+        builder.add(psRow);
       }
       while ((row = parser.parseNext()) != null) {
         Sample psRow = jtc.convert(row);
         if (psRow != null) {
-          update(psRow);
-          readLabels.add(psRow.getLabel());
-          readThreadNames.add(psRow.getThreadName());
+          builder.add(psRow);
         }
       }
       parser.stopParsing();
-    }
-    normalizeOffset();
-    outLabels.addAll(readLabels);
-    Collections.sort(outLabels);
-    outThreadNames.addAll(readThreadNames);
-    Collections.sort(outThreadNames);
-  }
-
-  private void update(Sample row) {
-    samples.add(row);
-    calcMinMax(row);
-    statusCodeLookup.getRef(row.getStatusCode(), row.getStatusMessage());
-    if (samples.size() % 1000000L == 0) {
-      LOGGER.debug("\tRunning row total: {}", samples.size());
-    }
-  }
-
-  private void calcMinMax(Sample row) {
-    long timestamp = row.getOffset();
-    if (timestamp < earliestMillis) {
-      earliest = row;
-      earliestMillis = timestamp;
-    }
-    if (timestamp > latestMillis) {
-      latest = row;
-      latestMillis = timestamp;
-    }
-    long duration = row.getDuration();
-    long timeMillis = timestamp + duration;
-    if (timeMillis > latestMillis) {
-      latest = row;
-      latestMillis = timeMillis;
-    }
-  }
-
-  /**
-   * At this point, all of the samples offsets are still in "timestamp" form. This will subtract the
-   * earliest timestamp from all of the timestamps, so that they become 0-based offsets, 0 being
-   * when the test began, rather than the UNIX epoch.
-   */
-  private void normalizeOffset() {
-    for (Sample sample : samples) {
-      sample.setOffset(sample.getOffset() - earliestMillis);
     }
   }
 
@@ -237,10 +141,6 @@ public class CsvJtlSource implements Samples {
 
     public boolean headerAbsent() {
       return headerAbsent;
-    }
-
-    public boolean canConvert() {
-      return true;
     }
 
     /**

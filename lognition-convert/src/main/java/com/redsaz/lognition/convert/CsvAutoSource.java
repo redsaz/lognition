@@ -69,7 +69,7 @@ public class CsvAutoSource {
 
       @Override
       public Samples load(File file) {
-        return new CsvLoadySource(file);
+        return CsvLoadySource.readLoadyFile(file);
       }
     },
     JTL {
@@ -86,7 +86,7 @@ public class CsvAutoSource {
 
       @Override
       public Samples load(File file) {
-        return new CsvJtlSource(file);
+        return CsvJtlSource.readJtlFile(file);
       }
     }
   }

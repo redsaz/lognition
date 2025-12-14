@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -123,6 +125,14 @@ public record ListSamples(
       samples.add(sample);
 
       return this;
+    }
+
+    public Set<String> getThreadNames() {
+      return Collections.unmodifiableSet(threadNames);
+    }
+
+    public void forEach(Consumer<Sample> action) {
+      samples.forEach(action);
     }
 
     // The earliest sample should have an offset of 0. As the timestamps arrive, they are altered to

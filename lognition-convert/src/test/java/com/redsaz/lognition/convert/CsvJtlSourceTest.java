@@ -54,7 +54,7 @@ public class CsvJtlSourceTest {
         1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3
         """;
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvJtlSource(tc.file());
+      Samples samples = CsvJtlSource.readJtlFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 11);
       Sample first = samples.getSamples().getFirst();
@@ -110,7 +110,7 @@ public class CsvJtlSourceTest {
           1469546803636,497,GET test/thing,200,OK,example 1-1,true,280,2
           """;
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvJtlSource(tc.file());
+      Samples samples = CsvJtlSource.readJtlFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 2);
       Sample first = samples.getSamples().getFirst();
@@ -147,7 +147,7 @@ public class CsvJtlSourceTest {
           1469546803636,497,GET test/thing,200,OK,example 1-1,true,280,2
           """;
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvJtlSource(tc.file());
+      Samples samples = CsvJtlSource.readJtlFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 2);
       Sample first = samples.getSamples().getFirst();
@@ -185,7 +185,7 @@ public class CsvJtlSourceTest {
             .formatted(badRow);
     // If a row is encountered that should have a numerical value but has a text one, skip it
     try (TempContent tc = TempContent.of(content)) {
-      Samples samples = new CsvJtlSource(tc.file());
+      Samples samples = CsvJtlSource.readJtlFile(tc.file());
 
       assertEquals(samples.getSamples().size(), 2);
       Sample first = samples.getSamples().getFirst();
