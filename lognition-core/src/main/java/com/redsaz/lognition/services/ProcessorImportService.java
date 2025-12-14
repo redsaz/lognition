@@ -25,7 +25,7 @@ import com.redsaz.lognition.api.model.Sample;
 import com.redsaz.lognition.api.model.Stats;
 import com.redsaz.lognition.api.model.Timeseries;
 import com.redsaz.lognition.convert.AvroSamplesWriter;
-import com.redsaz.lognition.convert.CsvJtlSource;
+import com.redsaz.lognition.convert.CsvAutoSource;
 import com.redsaz.lognition.convert.Samples;
 import com.redsaz.lognition.convert.SamplesWriter;
 import com.redsaz.lognition.stats.StatsBuilder;
@@ -176,7 +176,7 @@ public class ProcessorImportService implements ImportService {
       try {
         LOGGER.info("...importing...");
         logsSrv.updateStatus(source.getId(), Log.Status.IMPORTING);
-        sourceSamples = new CsvJtlSource(new File(source.getImportedFilename()));
+        sourceSamples = CsvAutoSource.loadSamples(new File(source.getImportedFilename()));
         SamplesWriter writer = new AvroSamplesWriter();
 
         File avro = new File(convertedDir, String.format("%d.avro", source.getId()));

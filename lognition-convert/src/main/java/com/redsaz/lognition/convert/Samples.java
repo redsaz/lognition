@@ -25,12 +25,18 @@ import java.util.List;
  */
 public interface Samples {
 
+  /**
+   * @return The time, in millis since Unix epoch, that the earliest-starting sample started.
+   */
   long getEarliestMillis();
 
   Sample getEarliestSample();
 
   List<String> getLabels();
 
+  /**
+   * @return The time, in millis since Unix epoch, that the latest-ending sample ended.
+   */
   long getLatestMillis();
 
   Sample getLatestSample();

@@ -186,7 +186,7 @@ public class CsvLoadySource implements Samples {
     int fail;
     String status;
     long bytesDown;
-    String label;
+    String label = "";
     String thread;
 
     public Sample toSample() {
@@ -250,7 +250,7 @@ public class CsvLoadySource implements Samples {
         // Unused, do nothing.
       }
     },
-    LABEL("label", true) {
+    LABEL("label", false) {
       @Override
       public void putIn(String src, LoadySample dest) {
         dest.label = src;

@@ -16,6 +16,30 @@ public class Sample implements Comparable<Sample> {
 
   public Sample() {}
 
+  public static Sample of(
+      long offset,
+      long duration,
+      String label,
+      String threadName,
+      String statusCode,
+      String statusMessage,
+      boolean success,
+      long responseBytes,
+      int totalThreads) {
+    Sample s = new Sample();
+    s.setOffset(offset);
+    s.setDuration(duration);
+    s.setLabel(label);
+    s.setThreadName(threadName);
+    s.setStatusCode(statusCode);
+    s.setStatusMessage(statusMessage);
+    s.setSuccess(success);
+    s.setResponseBytes(responseBytes);
+    s.setTotalThreads(totalThreads);
+
+    return s;
+  }
+
   /**
    * All-args constructor.
    *
