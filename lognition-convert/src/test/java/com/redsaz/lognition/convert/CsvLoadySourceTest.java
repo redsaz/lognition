@@ -15,6 +15,7 @@
  */
 package com.redsaz.lognition.convert;
 
+import static com.redsaz.lognition.convert.ConverterBaseTest.assertContentEquals;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
@@ -23,10 +24,66 @@ import static org.testng.Assert.expectThrows;
 
 import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.Sample;
+import java.io.IOException;
 import java.util.List;
 import org.testng.annotations.Test;
 
 public class CsvLoadySourceTest {
+
+  @Test
+  public void testRealisticLoadyFile() throws IOException {
+    // Given a Loady test results log file,
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1766362327212,101,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key7=val7,GET logs/test,8
+        1766362327212,102,0,200,55,464,POST http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key9=val9,POST logs/test,9
+        1766362327213,103,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key5=val5,GET logs/test,5
+        1766362327214,0,1,error: connection refused,0,0,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key12=val12,GET logs/test,5
+        1766362327218,107,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key3=val3,GET logs/test,3
+        1766362327225,115,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key6=val6,GET logs/test,6
+        1766362327227,116,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key2=val2,GET logs/test,2
+        1766362327228,117,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key4=val4,GET logs/test,4
+        1766362327228,118,1,400,0,387,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key8=val8&status=400,GET logs/test,7
+        1766362327233,123,0,200,55,463,PUT http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key0=val0,PUT logs/test,1
+        1766362327247,137,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key1=val1,GET logs/test,0
+        1766362327309,97,0,200,62,472,PUT http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key11=val11,PUT logs/test,9
+        1766362327318,105,1,404,0,389,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key10=val10&status=404,GET logs/test,8
+        1766362327324,95,0,200,0,362,GET http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key3=val3,GET logs/test,4
+        """;
+
+    try (TempContent tc = TempContent.of(content);
+        TempContent reconstitutedFile = TempContent.withName("reconstituted", ".log")) {
+      // When the data is read into a Samples structure and then output back as a Loady log file,
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
+      SamplesWriter writer = new CsvLoadySamplesWriter();
+      writer.write(samples, reconstitutedFile.file());
+
+      // Then the reconstituted log data should match the original data, but without bytes_up or
+      // call columns (though maybe some day that'd be nice) and is ordered by when the calls
+      // started (though maybe some day it'd be good to be ordered by completion time):
+      // completed_at_ms,duration_ms,fail,status,bytes_down,label,thread
+      String expectedStr =
+          """
+          completed_at_ms,duration_ms,fail,status,bytes_down,label,thread
+          1766362327212,102,0,200,464,POST logs/test,9
+          1766362327213,103,0,200,362,GET logs/test,5
+          1766362327225,115,0,200,362,GET logs/test,6
+          1766362327228,118,1,400,387,GET logs/test,7
+          1766362327233,123,0,200,463,PUT logs/test,1
+          1766362327247,137,0,200,362,GET logs/test,0
+          1766362327212,101,0,200,362,GET logs/test,8
+          1766362327218,107,0,200,362,GET logs/test,3
+          1766362327227,116,0,200,362,GET logs/test,2
+          1766362327228,117,0,200,362,GET logs/test,4
+          1766362327309,97,0,200,472,PUT logs/test,9
+          1766362327318,105,1,404,389,GET logs/test,8
+          1766362327214,0,1,error: connection refused,0,GET logs/test,5
+          1766362327324,95,0,200,362,GET logs/test,4
+          """;
+      assertContentEquals(reconstitutedFile.content(), expectedStr, "Reconstituted Loady data");
+    }
+  }
 
   @Test
   public void testLoadyFile() {

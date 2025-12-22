@@ -69,7 +69,7 @@ public class StatsBuilder {
     File dest = new File("../lognition/jtls/target/converted/real-550cps-1hour.avro");
     File statsFile = new File("../lognition/jtls/target/converted/real-550cps-1hour-stats-60s.csv");
 
-    Samples sourceSamples = new CsvJtlSource(source);
+    Samples sourceSamples = CsvJtlSource.readJtlFile(source);
     SamplesWriter writer = new AvroSamplesWriter();
     writer.write(sourceSamples, dest);
     StatsBuilder.calcHistogram(sourceSamples.getSamples());

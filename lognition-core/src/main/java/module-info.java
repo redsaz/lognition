@@ -25,6 +25,7 @@ module LognitionCore {
   requires org.apache.tika.core;
   requires org.jooq;
   requires slugify;
+  requires univocity.parsers;
 
   exports com.redsaz.lognition.services;
   exports com.redsaz.lognition.stats;

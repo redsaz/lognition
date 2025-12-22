@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -43,54 +41,98 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(CsvJtlToAvroOrderedConverterTest.class);
 
+  // This JTL data was (mostly) taken from a real jmeter run.
+  private static final String DEFAULT_CONTENT =
+      """
+      timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+      1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key2=val2,104,0,1
+      1766362285191,111,PUT /logs/test,200,OK,Thread Group 1-5,text,true,,538,287,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key0=val0,111,0,1
+      1766362285205,101,GET /logs/test,200,OK,Thread Group 1-10,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key6=val6,101,0,0
+      1766362285195,112,GET /logs/test,200,OK,Thread Group 1-3,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key1=val1,111,0,3
+      1766362285197,112,GET /logs/test,200,OK,Thread Group 1-4,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key3=val3,112,0,1
+      1766362285202,108,GET /logs/test,200,OK,Thread Group 1-9,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key5=val5,108,0,1
+      1766362285197,115,GET /logs/test,200,OK,Thread Group 1-2,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key4=val4,115,0,1
+      1766362285284,103,GET /logs/test,200,OK,Thread Group 1-6,text,true,,468,231,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key7=val7,103,0,0
+      1766362285292,101,GET /logs/test,400,Bad Request,Thread Group 1-7,text,false,,502,242,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key8=val8&status=400,100,0,0
+      1766362285297,102,POST /logs/test,200,OK,Thread Group 1-8,text,true,,539,288,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key9=val9,102,0,0
+      1766362285303,97,PUT /logs/test,200,OK,Thread Group 1-5,text,true,,547,296,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key11=val11,97,0,1
+      1766362285308,98,GET /logs/test,500,Internal Server Error,Thread Group 1-10,text,false,,514,244,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key12=val12&status=500,98,0,0
+      1766362285300,110,GET /logs/test,404,Not Found,Thread Group 1-1,text,false,,502,244,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key10=val10&status=404,110,0,1
+      1766362285310,1,GET /logs/test,Non HTTP response code: org.apache.http.conn.HttpHostConnectException,Non HTTP response message: Connect to 127.0.0.1:8080 [/127.0.0.1] failed: Connection refused,Thread Group 1-4,text,false,,2546,0,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key1=val1,0,0,1
+      """;
+
   @Test
-  public void testConvert() throws IOException {
-    MockPerfData mpd = defaultMockData();
-    File source = createTempFile("source", ".jtl");
-    mpd.createImportCsvFile(source, true);
+  public void testConvertAndBack() throws IOException {
+    // Given JTL-CSV data,
+    String content = DEFAULT_CONTENT;
 
-    File expectedDest = createTempFile("expected", ".avro");
-    String expectedHash = mpd.createAvroFile(expectedDest);
-    LOGGER.info("Hash from generating the expected output is {}.", expectedHash);
+    try (TempContent sourceFile = TempContent.of(content);
+        TempContent avroFile = TempContent.withName("converted", ".avro");
+        TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
-    File actualDest = createTempFile("actual", ".avro");
-    String actualHash = conv.convert(source, actualDest);
-    LOGGER.info("Hash from generating the actual output is {}.", actualHash);
+      // When converted into avro format and then converted back into csv format,
+      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
+      String avroHash = jtl2Avro.convert(sourceFile.file(), avroFile.file());
 
-    // The actual result should at least logically match the expected
-    // result, (that is, the samples exist and are in order, and the
-    // metadata exists but isn't necessarily in the same order).
-    assertAvroContentEquals(
-        actualDest, expectedDest, "The converter did not convert in the way expected.");
-    assertBytesEquals(actualDest, expectedDest, "The conversions are not byte-for-byte equal.");
-    assertEquals(actualHash, expectedHash, "Hashes differed.");
+      Converter avro2Jtl = new AvroToCsvJtlConverter();
+      String reconstitutedHash = avro2Jtl.convert(avroFile.file(), reconstitutedFile.file());
+
+      // Then the reconstituted csv data should match the original data, but ordered by timestamp
+      // and then elapsed, and just these columns:
+      // timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+      String expectedStr =
+          """
+          timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+          1766362285191,111,PUT /logs/test,200,OK,Thread Group 1-5,true,538,10
+          1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,true,468,10
+          1766362285195,112,GET /logs/test,200,OK,Thread Group 1-3,true,468,10
+          1766362285197,112,GET /logs/test,200,OK,Thread Group 1-4,true,468,10
+          1766362285197,115,GET /logs/test,200,OK,Thread Group 1-2,true,468,10
+          1766362285202,108,GET /logs/test,200,OK,Thread Group 1-9,true,468,10
+          1766362285205,101,GET /logs/test,200,OK,Thread Group 1-10,true,468,10
+          1766362285284,103,GET /logs/test,200,OK,Thread Group 1-6,true,468,10
+          1766362285292,101,GET /logs/test,400,Bad Request,Thread Group 1-7,false,502,10
+          1766362285297,102,POST /logs/test,200,OK,Thread Group 1-8,true,539,10
+          1766362285300,110,GET /logs/test,404,Not Found,Thread Group 1-1,false,502,10
+          1766362285303,97,PUT /logs/test,200,OK,Thread Group 1-5,true,547,10
+          1766362285308,98,GET /logs/test,500,Internal Server Error,Thread Group 1-10,false,514,10
+          1766362285310,1,GET /logs/test,Non HTTP response code: org.apache.http.conn.HttpHostConnectException,Non HTTP response message: Connect to 127.0.0.1:8080 [/127.0.0.1] failed: Connection refused,Thread Group 1-4,false,2546,10
+          """;
+      assertContentEquals(reconstitutedFile.content(), expectedStr, "Reconstituted CSV data");
+
+      // and the hash of the avro-based file should be the (precalculated) expected value.
+      assertEquals(
+          avroHash, "edf00831268cce0c0c6c2ca08249fb767b047c79e6b26b996f7b3b67230dcf10", "hash");
+
+      // and the hash of the resulting jtl-based file should be the (precalculated) expected value.
+      assertEquals(
+          reconstitutedHash,
+          "d0423e9aae3856cbb91cde79d305536c052672d7fe94dd5087d11919d6402fcf",
+          "hash");
+    }
   }
 
   @Test
   public void testConvertConsistent() throws IOException {
     // Tests that two invocations of the converter on the same input data
-    // results in the same output.
+    // results in the same output. By default the avro writer will add random data headers
+    // for reasons we don't need, (we never write to the file more than once.)
 
-    MockPerfData mpd = defaultMockData();
-    File source = createTempFile("source", ".jtl");
-    mpd.createImportCsvFile(source, true);
+    // Given JTL-CSV data,
+    String content = DEFAULT_CONTENT;
 
-    Converter conv1 = new CsvJtlToAvroOrderedConverter();
-    File actualDest1 = createTempFile("actual1", ".avro");
-    String actualHash1 = conv1.convert(source, actualDest1);
+    try (TempContent sourceFile = TempContent.of(content);
+        TempContent avroFile1 = TempContent.withName("converted1", ".avro");
+        TempContent avroFile2 = TempContent.withName("converted2", ".avro")) {
 
-    Converter conv2 = new CsvJtlToAvroOrderedConverter();
-    File actualDest2 = createTempFile("actual2", ".avro");
-    String actualHash2 = conv2.convert(source, actualDest2);
+      // When converted into avro format two different times,
+      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
+      String avroHash1 = jtl2Avro.convert(sourceFile.file(), avroFile1.file());
+      String avroHash2 = jtl2Avro.convert(sourceFile.file(), avroFile2.file());
 
-    assertAvroContentEquals(
-        actualDest1, actualDest2, "The converter did not convert in the way expected.");
-    assertBytesEquals(
-        actualDest1,
-        actualDest2,
-        "The files are logically the same with Avro, but are not byte-for-byte equal.");
-    assertEquals(actualHash1, actualHash2, "Hashes differed.");
+      // Then the two files should be identical.
+      assertEquals(avroHash1, avroHash2, "avro files should be identical content.");
+    }
   }
 
   @Test
@@ -99,75 +141,96 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
     // then by duration, then by label, then by threadname, then by bytes, then by status code,
     // then by status message, then by success, and then by total threads.
     // If a row is encountered that has an extra column, then skip the
-    // defective row. Any other columns from the soure jtl aren't considered.
+    // defective row. Any other columns from the source jtl aren't considered.
 
     String header =
         "timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads";
     // First, create the correctly ordered file.
-    List<String> lines = new ArrayList<>();
-    // #1 because timeStamp is older.
-    lines.add("1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2");
-    // #2 because timeStamp is more recent.
-    lines.add("1469546803635,496,GET test/thing,200,OK,example 1-1,true,280,2");
-    // #3 because elapsed is greater.
-    lines.add("1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2");
-    // #4 because label is lexicographically later.
-    lines.add("1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2");
-    // #5 because threadName is lexicographically later.
-    lines.add("1469546803635,497,GET test/thing,200,OK,example 1-2,true,280,2");
-    // #6 because more bytes were in the response.
-    lines.add("1469546803635,497,GET test/thing,200,OK,example 1-2,true,281,2");
-    // #7 because status code is greater.
-    lines.add("1469546803635,497,GET test/thing,201,OK,example 1-2,true,281,2");
-    // #8 because status message is lexigographically later.
-    lines.add("1469546803635,497,GET test/thing,201,OKAY,example 1-2,true,281,2");
-    // #9 because success false comes after true. (Signed int, true=-1, false = 0;
-    lines.add("1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,2");
-    // #10 because total threads is greater.
-    lines.add("1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3");
-    // #10 as well, but is a duplicate.
-    lines.add("1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3");
+    List<String> ordered =
+        List.of(
+            // #1 because timeStamp is older.
+            "1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2",
+            // #2 because timeStamp is more recent.
+            "1469546803635,496,GET test/thing,200,OK,example 1-1,true,280,2",
+            // #3 because elapsed is greater.
+            "1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2",
+            // #4 because label is lexicographically later.
+            "1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2",
+            // #5 because threadName is lexicographically later.
+            "1469546803635,497,GET test/thing,200,OK,example 1-2,true,280,2",
+            // #6 because more bytes were in the response.
+            "1469546803635,497,GET test/thing,200,OK,example 1-2,true,281,2",
+            // #7 because status code is greater.
+            "1469546803635,497,GET test/thing,201,OK,example 1-2,true,281,2",
+            // #8 because status message is lexigographically later.
+            "1469546803635,497,GET test/thing,201,OKAY,example 1-2,true,281,2",
+            // #9 because success false comes after true. (Signed int, true=-1, false = 0;
+            "1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,2",
+            // #10 because total threads is greater.
+            "1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3",
+            // #10 as well, but is a duplicate.
+            "1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3");
 
-    File expectedOrdered = createTempFile("expectedOrdered", ".jtl");
-    Files.write(expectedOrdered.toPath(), Collections.singleton(header), StandardOpenOption.CREATE);
-    Files.write(expectedOrdered.toPath(), lines, StandardOpenOption.APPEND);
+    try (TempContent sourceFile = TempContent.withName("source", ".jtl");
+        TempContent expectedOrderedFile = TempContent.withName("expected", ".jtl");
+        TempContent avroFile = TempContent.withName("converted", ".avro");
+        TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
+      Files.write(
+          expectedOrderedFile.path(), Collections.singleton(header), StandardOpenOption.CREATE);
+      Files.write(expectedOrderedFile.path(), ordered, StandardOpenOption.APPEND);
 
-    // Next, create an incorrectly ordered file (we'll reverse the lines to do this).
-    Collections.reverse(lines);
+      // Given a file with unordered lines.
+      Files.write(sourceFile.path(), List.of(header), StandardOpenOption.CREATE);
+      Files.write(sourceFile.path(), ordered.reversed(), StandardOpenOption.APPEND);
 
-    File sourceIncorrectlyOrdered = createTempFile("sourceIncorrectlyOrdered", ".jtl");
-    Files.write(
-        sourceIncorrectlyOrdered.toPath(),
-        Collections.singleton(header),
-        StandardOpenOption.CREATE);
-    Files.write(sourceIncorrectlyOrdered.toPath(), lines, StandardOpenOption.APPEND);
+      // When converted into avro format using the ordered converter and converted back into a CSV,
+      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
+      jtl2Avro.convert(sourceFile.file(), avroFile.file());
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
-    File actualDestAvro = createTempFile("actual", ".avro");
-    conv.convert(sourceIncorrectlyOrdered, actualDestAvro);
-
-    Converter toCsv = new AvroToCsvJtlConverter();
-    File actualDestCsv = createTempFile("actual", ".jtl");
-    toCsv.convert(actualDestAvro, actualDestCsv);
-    assertContentEquals(
-        actualDestCsv, expectedOrdered, "The converter did not order the rows as expected.");
+      // Then the data is there and in the correct order.
+      Converter avro2Jtl = new AvroToCsvJtlConverter();
+      avro2Jtl.convert(avroFile.file(), reconstitutedFile.file());
+      assertContentEquals(
+          reconstitutedFile.file(),
+          expectedOrderedFile.file(),
+          "The converter did not order the rows as expected.");
+    }
   }
 
   @Test
   public void testConvertNoHeaderButDefaultColumns() throws IOException {
-    MockPerfData mpd = defaultMockData();
-    File source = createTempFile("source", ".jtl");
-    mpd.createImportCsvFile(source, false);
+    // Given a JTL file with no header row but 12 columns,
 
-    File expectedDest = createTempFile("expected", ".avro");
-    mpd.createAvroFile(expectedDest);
+    // Back in the day, some versions of jmeter did not provide the header row with the CSV, and
+    // it only had data for these 12 columns:
+    // timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+    // Currently, lognition still has logic for handling this special case.
+    String headerlessContent =
+        """
+        1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,text,true,468,10,10,104
+        1766362285191,111,PUT /logs/test,200,OK,Thread Group 1-5,text,true,538,10,10,111
+        """;
+    try (TempContent sourceFile = TempContent.of(headerlessContent);
+        TempContent avroFile = TempContent.withName("converted", ".avro");
+        TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
+      // When converting to avro format and reconstituting back into a CSV,
+      Converter jtl2avro = new CsvJtlToAvroOrderedConverter();
+      jtl2avro.convert(sourceFile.file(), avroFile.file());
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
-    File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+      Converter avro2jtl = new AvroToCsvJtlConverter();
+      avro2jtl.convert(avroFile.file(), reconstitutedFile.file());
 
-    assertAvroContentEquals(
-        actualDest, expectedDest, "The converter did not convert in the way expected.");
+      // Then the reconstituted csv data should match the original data, but with a header row and
+      // data ordered by timestamp and then elapsed, and just these columns:
+      // timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+      String expectedStr =
+          """
+              timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+              1766362285191,111,PUT /logs/test,200,OK,Thread Group 1-5,true,538,10
+              1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,true,468,10
+              """;
+      assertContentEquals(reconstitutedFile.content(), expectedStr, "Reconstituted CSV data");
+    }
   }
 
   @Test
@@ -332,7 +395,7 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
     File source = createTempFile("source", ".jtl");
     try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
         PrintWriter pw = new PrintWriter(bw)) {
-      // The thread name is removed. This should not be convertable
+      // The thread name is removed. This should not be convertible
       // without a header row.
       pw.println("1469546803634,496,GET test/thing,200,OK,text,true,280,2,2,495");
       pw.println("1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599");
@@ -485,19 +548,5 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
     Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
     conv.convert(source, actualDest);
-  }
-
-  private static MockPerfData defaultMockData() {
-    // The orginal CSV to import from will have more columns than we'll
-    // actually use.
-    MockPerfData mpd =
-        new MockPerfData(
-            System.currentTimeMillis(),
-            240L,
-            Arrays.asList("Another-call-2", "Howdy there this is a call as well", "example-call-1"),
-            Arrays.asList("thread-1", "thread-2", "thread-3", "thread-4", "thread-5"),
-            Arrays.asList("1001", "200"),
-            Arrays.asList("Non Standard code", "Normally we don't see these"));
-    return mpd;
   }
 }

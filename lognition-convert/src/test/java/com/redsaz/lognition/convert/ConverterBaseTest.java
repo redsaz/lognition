@@ -23,8 +23,11 @@ import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.convert.model.HttpSample;
 import difflib.DiffUtils;
 import difflib.Patch;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.List;
@@ -117,6 +120,33 @@ public class ConverterBaseTest {
       }
     } catch (IOException ex) {
       fail(ex.getMessage(), ex);
+    }
+  }
+
+  public static List<String> stringLines(String stringWithNewLines) {
+    try (BufferedReader br = new BufferedReader(new StringReader(stringWithNewLines))) {
+      return br.lines().toList();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public static void assertContentEquals(
+      String actualLinesStr, String expectedLinesStr, String message) {
+    List<String> actualLines = stringLines(actualLinesStr);
+    List<String> expectedLines = stringLines(expectedLinesStr);
+    Patch<String> patch = DiffUtils.diff(expectedLines, actualLines);
+    if (!patch.getDeltas().isEmpty()) {
+      List<String> diff =
+          DiffUtils.generateUnifiedDiff("expected", "actual", expectedLines, patch, 3);
+      StringBuilder sb = new StringBuilder(message);
+      sb.append(" Contents do not match.\n");
+      diff.stream()
+          .forEach(
+              (diffLine) -> {
+                sb.append(diffLine).append("\n");
+              });
+      fail(sb.toString());
     }
   }
 
