@@ -1,6 +1,5 @@
 package com.redsaz.lognition.convert;
 
-import static com.redsaz.lognition.convert.ConverterBaseTest.assertContentEquals;
 import static org.testng.Assert.assertEquals;
 
 import com.redsaz.lognition.api.model.Sample;

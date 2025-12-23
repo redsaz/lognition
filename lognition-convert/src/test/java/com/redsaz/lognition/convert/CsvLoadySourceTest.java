@@ -147,6 +147,67 @@ public class CsvLoadySourceTest {
   }
 
   @Test
+  public void testLoadyFileNoLabelShouldSucceedWithEmptyLabel() {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1244,10,0,200,0,400,GET http://127.0.0.1:8080/example/abcd1234,,1
+        1355,12,1,error: connection refused,0,123,GET http://127.0.0.1:8080/fail/323,,1
+        1587,20,0,200,0,667,GET http://127.0.0.1:8080/example/56789abc,,2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvLoadySource.readLoadyFile(tc.file());
+
+      assertEquals(samples.getSamples().size(), 3);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      Sample next = samples.getSamples().get(1);
+      assertEquals(next.getOffset(), 109);
+      assertEquals(next.getDuration(), 12);
+      assertEquals(next.getLabel(), "");
+      assertEquals(next.getStatusCode(), "error: connection refused");
+      assertEquals(next.getThreadName(), "1");
+      assertFalse(next.isSuccess());
+      assertEquals(next.getResponseBytes(), 123);
+      assertEquals(next.getTotalThreads(), 2);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertEquals(
+          samples.getEarliestMillis(),
+          1234L,
+          "Earliest should be timestamp from epoch when the earliest start happened (completed_at minus duration).");
+      assertEquals(
+          samples.getLatestMillis(),
+          1587L,
+          "Latest should be timestamp from epoch when the latest finish happened.");
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of(""));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+  @Test
   public void testLoadyFileNoLabelShouldSucceedWithBlankLabel() {
     String content =
         """

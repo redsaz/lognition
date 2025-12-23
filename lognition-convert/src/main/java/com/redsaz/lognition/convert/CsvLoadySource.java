@@ -161,6 +161,9 @@ public class CsvLoadySource {
       @Override
       public void putIn(String src, LoadySample dest) {
         dest.label = src;
+        if (dest.label == null) {
+          dest.label = "";
+        }
       }
     },
     THREAD("thread", true) {
