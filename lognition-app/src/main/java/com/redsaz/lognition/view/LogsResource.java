@@ -111,7 +111,24 @@ public class LogsResource {
   @GET
   @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
   @Path("{id}")
-  public Response getLogBrief(@PathParam("id") long id) {
+  public Response getLogBriefNoUrlName(@PathParam("id") long id) {
+    return getLogBrief(id);
+  }
+
+  /**
+   * Get the note contents with urlName.
+   *
+   * @param id The id of the note.
+   * @return Note.
+   */
+  @GET
+  @Produces({LognitionMediaType.LOGBRIEF_V1_JSON, MediaType.APPLICATION_JSON})
+  @Path("{id}/{urlName}")
+  public Response getLogBriefWithUrlName(@PathParam("id") long id) {
+    return getLogBrief(id);
+  }
+
+  private Response getLogBrief(long id) {
     Log brief = logsSrv.get(id);
     if (brief == null) {
       throw new NotFoundException("Could not find log brief id=" + id);
@@ -126,12 +143,14 @@ public class LogsResource {
    * @return log data.
    */
   @GET
-  @Produces({"text/csv"})
-  @Path("{id}/content")
+  @Produces({"text/csv", "*/*"})
+  @Path("{id}/{urlName}/content")
   public Response getCsvContent(@PathParam("id") long id) throws IOException {
     try {
       File file = logsSrv.getAvroFile(id);
-      return Response.ok(CONVERTER.convertStreaming(file), "text/csv").build();
+      return Response.ok(CONVERTER.convertStreaming(file), "text/csv")
+          .header("Content-Disposition", "attachment; filename=\"" + id + "-content.csv\"")
+          .build();
     } catch (FileNotFoundException ex) {
       throw new NotFoundException(ex.getMessage());
     }

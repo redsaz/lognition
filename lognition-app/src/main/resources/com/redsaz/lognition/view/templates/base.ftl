@@ -58,7 +58,8 @@
                 <ul class="pure-menu-list">
                     <li class="pure-menu-item"><a href="${base}/logs" class="custom-menu-link pure-menu-link">Logs</a></li>
                     <li class="pure-menu-item"><a href="${base}/reviews" class="custom-menu-link pure-menu-link">Reviews</a></li>
-                    <#if brief??><li class="pure-menu-item custom-menu-item"><a href="${base}/logs/#{brief.id}/edit" class="custom-menu-link pure-menu-link">Edit</a></li></#if>
+                    <#if brief??><li class="pure-menu-item custom-menu-item"><a href="${base}/logs/#{brief.id}/${brief.urlName!'-'}/edit" class="custom-menu-link pure-menu-link">Edit</a></li></#if>
+                    <#if brief??><li class="pure-menu-item custom-menu-item"><a href="${base}/logs/#{brief.id}/${brief.urlName!'-'}/content" class="custom-menu-link pure-menu-link">Export</a></li></#if>
                 </ul>
             </nav>
         </div>

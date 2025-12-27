@@ -287,7 +287,7 @@ public class BrowserLogsResource {
    */
   @GET
   @Produces(MediaType.TEXT_HTML)
-  @Path("{id}/edit")
+  @Path("{id}/{urlName}/edit")
   public Response editLog(@Context HttpServerRequest httpRequest, @PathParam("id") long logId) {
     String dist = "/dist";
 

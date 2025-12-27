@@ -37,7 +37,7 @@
       <div class="fcm">
         <#list reviews as review>
         <div class="fcm-parent">
-          <a class="fcm-child-item" href="${base}/reviews/#{review.id}/${review.uriName}">
+          <a class="fcm-child-item" href="${base}/reviews/#{review.id}/${review.uriName!'-'}">
             <span class="fcm-child-item-title">${review.name}</span> - ${review.description}
           </a>
           <span class="fcm-child-actions">

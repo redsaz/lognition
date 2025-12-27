@@ -116,7 +116,7 @@ public class LogsResourceTest {
         given()
             .when()
             .accept("text/csv")
-            .get("/logs/1/content")
+            .get("/logs/1/-/content")
             .then()
             .statusCode(200)
             .extract()
@@ -142,7 +142,7 @@ public class LogsResourceTest {
     given()
         .when()
         .accept("text/csv")
-        .get("/logs/1/content")
+        .get("/logs/1/-/content")
         .then()
         .statusCode(404)
         .body(
