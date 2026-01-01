@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Csvs {
+  // Do not instantiate utility classes
   private Csvs() {}
 
   /**
@@ -76,6 +77,32 @@ public class Csvs {
     }
   }
 
+  public static String writeRecords(Path dest, List<String> headers, Stream<TabRecord> rows)
+      throws IOException {
+    try (HashingOutputStream hos =
+        new HashingOutputStream(
+            Hashing.sha256(), new BufferedOutputStream(new FileOutputStream(dest.toFile())))) {
+      try (BufferedWriter bw =
+          new BufferedWriter(new OutputStreamWriter(hos, StandardCharsets.UTF_8))) {
+        CsvWriter writer = null;
+        try {
+          writer = new CsvWriter(bw, new CsvWriterSettings());
+          if (headers != null && !headers.isEmpty()) {
+            // Only write the headers if there are any.
+            writer.writeHeaders(headers);
+          }
+          rows.map(row -> row.values().stream().map(TabVal::stringValue).toList())
+              .forEach(writer::writeRow);
+        } finally {
+          if (writer != null) {
+            writer.close(); // Looks like it could be put in try-with-resources, but nope.
+          }
+        }
+      }
+      return hos.hash().toString();
+    }
+  }
+
   private static Runnable uncheckedCloser(Closeable closeable) {
     return () -> {
       try {
@@ -86,7 +113,7 @@ public class Csvs {
     };
   }
 
-  private record ReaderCsvStream(List<String> headers, Stream<List<String>> stream)
+  private record ReaderCsvStream(List<String> fieldNames, Stream<List<String>> stream)
       implements CsvStream {
     @Override
     public void close() throws IOException {

@@ -32,11 +32,11 @@ public class CsvsTest {
     // Given a normal, everyday CSV file (not necessarily a Jmeter JTL or Loady log file),
     // When the source CSV is read in and written back out,
     try (TempContent sourceFile = TempContent.of(content);
-         TempContent destFile = TempContent.withName("converted", ".csv");
-         CsvStream records = Csvs.records( sourceFile.path())) {
+        TempContent destFile = TempContent.withName("converted", ".csv");
+        CsvStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.headers(), records.stream());
+      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
 
       // Then the source CSV file and the result CSV file contents are functionally the same.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
@@ -50,11 +50,11 @@ public class CsvsTest {
     // Given an empty CSV file,
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
-         TempContent destFile = TempContent.withName("converted", ".csv");
-         CsvStream records = Csvs.records( sourceFile.path())) {
+        TempContent destFile = TempContent.withName("converted", ".csv");
+        CsvStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.headers(), records.stream());
+      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
 
       // Then the source CSV file and the result CSV file contents should be empty.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
@@ -63,21 +63,20 @@ public class CsvsTest {
 
   @Test
   public void testReadWriteHeaderOnly() throws IOException {
-    String content = "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect";
+    String content =
+        "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect";
 
     // Given a CSV file with only a header line,
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
-         TempContent destFile = TempContent.withName("converted", ".csv");
-         CsvStream records = Csvs.records( sourceFile.path())) {
+        TempContent destFile = TempContent.withName("converted", ".csv");
+        CsvStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.headers(), records.stream());
+      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
 
       // Then the source CSV file and the result CSV file contents should be empty.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
     }
   }
-
-
 }

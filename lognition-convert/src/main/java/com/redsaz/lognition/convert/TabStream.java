@@ -4,8 +4,10 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.stream.Stream;
 
-public interface CsvStream extends Closeable {
+public interface TabStream extends Closeable {
   List<String> fieldNames();
 
-  Stream<List<String>> stream();
+  TabSchema schema();
+
+  Stream<TabRecord> stream();
 }
