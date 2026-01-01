@@ -1,8 +1,11 @@
 package com.redsaz.lognition.convert;
 
 import static com.redsaz.lognition.convert.ConverterBaseTest.assertContentEquals;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 
 import java.io.IOException;
+import java.util.List;
 import org.testng.annotations.Test;
 
 public class CsvsTest {
@@ -33,13 +36,148 @@ public class CsvsTest {
     // When the source CSV is read in and written back out,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        CsvStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
+      Csvs.write(destFile.path(), records.schema(), records.stream());
 
       // Then the source CSV file and the result CSV file contents are functionally the same.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
+    }
+  }
+
+  @Test
+  public void testReadWriteSimpleWithSchema() throws IOException {
+    // Given a CSV file with no null/empty values with strings, ints, longs, floats, doubles, and
+    // booleans,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        1766362285195,104,GET /logs/test,1.5,3.25,true
+        1766362285191,111,PUT /logs/test,2.125,6.0625,false
+        """;
+
+    // and a schema that accounts for every column,
+    String schemaStr =
+        """
+        {"namespace": "com.redsaz.lognition",
+        "type": "record",
+        "name": "ExampleRecord",
+        "fields": [
+            {"name": "exampleLong", "type": "long"},
+            {"name": "exampleInt", "type": "int"},
+            {"name": "exampleString", "type": "string"},
+            {"name": "exampleFloat", "type": "float"},
+            {"name": "exampleDouble", "type": "double"},
+            {"name": "exampleBoolean", "type": "boolean"}
+        ]
+        }
+        """;
+    TabSchema schema = TabSchema.of(schemaStr);
+
+    try (TempContent sourceFile = TempContent.of(content);
+        TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
+
+      // When it is loaded as tabular data with the schema,
+      try (TabStream records = Csvs.records(sourceFile.path(), schema)) {
+        // and written back into a CSV file,
+        Csvs.write(destCsvFile.path(), records.schema(), records.stream());
+      }
+
+      // Then the source CSV file and the result CSV file contents are functionally the same.
+      assertContentEquals(destCsvFile.content(), content, "Reconstituted CSV data");
+    }
+  }
+
+  @Test
+  public void testReadSimpleWithSchema() throws IOException {
+    // Given a CSV file with no null/empty values with strings, ints, longs, floats, doubles, and
+    // booleans,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        1766362285195,104,GET /logs/test,1.5,3.25,true
+        1766362285191,111,PUT /logs/test,2.125,6.0625,false
+        """;
+
+    // and a schema that accounts for every column,
+    String schemaStr =
+        """
+        {"namespace": "com.redsaz.lognition",
+        "type": "record",
+        "name": "ExampleRecord",
+        "fields": [
+            {"name": "exampleLong", "type": "long"},
+            {"name": "exampleInt", "type": "int"},
+            {"name": "exampleString", "type": "string"},
+            {"name": "exampleFloat", "type": "float"},
+            {"name": "exampleDouble", "type": "double"},
+            {"name": "exampleBoolean", "type": "boolean"}
+        ]
+        }
+        """;
+    TabSchema schema = TabSchema.of(schemaStr);
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of(1766362285195L, 104, "GET /logs/test", 1.5f, 3.25d, true),
+              TabRecord.of(1766362285191L, 111, "PUT /logs/test", 2.125f, 6.0625d, false));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test
+  public void testReadSimpleWithSchemaDifferentOrder() throws IOException {
+    // Given a CSV file with no null/empty values with strings, ints, longs, floats, doubles, and
+    // booleans,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        1766362285195,104,GET /logs/test,1.5,3.25,true
+        1766362285191,111,PUT /logs/test,2.125,6.0625,false
+        """;
+
+    // and a schema that accounts for every column but is a different order than what appears in the
+    // CSV,
+    String schemaStr =
+        """
+        {"namespace": "com.redsaz.lognition",
+        "type": "record",
+        "name": "ExampleRecord",
+        "fields": [
+            {"name": "exampleBoolean", "type": "boolean"},
+            {"name": "exampleDouble", "type": "double"},
+            {"name": "exampleFloat", "type": "float"},
+            {"name": "exampleString", "type": "string"},
+            {"name": "exampleInt", "type": "int"},
+            {"name": "exampleLong", "type": "long"}
+        ]
+        }
+        """;
+    TabSchema schema = TabSchema.of(schemaStr);
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema
+      // and the values are in the order specified by the schema.
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of(true, 3.25d, 1.5f, "GET /logs/test", 104, 1766362285195L),
+              TabRecord.of(false, 6.0625d, 2.125f, "PUT /logs/test", 111, 1766362285191L));
+      assertEquals(actualRows, expectedRows);
     }
   }
 
@@ -51,10 +189,10 @@ public class CsvsTest {
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        CsvStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
+      Csvs.write(destFile.path(), records.schema(), records.stream());
 
       // Then the source CSV file and the result CSV file contents should be empty.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
@@ -70,10 +208,10 @@ public class CsvsTest {
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        CsvStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.records(sourceFile.path())) {
 
       // and written back out into a CSV,
-      Csvs.write(destFile.path(), records.fieldNames(), records.stream());
+      Csvs.write(destFile.path(), records.schema(), records.stream());
 
       // Then the source CSV file and the result CSV file contents should be empty.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");

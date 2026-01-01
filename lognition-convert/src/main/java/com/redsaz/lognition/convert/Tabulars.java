@@ -51,22 +51,22 @@ public class Tabulars {
 
     Function<GenericRecord, TabRecord> converter =
         genRec -> {
-          List<TabVal> tabVals =
+          List<Object> tabVals =
               IntStream.range(0, schema.fields().size())
                   .mapToObj(
                       i ->
-                          (TabVal)
+                          (Object)
                               switch (genRec.get(i)) {
-                                case null -> TabVal.Null.of();
-                                case Utf8 v -> new TabVal.String(v.toString());
-                                case Integer v -> new TabVal.Int(v);
-                                case Long v -> new TabVal.Long(v);
-                                case Float v -> new TabVal.Float(v);
-                                case Double v -> new TabVal.Double(v);
-                                case Boolean v -> new TabVal.Boolean(v);
+                                case null -> null;
+                                case Utf8 v -> v.toString();
+                                case Integer v -> v;
+                                case Long v -> v;
+                                case Float v -> v;
+                                case Double v -> v;
+                                case Boolean v -> v;
                                 default ->
                                     throw new IllegalArgumentException(
-                                        "Count not convert value into TabVal: "
+                                        "Not a compatible type for TabRecord: "
                                             + genRec.get(i).getClass()
                                             + " for field: "
                                             + schema.fields().get(i).name());
@@ -82,62 +82,25 @@ public class Tabulars {
     return new ReaderTabStream(schema, stream);
   }
 
-  /**
-   * Given a list of field names in the order they appear in each row in the source row stream, and
-   * a destination schema, creates a TabStream that is compliant with the destination schema.
-   *
-   * @param sourceFields the names of each field as they appear in each row of the row stream
-   * @param sourceRowStream the stream of rows, each row with the same number of fields as the count
-   *     of fieldNames
-   * @param destSchema the schema of the destination tabular data stream.
-   * @return a tabular data stream using destSchema.
-   */
-  public static TabStream convert(
-      List<String> sourceFields, Stream<List<String>> sourceRowStream, TabSchema destSchema) {
-    // TODO This seems like we could remove Csvs and just have Tabulars, right?
-    Function<List<String>, TabRecord> converter = createCsvConverter(destSchema);
-    Stream<TabRecord> tabRowStream = sourceRowStream.map(converter);
-    return new ReaderTabStream(destSchema, tabRowStream);
-  }
-
-  /**
-   * Given a list of field names in the order they appear in each row in the row stream, creates a
-   * TabStream where all fields are of type String.
-   *
-   * @param fieldNames the names of each field as they appear in each row of the row stream
-   * @param rowStream the stream of rows, each row with the same number of fields as the count of
-   *     fieldNames
-   * @return Essentially a CsvStream in TabStream form. It seems like a CsvStream is just a special
-   *     case of TabStream, no?
-   */
-  public static TabStream convert(List<String> fieldNames, Stream<List<String>> rowStream) {
-    // TODO This seems like we could remove Csvs and just have Tabulars, right?
-
-    // A CsvStream is a TabStream but everything is a String. So we'll "convert" it to a TabStream
-    // by making a schema of all stream types.
-    SchemaBuilder.FieldAssembler<Schema> builder =
-        SchemaBuilder.builder().record("TabRecord").fields();
-    fieldNames.stream().forEach(builder::optionalString);
-    Schema avroSchema = builder.endRecord();
-
-    TabSchema tabSchema = TabSchema.ofAvro(avroSchema);
-    Function<List<String>, TabRecord> converter = createCsvConverter(tabSchema);
-    Stream<TabRecord> tabRowStream = rowStream.map(converter);
-    return new ReaderTabStream(tabSchema, tabRowStream);
-  }
-
-  //
   //  /**
-  //   * Given one TabStream, convert into another TabStream if the two schemas are compatible.
+  //   * Given a source TabStream of TabRecords of all TabVals, and a destination schema, creates a
+  //   * TabStream that is compliant with the destination schema.
   //   *
-  //   * @param source the origin tabular data stream.
+  //   * @param sourceSchema the names of each field as they appear in each row of the row stream
+  //   * @param sourceRowStream the stream of rows, each row with the same number of fields as the
+  // count
+  //   *     of fieldNames
   //   * @param destSchema the schema of the destination tabular data stream.
   //   * @return a tabular data stream using destSchema.
   //   */
-  //  public static TabStream convert(TabStream source, TabSchema destSchema) {
-  //    // Huh? I'm not sure what I was thinking with this. Conversion of records is complex.
+  //  public static TabStream convert(
+  //      TabSchema sourceSchema, Stream<TabRecord> sourceRowStream, TabSchema destSchema) {
+  //    // TODO This seems like we could remove Csvs and just have Tabulars, right?
+  //    Function<TabRecord, TabRecord> converter = createCsvConverter(destSchema);
+  //    Stream<TabRecord> tabRowStream = sourceRowStream.map(converter);
+  //    return new ReaderTabStream(destSchema, tabRowStream);
   //  }
-
+  //
   public static String write(Path dest, TabSchema schema, Stream<TabRecord> rows)
       throws IOException {
     try (HashingOutputStream hos =
@@ -154,7 +117,7 @@ public class Tabulars {
               try {
                 GenericRecord rec = new GenericData.Record(avroSchema);
                 IntStream.range(0, schema.fields().size())
-                    .forEach(i -> rec.put(i, tabRec.values().get(i).get()));
+                    .forEach(i -> rec.put(i, tabRec.values().get(i)));
                 dataFileWriter.append(rec);
               } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
@@ -164,29 +127,6 @@ public class Tabulars {
       }
       return hos.hash().toString();
     }
-  }
-
-  private static Function<List<String>, TabRecord> createCsvConverter(TabSchema schema) {
-    List<Function<String, TabVal>> valConvs =
-        schema.fields().stream().map(Tabulars::valConverter).toList();
-    int size = valConvs.size();
-    ;
-    return (List<String> row) -> {
-      List<TabVal> converteds =
-          IntStream.range(0, size).mapToObj(i -> valConvs.get(i).apply(row.get(i))).toList();
-      return new TabRecord(converteds);
-    };
-  }
-
-  private static Function<String, TabVal> valConverter(TabField field) {
-    return switch (field) {
-      case TabField.String f -> TabVal.String::new;
-      case TabField.Int f -> (String val) -> new TabVal.Int(Integer.parseInt(val));
-      case TabField.Long f -> (String val) -> new TabVal.Long(Long.parseLong(val));
-      case TabField.Float f -> (String val) -> new TabVal.Float(Float.parseFloat(val));
-      case TabField.Double f -> (String val) -> new TabVal.Double(Double.parseDouble(val));
-      case TabField.Boolean f -> (String val) -> new TabVal.Boolean(Boolean.parseBoolean(val));
-    };
   }
 
   private static Schema toAvroSchema(TabSchema schema) {

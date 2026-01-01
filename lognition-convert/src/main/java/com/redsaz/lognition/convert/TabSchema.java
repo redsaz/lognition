@@ -3,9 +3,7 @@ package com.redsaz.lognition.convert;
 import java.util.List;
 import org.apache.avro.Schema;
 
-public record TabSchema(List<TabField> fields) {
-
-  private static final Schema.Parser PARSER = new Schema.Parser();
+public record TabSchema(List<? extends TabField> fields) {
 
   /**
    * Essentially an Avro spec. Kinda. Hmm. Keep it simple.
@@ -13,7 +11,7 @@ public record TabSchema(List<TabField> fields) {
    * @param spec an Avro spec in string form.
    */
   public static TabSchema of(String spec) {
-    return TabSchema.ofAvro(PARSER.parse(spec));
+    return TabSchema.ofAvro((new Schema.Parser()).parse(spec));
   }
 
   static TabSchema ofAvro(Schema schema) {

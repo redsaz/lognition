@@ -36,27 +36,23 @@ public class TabularsTest {
         """;
     TabSchema schema = TabSchema.of(schemaStr);
 
+    // When it is loaded into tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
-        CsvStream csv = Csvs.records(sourceFile.path());
+        TabStream csv = Csvs.records(sourceFile.path(), schema);
         TempContent destAvroFile = TempContent.withName("converted", ".avro");
         TempContent destCsvFile = TempContent.withName("exported", ".csv")) {
 
-      // When it is converted into tabular data,
-      TabStream converted = Tabulars.convert(csv.fieldNames(), csv.stream(), schema);
-      Tabulars.write(destAvroFile.path(), converted.schema(), converted.stream());
+      // and written to an avro file,
+      Tabulars.write(destAvroFile.path(), csv.schema(), csv.stream());
 
-      // and read from the avro file back into a tabular data item,
-      // which is exported back into a CSV file,
-      try (TabStream exporting = Tabulars.records(destAvroFile.path())) {
-        Csvs.writeRecords(destCsvFile.path(), exporting.fieldNames(), exporting.stream());
+      // and read from the avro file,
+      try (TabStream avro = Tabulars.records(destAvroFile.path())) {
+        // and written back into a CSV file,
+        Csvs.write(destCsvFile.path(), avro.schema(), avro.stream());
       }
 
       // Then the source CSV file and the result CSV file contents are functionally the same.
       assertContentEquals(destCsvFile.content(), content, "Reconstituted CSV data");
-
-      // TODO: I think there shouldn't be a TabVal and friends. Just normal Object and Integer,
-      // Long, etc.
-      // Let the TabSchema, TabField, etc be what defines the stuff, no need for a wrapper.
 
       // TODO: I think Tabulars et al should be in core or API (probably api) rather than convert,
       // perhaps.
