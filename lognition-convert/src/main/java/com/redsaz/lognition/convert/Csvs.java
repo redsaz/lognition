@@ -191,21 +191,32 @@ public class Csvs {
 
   private static <U> Function<String, U> valConverter(TabField<U> field) {
     return switch (field) {
-      case TabField.StrF f -> (String val) -> (U) val;
-      case TabField.IntF f -> (Function<String, U>) orNuller(Integer::valueOf);
-      case TabField.LongF f -> (Function<String, U>) orNuller(Long::valueOf);
-      case TabField.FloatF f -> (Function<String, U>) orNuller(Float::valueOf);
-      case TabField.DoubleF f -> (Function<String, U>) orNuller(Double::valueOf);
-      case TabField.BooleanF f -> (Function<String, U>) orNuller(Boolean::valueOf);
+      case TabField.StrF f -> (Function<String, U>) orOpt(Function.identity(), f);
+      case TabField.IntF f -> (Function<String, U>) orOpt(Integer::valueOf, f);
+      case TabField.LongF f -> (Function<String, U>) orOpt(Long::valueOf, f);
+      case TabField.FloatF f -> (Function<String, U>) orOpt(Float::valueOf, f);
+      case TabField.DoubleF f -> (Function<String, U>) orOpt(Double::valueOf, f);
+      case TabField.BooleanF f -> (Function<String, U>) orOpt(Boolean::valueOf, f);
     };
   }
 
-  private static <U> Function<String, U> orNuller(Function<String, U> valueOfer) {
+  private static <U> Function<String, U> orOpt(Function<String, U> fromString, TabField<U> field) {
+    U defVal = field.opt().defVal();
+    // If field is optional, then when null is encountered, provide the default value
+    if (field.isOptional()) {
+      return source -> {
+        if (source == null) {
+          return defVal;
+        }
+        return fromString.apply(source);
+      };
+    }
+    // otherwise if required, then when null is encountered, throw exception
     return source -> {
       if (source == null) {
-        return null;
+        throw new IllegalArgumentException("Not optional, but was null: " + field);
       }
-      return valueOfer.apply(source);
+      return fromString.apply(source);
     };
   }
 

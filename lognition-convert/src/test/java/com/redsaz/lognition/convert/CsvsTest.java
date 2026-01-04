@@ -3,10 +3,11 @@ package com.redsaz.lognition.convert;
 import static com.redsaz.lognition.convert.ConverterBaseTest.assertContentEquals;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.List;
-
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class CsvsTest {
@@ -219,19 +220,162 @@ public class CsvsTest {
         // Then the data should be null when not provided in the source,
         List<TabRecord> expectedRows =
             List.of(
-                TabRecord.of(null,104,"GET /logs/test",1.5f,3.25d,true),
-                TabRecord.of(1766362285191L,null,"PUT /logs/test",2.125f,6.0625d,false),
-                TabRecord.of(1766362285205L,101,null,3.03125f,4.5d,true),
-                TabRecord.of(1766362285195L,112,"GET /logs/test",null,6.0625d,false),
-                TabRecord.of(1766362285197L,112,"GET /logs/test",7.25f,null,true),
-                TabRecord.of(1766362285202L,108,"GET /logs/test",9.0625f,10.03125d,null)
-                );
+                TabRecord.of(null, 104, "GET /logs/test", 1.5f, 3.25d, true),
+                TabRecord.of(1766362285191L, null, "PUT /logs/test", 2.125f, 6.0625d, false),
+                TabRecord.of(1766362285205L, 101, null, 3.03125f, 4.5d, true),
+                TabRecord.of(1766362285195L, 112, "GET /logs/test", null, 6.0625d, false),
+                TabRecord.of(1766362285197L, 112, "GET /logs/test", 7.25f, null, true),
+                TabRecord.of(1766362285202L, 108, "GET /logs/test", 9.0625f, 10.03125d, null));
         assertEquals(actualRows, expectedRows);
       }
 
       // and the source CSV file and the result CSV file contents are functionally the same.
       assertContentEquals(destCsvFile.content(), content, "Reconstituted CSV data");
     }
+  }
+
+  @Test
+  public void testReadWriteWithDefaults() throws IOException {
+    // Given a CSV file with null values,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        ,104,GET /logs/test,1.5,3.25,true
+        1766362285191,,PUT /logs/test,2.125,6.0625,false
+        1766362285205,101,,3.03125,4.5,true
+        1766362285195,112,GET /logs/test,,6.0625,false
+        1766362285197,112,GET /logs/test,7.25,,true
+        1766362285202,108,GET /logs/test,9.0625,10.03125,
+        """;
+
+    // and a schema that allows for default values for the columns with nulls,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.LongF.optional("exampleLong", 1L),
+            TabField.IntF.optional("exampleInt", 2),
+            TabField.StrF.optional("exampleString", "value"),
+            TabField.FloatF.optional("exampleFloat", 3.5f),
+            TabField.DoubleF.optional("exampleDouble", 4.25d),
+            TabField.BooleanF.optional("exampleBoolean", true));
+
+    try (TempContent sourceFile = TempContent.of(content);
+        TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
+
+      // When it is loaded as tabular data with the schema,
+      try (TabStream records = Csvs.records(sourceFile.path(), schema)) {
+        List<TabRecord> actualRows = records.stream().toList();
+
+        // and written back into a CSV file,
+        Csvs.write(destCsvFile.path(), records.schema(), actualRows.stream());
+
+        // Then the data should be null when not provided in the source,
+        List<TabRecord> expectedRows =
+            List.of(
+                TabRecord.of(1L, 104, "GET /logs/test", 1.5f, 3.25d, true),
+                TabRecord.of(1766362285191L, 2, "PUT /logs/test", 2.125f, 6.0625d, false),
+                TabRecord.of(1766362285205L, 101, "value", 3.03125f, 4.5d, true),
+                TabRecord.of(1766362285195L, 112, "GET /logs/test", 3.5f, 6.0625d, false),
+                TabRecord.of(1766362285197L, 112, "GET /logs/test", 7.25f, 4.25d, true),
+                TabRecord.of(1766362285202L, 108, "GET /logs/test", 9.0625f, 10.03125d, true));
+        assertEquals(actualRows, expectedRows);
+      }
+
+      // and the resulting CSV file is written with the default values in place of the nulls, all
+      // other values are the same.
+      String expectedContent =
+          """
+          exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+          1,104,GET /logs/test,1.5,3.25,true
+          1766362285191,2,PUT /logs/test,2.125,6.0625,false
+          1766362285205,101,value,3.03125,4.5,true
+          1766362285195,112,GET /logs/test,3.5,6.0625,false
+          1766362285197,112,GET /logs/test,7.25,4.25,true
+          1766362285202,108,GET /logs/test,9.0625,10.03125,true
+          """;
+
+      assertContentEquals(destCsvFile.content(), expectedContent, "Reconstituted CSV data");
+    }
+  }
+
+  @Test(dataProvider = "requireds")
+  public void testReadWriteRequired(String content, String message) throws IOException {
+    // Given a CSV file with null values,
+    try (TempContent sourceFile = TempContent.of(content);
+        TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
+
+      // and a schema that requires a value instead of null,
+      TabSchema schema =
+          TabSchema.of(
+              TabField.LongF.required("exampleLong"),
+              TabField.IntF.required("exampleInt"),
+              TabField.StrF.required("exampleString"),
+              TabField.FloatF.required("exampleFloat"),
+              TabField.DoubleF.required("exampleDouble"),
+              TabField.BooleanF.required("exampleBoolean"));
+
+      // When it is loaded as tabular data with the schema and read,
+      try (TabStream records = Csvs.records(sourceFile.path(), schema)) {
+        records.stream().toList();
+        fail("Should fail due to encountering a null value with: " + message);
+      } catch (IllegalArgumentException ex) {
+        // Then an exception should be thrown due to failed constraint.
+      }
+    }
+  }
+
+  @DataProvider(name = "requireds")
+  public Object[][] requireds() {
+    return new Object[][] {
+      {
+        """
+        exampleLong,str
+        1,a
+        ,b
+        """,
+        "Required: long"
+      },
+      {
+        """
+        exampleInt,str
+        1,a
+        ,b
+        """,
+        "Required: int"
+      },
+      {
+        """
+        exampleString,str
+        value,a
+        ,b
+        """,
+        "Required: string"
+      },
+      {
+        """
+        exampleFloat,str
+        1.5,a
+        ,b
+        """,
+        "Required: float"
+      },
+      {
+        """
+        exampleDouble,str
+        1.5,a
+        ,b
+        """,
+        "Required: double"
+      },
+      {
+        """
+        exampleBoolean,str
+        true,a
+        false,b
+        ,c
+        """,
+        "Required: boolean"
+      }
+    };
   }
 
   @Test

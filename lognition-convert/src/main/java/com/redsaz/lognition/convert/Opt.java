@@ -19,14 +19,34 @@ public sealed interface Opt<T> permits Opt.DefVal, Opt.Null, Opt.Required {
   Opt.Null<Object> NULL = new Null<>();
   Opt.Required<Object> REQUIRED = new Required<>();
 
+  /**
+   * Returns a required, null, or defval opt depending on the params
+   *
+   * @param isOptional if true, then the result is either a null or defval. If false, result is
+   *     required.
+   * @param valueIfOptional If isOptional is true, then use this for the default value. May be null.
+   * @return Required, Null, or DefVal.
+   */
   @SuppressWarnings("unchecked")
   static <U> Opt<U> of(boolean isOptional, U valueIfOptional) {
     if (isOptional) {
-      if (valueIfOptional == null) {
-        return (Opt.Null<U>) NULL;
-      }
+      return of(valueIfOptional);
     }
     return (Required<U>) REQUIRED;
+  }
+
+  /**
+   * Returns either a default value opt or a null opt.
+   *
+   * @param defVal the default value, can be null.
+   * @return a DefVal or a Null opt, depending on the param value.
+   */
+  @SuppressWarnings("unchecked")
+  static <U> Opt<U> of(U defVal) {
+    if (defVal == null) {
+      return (Opt.Null<U>) NULL;
+    }
+    return new DefVal<>(defVal);
   }
 
   @SuppressWarnings("unchecked")
