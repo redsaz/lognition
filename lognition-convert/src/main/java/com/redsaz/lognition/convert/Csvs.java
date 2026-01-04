@@ -59,10 +59,10 @@ public class Csvs {
 
     List<String> headers = headersGetter.headers();
     List<String> givenFields = partialSchema.fields().stream().map(TabField::name).toList();
-    List<TabField.String> unlistedFields =
+    List<TabField.StrF> unlistedFields =
         headers.stream()
             .filter(Predicate.not(givenFields::contains))
-            .map(TabField.String::new)
+            .map(TabField.StrF::optional)
             .toList();
     TabSchema resultSchema;
     if (unlistedFields.isEmpty()) {
@@ -86,7 +86,7 @@ public class Csvs {
                 })
             .toArray();
     // Each converter is how to convert a string into the field type per position
-    List<Function<String, Object>> fieldConverters =
+    List<? extends Function<String, ?>> fieldConverters =
         IntStream.range(0, outPosToInPos.length)
             .mapToObj(
                 i -> {
@@ -96,7 +96,7 @@ public class Csvs {
     // Actual converter of a CSV row of Strings to a record with values converted to correct types
     Function<String[], TabRecord> toTabRecord =
         row -> {
-          List<Object> values =
+          List<?> values =
               IntStream.range(0, outPosToInPos.length)
                   .mapToObj(
                       i -> {
@@ -135,7 +135,7 @@ public class Csvs {
     HeadersGetter headersGetter = new HeadersGetter();
     iter.tryAdvance(headersGetter.fetcher());
     List<String> headers = headersGetter.headers();
-    List<? extends TabField> fields = headers.stream().map(TabField.String::new).toList();
+    List<? extends TabField<?>> fields = headers.stream().map(TabField.StrF::optional).toList();
     TabSchema schema = new TabSchema(fields);
 
     Function<String[], TabRecord> toTabRecord =
@@ -177,11 +177,11 @@ public class Csvs {
   }
 
   private static Function<TabRecord, TabRecord> createCsvConverter(TabSchema schema) {
-    List<Function<String, Object>> valConvs =
+    List<? extends Function<String, ?>> valConvs =
         schema.fields().stream().map(Csvs::valConverter).toList();
     int size = valConvs.size();
     return (TabRecord sourceRow) -> {
-      List<Object> destVals =
+      List<?> destVals =
           IntStream.range(0, size)
               .mapToObj(i -> valConvs.get(i).apply((String) sourceRow.get(i)))
               .toList();
@@ -189,14 +189,23 @@ public class Csvs {
     };
   }
 
-  private static Function<String, Object> valConverter(TabField field) {
+  private static <U> Function<String, U> valConverter(TabField<U> field) {
     return switch (field) {
-      case TabField.String f -> (String val) -> val;
-      case TabField.Int f -> Integer::valueOf;
-      case TabField.Long f -> Long::valueOf;
-      case TabField.Float f -> Float::valueOf;
-      case TabField.Double f -> Double::valueOf;
-      case TabField.Boolean f -> Boolean::valueOf;
+      case TabField.StrF f -> (String val) -> (U) val;
+      case TabField.IntF f -> (Function<String, U>) orNuller(Integer::valueOf);
+      case TabField.LongF f -> (Function<String, U>) orNuller(Long::valueOf);
+      case TabField.FloatF f -> (Function<String, U>) orNuller(Float::valueOf);
+      case TabField.DoubleF f -> (Function<String, U>) orNuller(Double::valueOf);
+      case TabField.BooleanF f -> (Function<String, U>) orNuller(Boolean::valueOf);
+    };
+  }
+
+  private static <U> Function<String, U> orNuller(Function<String, U> valueOfer) {
+    return source -> {
+      if (source == null) {
+        return null;
+      }
+      return valueOfer.apply(source);
     };
   }
 

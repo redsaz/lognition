@@ -1,19 +1,43 @@
 package com.redsaz.lognition.convert;
 
+import java.util.Optional;
 import org.apache.avro.Schema;
 
-public sealed interface TabField
-    permits TabField.String,
-        TabField.Int,
-        TabField.Long,
-        TabField.Float,
-        TabField.Double,
-        TabField.Boolean {
+public sealed interface TabField<T>
+    permits TabField.StrF,
+        TabField.IntF,
+        TabField.LongF,
+        TabField.FloatF,
+        TabField.DoubleF,
+        TabField.BooleanF {
 
-  java.lang.String name();
+  String name();
 
-  static TabField fromAvro(Schema.Field field) {
-    return switch (field.schema().getType()) {
+  /**
+   * @return true if the value does not have to be provided, and the opt value can be used.
+   */
+  default boolean isOptional() {
+    return opt().isOptional();
+  }
+
+  /** Opposite of isOptional. */
+  default boolean isRequired() {
+    return opt().isRequired();
+  }
+
+  Opt<T> opt();
+
+  /**
+   * @return the default value to use if one was not provided from a source. May be null if required
+   *     or if the default value is null.
+   */
+  default Object defVal() {
+    return opt().defVal();
+  }
+
+  static <U> TabField<U> fromAvro(Schema.Field field) {
+
+    return (TabField<U>) switch (field.schema().getType()) {
       case RECORD ->
           throw new IllegalArgumentException(
               "Tabular values (\"" + field.name() + "\") cannot be records.");
@@ -33,30 +57,54 @@ public sealed interface TabField
       case FIXED ->
           throw new IllegalArgumentException(
               "Tabular values (\"" + field.name() + "\") cannot be fixeds.");
-      case STRING -> new TabField.String(field.name());
+      case STRING -> new StrF(field.name(), Opt.of(field.hasDefaultValue(), (String) field.defaultVal()));
       case BYTES ->
           throw new IllegalArgumentException(
               "Tabular values (\"" + field.name() + "\") cannot be bytes.");
-      case INT -> new TabField.Int(field.name());
-      case LONG -> new TabField.Long(field.name());
-      case FLOAT -> new TabField.Float(field.name());
-      case DOUBLE -> new TabField.Double(field.name());
-      case BOOLEAN -> new TabField.Boolean(field.name());
+      case INT -> new IntF(field.name(), Opt.of(field.hasDefaultValue(), (Integer) field.defaultVal()));
+      case LONG -> new LongF(field.name(), Opt.of(field.hasDefaultValue(), (Long) field.defaultVal()));
+      case FLOAT -> new FloatF(field.name(), Opt.of(field.hasDefaultValue(), (Float) field.defaultVal()));
+      case DOUBLE -> new DoubleF(field.name(), Opt.of(field.hasDefaultValue(), (Double) field.defaultVal()));
+      case BOOLEAN -> new BooleanF(field.name(), Opt.of(field.hasDefaultValue(), (Boolean) field.defaultVal()));
       case NULL ->
           throw new IllegalArgumentException(
               "Tabular values (\"" + field.name() + "\") cannot be nulls (alone).");
     };
   }
 
-  record String(java.lang.String name) implements TabField {}
+  record StrF(String name, Opt<String> opt) implements TabField<String> {
+    public static StrF optional(String name) {
+      return new StrF(name, Opt.nullOpt());
+    }
+  }
 
-  record Int(java.lang.String name) implements TabField {}
+  record IntF(String name, Opt<Integer> opt) implements TabField<Integer> {
+    public static IntF optional(String name) {
+      return new IntF(name, Opt.nullOpt());
+    }
+  }
 
-  record Long(java.lang.String name) implements TabField {}
+  record LongF(String name, Opt<Long> opt) implements TabField<Long> {
+    public static LongF optional(String name) {
+      return new LongF(name, Opt.nullOpt());
+    }
+  }
 
-  record Float(java.lang.String name) implements TabField {}
+  record FloatF(String name, Opt<Float> opt) implements TabField<Float> {
+    public static FloatF optional(String name) {
+      return new FloatF(name, Opt.nullOpt());
+    }
+  }
 
-  record Double(java.lang.String name) implements TabField {}
+  record DoubleF(String name, Opt<Double> opt) implements TabField<Double> {
+    public static DoubleF optional(String name) {
+      return new DoubleF(name, Opt.nullOpt());
+    }
+  }
 
-  record Boolean(java.lang.String name) implements TabField {}
+  record BooleanF(String name, Opt<Boolean> opt) implements TabField<Boolean> {
+    public static BooleanF optional(String name) {
+      return new BooleanF(name, Opt.nullOpt());
+    }
+  }
 }

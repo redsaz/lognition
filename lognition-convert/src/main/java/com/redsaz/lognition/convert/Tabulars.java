@@ -138,12 +138,12 @@ public class Tabulars {
             field -> {
               builder.name(field.name());
               switch (field) {
-                case TabField.String f -> builder.requiredString(field.name());
-                case TabField.Int f -> builder.requiredInt(field.name());
-                case TabField.Long f -> builder.requiredLong(field.name());
-                case TabField.Float f -> builder.requiredFloat(field.name());
-                case TabField.Double f -> builder.requiredDouble(field.name());
-                case TabField.Boolean f -> builder.requiredBoolean(field.name());
+                case TabField.StrF f -> builder.requiredString(field.name());
+                case TabField.IntF f -> builder.requiredInt(field.name());
+                case TabField.LongF f -> builder.requiredLong(field.name());
+                case TabField.FloatF f -> builder.requiredFloat(field.name());
+                case TabField.DoubleF f -> builder.requiredDouble(field.name());
+                case TabField.BooleanF f -> builder.requiredBoolean(field.name());
               }
             });
     return builder.endRecord();
