@@ -1,5 +1,8 @@
 package com.redsaz.lognition.convert;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import org.apache.avro.Schema;
 
 public sealed interface TabField<T>
@@ -8,7 +11,8 @@ public sealed interface TabField<T>
         TabField.LongF,
         TabField.FloatF,
         TabField.DoubleF,
-        TabField.BooleanF {
+        TabField.BooleanF,
+        TabField.UnionF {
 
   String name();
 
@@ -51,8 +55,26 @@ public sealed interface TabField<T>
               throw new IllegalArgumentException(
                   "Tabular values (\"" + field.name() + "\") cannot be maps.");
           case UNION -> {
-            throw new IllegalArgumentException(
-                "Tabular values (\"" + field.name() + "\") cannot be unions.");
+            List<Class<?>> types =
+                field.schema().getTypes().stream()
+                    .map(
+                        t ->
+                            switch (t.getType()) {
+                              case STRING -> (Class<?>) String.class;
+                              case INT -> (Class<?>) Integer.class;
+                              case LONG -> (Class<?>) Long.class;
+                              case FLOAT -> (Class<?>) Float.class;
+                              case DOUBLE -> (Class<?>) Double.class;
+                              case BOOLEAN -> (Class<?>) Boolean.class;
+                              case NULL -> null;
+                              default ->
+                                  throw new IllegalArgumentException(
+                                      "Tabular union cannot have type \"" + t.getType() + "\".");
+                            })
+                    .filter(Objects::nonNull)
+                    .toList();
+            yield new UnionF(
+                field.name(), Opt.of(field.hasDefaultValue(), field.defaultVal()), types);
           }
           case FIXED ->
               throw new IllegalArgumentException(
@@ -161,6 +183,20 @@ public sealed interface TabField<T>
 
     public static BooleanF required(String name) {
       return new BooleanF(name, Opt.required());
+    }
+  }
+
+  record UnionF(String name, Opt<Object> opt, List<Class<?>> types) implements TabField<Object> {
+    public static UnionF optional(String name, Class<?>... types) {
+      return new UnionF(name, Opt.nullOpt(), List.copyOf(Arrays.asList(types)));
+    }
+
+    public static UnionF optional(String name, Boolean defVal, Class<?>... types) {
+      return new UnionF(name, Opt.of(defVal), List.copyOf(Arrays.asList(types)));
+    }
+
+    public static UnionF required(String name, Class<?>... types) {
+      return new UnionF(name, Opt.required(), List.copyOf(Arrays.asList(types)));
     }
   }
 }

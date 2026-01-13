@@ -144,9 +144,31 @@ public class Tabulars {
                 case TabField.FloatF f -> builder.requiredFloat(field.name());
                 case TabField.DoubleF f -> builder.requiredDouble(field.name());
                 case TabField.BooleanF f -> builder.requiredBoolean(field.name());
+                case TabField.UnionF f -> addUnion(builder, f);
               }
             });
     return builder.endRecord();
+  }
+
+  private static SchemaBuilder.FieldAssembler<Schema> addUnion(
+      SchemaBuilder.FieldAssembler<Schema> builder, TabField.UnionF f) {
+    SchemaBuilder.UnionAccumulator<SchemaBuilder.NullDefault<Schema>> b =
+        builder.name(f.name()).type().unionOf().nullType();
+    for (Class<?> c : f.types()) {
+      b =
+          switch (c.getName()) {
+            case "java.lang.Integer" -> b.and().intType();
+            case "java.lang.Long" -> b.and().longType();
+            case "java.lang.Float" -> b.and().floatType();
+            case "java.lang.Double" -> b.and().doubleType();
+            case "java.lang.Boolean" -> b.and().booleanType();
+            case "java.lang.String" -> b.and().stringType();
+            default ->
+                throw new IllegalArgumentException(
+                    "Cannot handle this type in tabular data: " + c.getName());
+          };
+    }
+    return b.endUnion().nullDefault();
   }
 
   private static Runnable uncheckedCloser(Closeable closeable) {

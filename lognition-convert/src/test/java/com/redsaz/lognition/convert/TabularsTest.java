@@ -1,8 +1,10 @@
 package com.redsaz.lognition.convert;
 
 import static com.redsaz.lognition.convert.ConverterBaseTest.assertContentEquals;
+import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.List;
 import org.testng.annotations.Test;
 
 public class TabularsTest {
@@ -58,6 +60,52 @@ public class TabularsTest {
       // perhaps.
       // Csvs should stay in convert, but get rid of CsvStream. Instead, Csvs should output a
       // TabStream.
+    }
+  }
+
+  @Test
+  public void testReadWriteUnion() throws IOException {
+    // Given a CSV file with no null/empty values with various union combos,
+    String content =
+        """
+        exampleLongString,exampleIntString,exampleFloatString,exampleDoubleString,exampleBooleanString
+        strval1,2,3.5,4.25,true
+        1,strval2,4.5,5.25,false
+        1,3,strval3,6.25,true
+        1,4,5.5,strval4,false
+        1,4,5.5,7.25,strval5
+        """;
+
+    // and a schema that accounts for every column,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
+            TabField.UnionF.required("exampleIntString", Integer.class, String.class),
+            TabField.UnionF.required("exampleFloatString", Float.class, String.class),
+            TabField.UnionF.required("exampleDoubleString", Double.class, String.class),
+            TabField.UnionF.required("exampleBooleanString", Boolean.class, String.class));
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream csv = Csvs.records(sourceFile.path(), schema);
+        TempContent destAvroFile = TempContent.withName("converted", ".avro");
+        TempContent destCsvFile = TempContent.withName("exported", ".csv")) {
+
+      // and written to an avro file,
+      Tabulars.write(destAvroFile.path(), csv.schema(), csv.stream());
+
+      // and read from the avro file,
+      try (TabStream avro = Tabulars.records(destAvroFile.path())) {
+        List<TabRecord> actualRows = avro.stream().toList();
+        List<TabRecord> expectedRows =
+            List.of(
+                TabRecord.of("strval1", 2, 3.5f, 4.25d, true),
+                TabRecord.of(1L, "strval2", 4.5f, 5.25d, false),
+                TabRecord.of(1L, 3, "strval3", 6.25d, true),
+                TabRecord.of(1L, 4, 5.5f, "strval4", false),
+                TabRecord.of(1L, 4, 5.5f, 7.25d, "strval5"));
+        assertEquals(actualRows, expectedRows);
+      }
     }
   }
 

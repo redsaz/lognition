@@ -13,7 +13,7 @@ import org.testng.annotations.Test;
 public class CsvsTest {
 
   @Test
-  public void testReadWrite() throws IOException {
+  public void testReadWriteSchemaless() throws IOException {
     // This JTL data was (mostly) taken from a real 10-thread jmeter run.
     String content =
         """
@@ -35,7 +35,7 @@ public class CsvsTest {
         """;
 
     // Given a normal, everyday CSV file (not necessarily a Jmeter JTL or Loady log file),
-    // When the source CSV is read in and written back out,
+    // When the source CSV is read in and written back out without a provided schema,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
         TabStream records = Csvs.records(sourceFile.path())) {
@@ -376,6 +376,47 @@ public class CsvsTest {
         "Required: boolean"
       }
     };
+  }
+
+  @Test
+  public void testReadUnionWithSchema() throws IOException {
+    // Given a CSV file with no null/empty values with various union combos,
+    String content =
+        """
+        exampleLongString,exampleIntString,exampleFloatString,exampleDoubleString,exampleBooleanString
+        strval1,2,3.5,4.25,true
+        1,strval2,4.5,5.25,false
+        1,3,strval3,6.25,true
+        1,4,5.5,strval4,false
+        1,4,5.5,7.25,strval5
+        """;
+
+    // and a schema that accounts for every column,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
+            TabField.UnionF.required("exampleIntString", Integer.class, String.class),
+            TabField.UnionF.required("exampleFloatString", Float.class, String.class),
+            TabField.UnionF.required("exampleDoubleString", Double.class, String.class),
+            TabField.UnionF.required("exampleBooleanString", Boolean.class, String.class));
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of("strval1", 2, 3.5f, 4.25d, true),
+              TabRecord.of(1L, "strval2", 4.5f, 5.25d, false),
+              TabRecord.of(1L, 3, "strval3", 6.25d, true),
+              TabRecord.of(1L, 4, 5.5f, "strval4", false),
+              TabRecord.of(1L, 4, 5.5f, 7.25d, "strval5"));
+      assertEquals(actualRows, expectedRows);
+    }
   }
 
   @Test

@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -197,6 +198,7 @@ public class Csvs {
       case TabField.FloatF f -> (Function<String, U>) orOpt(Float::valueOf, f);
       case TabField.DoubleF f -> (Function<String, U>) orOpt(Double::valueOf, f);
       case TabField.BooleanF f -> (Function<String, U>) orOpt(Boolean::valueOf, f);
+      case TabField.UnionF f -> (Function<String, U>) orOpt(unionFromCsv(f), f);
     };
   }
 
@@ -220,6 +222,140 @@ public class Csvs {
     };
   }
 
+  /**
+   * CSV files don't really have types, per se, so this does a best guess fit. The order of types
+   * specified in the union do not matter. For the "worst case" union that could be one of any
+   * String, long, double, int, float, and boolean, the priorities and rules from highest to lowest
+   * are:
+   *
+   * <ul>
+   *   <li>int - if no E and no decimal point and within INT_MIN and INT_MAX
+   *   <li>long - if no E and no decimal point and within LONG_MIN and LONG_MAX
+   *   <li>double - if an E and/or decimal point
+   *   <li>float - if an E and/or decimal point (yes this means if union has flaot and double,
+   *       double always wins)
+   *   <li>boolean - if case-insensitive "true" or "false"
+   *   <li>string - when nothing else matched
+   * </ul>
+   *
+   * @param union The union containing the types to try to deserialize.
+   * @return The value, as a type in the union.
+   */
+  private static <U> Function<String, U> unionFromCsv(TabField.UnionF union) {
+    boolean hasInt = union.types().contains(Integer.class);
+    boolean hasLong = union.types().contains(Long.class);
+    boolean hasDouble = union.types().contains(Double.class);
+    boolean hasFloat = union.types().contains(Float.class);
+    boolean hasBoolean = union.types().contains(Boolean.class);
+    boolean hasString = union.types().contains(String.class);
+    Function<String, Object> iGetter;
+    if (hasInt && hasLong) {
+      iGetter =
+          source -> {
+            if (!integery(source)) {
+              return null;
+            }
+            try {
+              long val = Long.valueOf(source);
+              if (hasInt && val >= Integer.MIN_VALUE && val <= Integer.MAX_VALUE) {
+                return (int) val;
+              }
+              return val;
+            } catch (NumberFormatException ex) {
+              return null;
+            }
+          };
+    } else if (hasLong) {
+      iGetter =
+          source -> {
+            if (!integery(source)) {
+              return null;
+            }
+            try {
+              return Long.valueOf(source);
+            } catch (NumberFormatException ex) {
+              return null;
+            }
+          };
+    } else if (hasInt) {
+      iGetter =
+          source -> {
+            if (!integery(source)) {
+              return null;
+            }
+            try {
+              return Integer.valueOf(source);
+            } catch (NumberFormatException ex) {
+              return null;
+            }
+          };
+    } else {
+      iGetter = null;
+    }
+    Function<String, Object> fGetter;
+    if (hasDouble) {
+      fGetter =
+          source -> {
+            if (!floatish(source)) {
+              return null;
+            }
+            try {
+              return Double.valueOf(source);
+            } catch (NumberFormatException ex) {
+              return null;
+            }
+          };
+    } else if (hasFloat) {
+      fGetter =
+          source -> {
+            if (!floatish(source)) {
+              return null;
+            }
+            try {
+              return Float.valueOf(source);
+            } catch (NumberFormatException ex) {
+              return null;
+            }
+          };
+    } else {
+      fGetter = null;
+    }
+    Function<String, Boolean> bGetter;
+    if (hasBoolean) {
+      bGetter =
+          source -> {
+            // This looks like it could be simplified, but we
+            // need it to only deal with "tRuE" and "FaLsE" strings
+            // (Boolean.parseBoolean(str) will treat "fAlSe", "banana", "yes", "no", "maybe", etc
+            // all as false. We only want the "fAlSe" case to be treated as false, skip the rest)
+            if (Boolean.parseBoolean(source)) {
+              return true;
+            } else if ("false".equalsIgnoreCase(source)) {
+              return false;
+            }
+            return null;
+          };
+    } else {
+      bGetter = null;
+    }
+    Function<String, String> sGetter;
+    if (hasString) {
+      sGetter = Function.identity();
+    } else {
+      sGetter = null;
+    }
+    List<Function<String, ? extends Object>> getters =
+        Stream.of(iGetter, fGetter, bGetter, sGetter).filter(Objects::nonNull).toList();
+
+    return (String source) ->
+        (U)
+            getters.stream()
+                .map(getter -> getter.apply(source))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+  }
+
   private static Runnable uncheckedCloser(Closeable closeable) {
     return () -> {
       try {
@@ -239,6 +375,55 @@ public class Csvs {
       return null;
     }
     return obj.toString();
+  }
+
+  /**
+   * @return true if a string *may* be able to be safely interpreted as a long/int, false if not.
+   */
+  private static boolean integery(String str) {
+    if (str == null) {
+      return false;
+    }
+    int len = str.length();
+    int start = 0;
+    char c = str.charAt(start);
+    if (c == '+' || c == '-') {
+      ++start;
+    }
+    for (int i = start; i < len; ++i) {
+      c = str.charAt(i);
+      if (!Character.isDigit(c)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @return true if a string *may* be able to be safely interpreted as a float/double (including
+   *     NaN), false if not.
+   */
+  private static boolean floatish(String str) {
+    // This method is purposely simplistic. It'll reject expected stuff like "bob", "", null, "NAN",
+    // "nan" from being considered floaty,
+    // and will allow "1", "1.", ".1", "-1", "+1", "1E1", "NaN" as floaty, but MAY allow unexpected
+    // strings like "..1..", "--1", "1-+", "1EE-1.2-" as being floaty, so try-catch is still needed.
+    if (str == null || str.isBlank()) {
+      return false;
+    } else if ("NaN".equals(str)) {
+      return true;
+    }
+    int len = str.length();
+    for (int i = 0; i < len; ++i) {
+      char c = str.charAt(i);
+      if (c >= '0' && c <= '9') {
+        continue;
+      } else if (c == 'e' || c == 'E' || c == '.' || c == '-' || c == '+') {
+        continue;
+      }
+      return false;
+    }
+    return true;
   }
 
   private record CsvTabStream(TabSchema schema, Stream<TabRecord> stream) implements TabStream {
