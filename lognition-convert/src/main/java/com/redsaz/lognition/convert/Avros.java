@@ -25,18 +25,15 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 
 /**
- * Utility for reading and writing tabular data.
- *
- * <p>There's all sorts of tabular data formats, CSV/TSV for example, or JSON (If an array of
- * objects with no inner objects) / JSONL (If each object contains no inner object),
+ * Utility for reading and writing tabular data from Avro files.
  */
-public class Tabulars {
+public class Avros {
 
   // Do not instantiate utility classes
-  private Tabulars() {}
+  private Avros() {}
 
   /**
-   * Returns a stream to get tabular records from a file.
+   * Returns a stream to get tabular records from an avro file.
    *
    * @apiNote Similar to {@link java.nio.file.Files#lines(Path)}, this should be used within a
    *     try-with-resources statement or similar to ensure the stream's file is closed promptly.
@@ -82,25 +79,14 @@ public class Tabulars {
     return new ReaderTabStream(schema, stream);
   }
 
-  //  /**
-  //   * Given a source TabStream of TabRecords of all TabVals, and a destination schema, creates a
-  //   * TabStream that is compliant with the destination schema.
-  //   *
-  //   * @param sourceSchema the names of each field as they appear in each row of the row stream
-  //   * @param sourceRowStream the stream of rows, each row with the same number of fields as the
-  // count
-  //   *     of fieldNames
-  //   * @param destSchema the schema of the destination tabular data stream.
-  //   * @return a tabular data stream using destSchema.
-  //   */
-  //  public static TabStream convert(
-  //      TabSchema sourceSchema, Stream<TabRecord> sourceRowStream, TabSchema destSchema) {
-  //    // TODO This seems like we could remove Csvs and just have Tabulars, right?
-  //    Function<TabRecord, TabRecord> converter = createCsvConverter(destSchema);
-  //    Stream<TabRecord> tabRowStream = sourceRowStream.map(converter);
-  //    return new ReaderTabStream(destSchema, tabRowStream);
-  //  }
-  //
+  /**
+   * Writes a tab schema to an Avro file.
+   * @param dest The Avro file to write to
+   * @param schema The schema used by the records
+   * @param rows The records
+   * @return The SHA256 hash of the resulting file.
+   * @throws IOException if an error while writing the file.
+   */
   public static String write(Path dest, TabSchema schema, Stream<TabRecord> rows)
       throws IOException {
     try (HashingOutputStream hos =

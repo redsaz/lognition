@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import org.testng.annotations.Test;
 
-public class TabularsTest {
+public class AvrosTest {
 
   @Test
   public void testReadWriteSimple() throws IOException {
@@ -45,10 +45,10 @@ public class TabularsTest {
         TempContent destCsvFile = TempContent.withName("exported", ".csv")) {
 
       // and written to an avro file,
-      Tabulars.write(destAvroFile.path(), csv.schema(), csv.stream());
+      Avros.write(destAvroFile.path(), csv.schema(), csv.stream());
 
       // and read from the avro file,
-      try (TabStream avro = Tabulars.records(destAvroFile.path())) {
+      try (TabStream avro = Avros.records(destAvroFile.path())) {
         // and written back into a CSV file,
         Csvs.write(destCsvFile.path(), avro.schema(), avro.stream());
       }
@@ -92,10 +92,10 @@ public class TabularsTest {
         TempContent destCsvFile = TempContent.withName("exported", ".csv")) {
 
       // and written to an avro file,
-      Tabulars.write(destAvroFile.path(), csv.schema(), csv.stream());
+      Avros.write(destAvroFile.path(), csv.schema(), csv.stream());
 
       // and read from the avro file,
-      try (TabStream avro = Tabulars.records(destAvroFile.path())) {
+      try (TabStream avro = Avros.records(destAvroFile.path())) {
         List<TabRecord> actualRows = avro.stream().toList();
         List<TabRecord> expectedRows =
             List.of(
