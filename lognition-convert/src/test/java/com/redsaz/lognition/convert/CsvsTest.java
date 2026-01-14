@@ -394,7 +394,7 @@ public class CsvsTest {
     // and a schema that accounts for every column,
     TabSchema schema =
         TabSchema.of(
-            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
+            TabField.UnionF.required("exampleLongString", Long.class, String.class),
             TabField.UnionF.required("exampleIntString", Integer.class, String.class),
             TabField.UnionF.required("exampleFloatString", Float.class, String.class),
             TabField.UnionF.required("exampleDoubleString", Double.class, String.class),
@@ -415,6 +415,90 @@ public class CsvsTest {
               TabRecord.of(1L, 3, "strval3", 6.25d, true),
               TabRecord.of(1L, 4, 5.5f, "strval4", false),
               TabRecord.of(1L, 4, 5.5f, 7.25d, "strval5"));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test
+  public void testReadUnionNullsWithSchema() throws IOException {
+    // Given a CSV file with no null/empty values with various union combos,
+    String content =
+        """
+        exampleLongString,exampleIntString,exampleFloatString,exampleDoubleString,exampleBooleanString
+        strval1,2,3.5,4.25,
+        ,strval2,4.5,5.25,false
+        1,,strval3,6.25,true
+        1,4,,strval4,false
+        1,4,5.5,,strval5
+        """;
+
+    // and a schema that accounts for every column,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
+            TabField.UnionF.optional("exampleIntString", Integer.class, String.class),
+            TabField.UnionF.optional("exampleFloatString", Float.class, String.class),
+            TabField.UnionF.optional("exampleDoubleString", Double.class, String.class),
+            TabField.UnionF.optional("exampleBooleanString", Boolean.class, String.class));
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of("strval1", 2, 3.5f, 4.25d, null),
+              TabRecord.of(null, "strval2", 4.5f, 5.25d, false),
+              TabRecord.of(1L, null, "strval3", 6.25d, true),
+              TabRecord.of(1L, 4, null, "strval4", false),
+              TabRecord.of(1L, 4, 5.5f, null, "strval5"));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test
+  public void testReadUnionDefaultsWithSchema() throws IOException {
+    // Given a CSV file with no null/empty values with various union combos,
+    String content =
+        """
+        exampleLongString,exampleIntString,exampleFloatString,exampleDoubleString,exampleBooleanString
+        strval1,2,3.5,4.25,
+        ,strval2,4.5,5.25,false
+        1,,strval3,6.25,true
+        1,4,,strval4,false
+        1,4,5.5,,strval5
+        """;
+
+    // and a schema that accounts for every column,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.UnionF.optional("exampleLongString", "test-def1", Long.class, String.class),
+            TabField.UnionF.optional("exampleIntString", "test-def2", Integer.class, String.class),
+            TabField.UnionF.optional("exampleFloatString", "test-def3", Float.class, String.class),
+            TabField.UnionF.optional(
+                "exampleDoubleString", "test-def4", Double.class, String.class),
+            TabField.UnionF.optional(
+                "exampleBooleanString", "test-def5", Boolean.class, String.class));
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of("strval1", 2, 3.5f, 4.25d, "test-def5"),
+              TabRecord.of("test-def1", "strval2", 4.5f, 5.25d, false),
+              TabRecord.of(1L, "test-def2", "strval3", 6.25d, true),
+              TabRecord.of(1L, 4, "test-def3", "strval4", false),
+              TabRecord.of(1L, 4, 5.5f, "test-def4", "strval5"));
       assertEquals(actualRows, expectedRows);
     }
   }

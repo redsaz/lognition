@@ -104,6 +104,7 @@ public class TabularsTest {
                 TabRecord.of(1L, 3, "strval3", 6.25d, true),
                 TabRecord.of(1L, 4, 5.5f, "strval4", false),
                 TabRecord.of(1L, 4, 5.5f, 7.25d, "strval5"));
+        // Then the results have the expected values.
         assertEquals(actualRows, expectedRows);
       }
     }

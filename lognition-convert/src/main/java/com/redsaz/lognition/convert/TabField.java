@@ -191,7 +191,7 @@ public sealed interface TabField<T>
       return new UnionF(name, Opt.nullOpt(), List.copyOf(Arrays.asList(types)));
     }
 
-    public static UnionF optional(String name, Boolean defVal, Class<?>... types) {
+    public static UnionF optional(String name, Object defVal, Class<?>... types) {
       return new UnionF(name, Opt.of(defVal), List.copyOf(Arrays.asList(types)));
     }
 
