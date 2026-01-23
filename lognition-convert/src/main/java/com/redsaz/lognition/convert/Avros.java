@@ -24,9 +24,7 @@ import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 
-/**
- * Utility for reading and writing tabular data from Avro files.
- */
+/** Utility for reading and writing tabular data from Avro files. */
 public class Avros {
 
   // Do not instantiate utility classes
@@ -81,8 +79,9 @@ public class Avros {
 
   /**
    * Writes a tab schema to an Avro file.
+   *
    * @param dest The Avro file to write to
-   * @param schema The schema used by the records
+   * @param schema The schema for reading and writing
    * @param rows The records
    * @return The SHA256 hash of the resulting file.
    * @throws IOException if an error while writing the file.
@@ -124,12 +123,72 @@ public class Avros {
             field -> {
               builder.name(field.name());
               switch (field) {
-                case TabField.StrF f -> builder.requiredString(field.name());
-                case TabField.IntF f -> builder.requiredInt(field.name());
-                case TabField.LongF f -> builder.requiredLong(field.name());
-                case TabField.FloatF f -> builder.requiredFloat(field.name());
-                case TabField.DoubleF f -> builder.requiredDouble(field.name());
-                case TabField.BooleanF f -> builder.requiredBoolean(field.name());
+                case TabField.StrF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalString(f.name());
+                    } else {
+                      builder.nullableString(f.name(), (String) f.defVal());
+                    }
+                  } else {
+                    builder.requiredString(field.name());
+                  }
+                }
+                case TabField.IntF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalInt(f.name());
+                    } else {
+                      builder.nullableInt(f.name(), (Integer) f.defVal());
+                    }
+                  } else {
+                    builder.requiredInt(field.name());
+                  }
+                }
+                case TabField.LongF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalLong(f.name());
+                    } else {
+                      builder.nullableLong(f.name(), (Long) f.defVal());
+                    }
+                  } else {
+                    builder.requiredLong(field.name());
+                  }
+                }
+                case TabField.FloatF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalFloat(f.name());
+                    } else {
+                      builder.nullableFloat(f.name(), (Float) f.defVal());
+                    }
+                  } else {
+                    builder.requiredFloat(field.name());
+                  }
+                }
+                case TabField.DoubleF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalDouble(f.name());
+                    } else {
+                      builder.nullableDouble(f.name(), (Double) f.defVal());
+                    }
+                  } else {
+                    builder.requiredDouble(field.name());
+                  }
+                }
+                case TabField.BooleanF f -> {
+                  if (f.isOptional()) {
+                    if (f.defVal() == null) {
+                      builder.optionalBoolean(f.name());
+                    } else {
+                      builder.nullableBoolean(f.name(), (Boolean) f.defVal());
+                    }
+                  } else {
+                    builder.requiredBoolean(field.name());
+                  }
+                }
                 case TabField.UnionF f -> addUnion(builder, f);
               }
             });

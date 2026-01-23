@@ -35,21 +35,126 @@ public class Csvs {
   // Do not instantiate utility classes
   private Csvs() {}
 
+  /** See {@link SimpleReadOption} and {@link ReadErrorHandler} for more information. */
+  public sealed interface ReadOption permits SimpleReadOption, ReadErrorHandler {}
+
+  /** Any unhandled errors while processing the data will be reported to this handler. */
+  public non-sealed interface ReadErrorHandler extends ReadOption {
+    ErrorAction missingRequiredValues(TabSchema schema, TabRecord recordInError);
+
+    ErrorAction mistypedValues(TabSchema schema, TabRecord recordInError);
+  }
+
+  public enum SimpleReadOption implements ReadOption {
+    /**
+     * If a value's type does not match the type specified in the schema, and the type is not
+     * required, ignore it as if the value wasn't provided at all.
+     */
+    IGNORE_MISTYPED,
+    /**
+     * if a value's type does not match the type specified in the schema, skip the entire record.
+     */
+    SKIP_MISTYPED,
+    /**
+     * If a value's type does not match the type specified in the schema, fail the entire read
+     * operation.
+     */
+    FAIL_MISTYPED,
+
+    /**
+     * Columns from the file, not specified in the schema, will be skipped (will not be added to the
+     * schema).
+     */
+    IGNORE_UNKNOWN,
+
+    /**
+     * Columns from the file, not specified in the schema, will be added to the schema as a string.
+     */
+    ADD_UNKNOWN
+  }
+
   /**
-   * Returns a stream to get records from a CSV file. A new schema is created based off of the
-   * partialSchema: any field encountered that is not in the partialSchema will be added to the
-   * resulting schema as type String.
+   * The action the reader should perform for a given error. One of:
+   *
+   * <ul>
+   *   <li>Recover - Use the provided record and continue reading further records
+   *   <li>Skip - Skip over the failed record but read further records
+   *   <li>Fail - Throw an error, do not read any more records
+   * </ul>
+   */
+  public static class ErrorAction {
+    private enum ActionType {
+      RECOVER,
+      SKIP,
+      FAIL
+    }
+
+    private final ActionType type;
+    private final TabRecord recovered;
+
+    private ErrorAction(ActionType type, TabRecord recovered) {
+      this.type = type;
+      this.recovered = recovered;
+    }
+
+    public static ErrorAction recover(TabRecord recovered) {
+      return new ErrorAction(ActionType.RECOVER, recovered);
+    }
+
+    private static final ErrorAction SKIP = new ErrorAction(ActionType.SKIP, null);
+
+    public static ErrorAction skip() {
+      return SKIP;
+    }
+
+    private static final ErrorAction FAIL = new ErrorAction(ActionType.FAIL, null);
+
+    public static ErrorAction fail() {
+      return FAIL;
+    }
+  }
+
+  private static boolean hasSimpleReadOption(SimpleReadOption opt, ReadOption[] opts) {
+    if (opts == null) {
+      return false;
+    }
+    return Arrays.stream(opts).anyMatch(o -> o == opt);
+  }
+
+  private static SimpleReadOption findMistypeOption(ReadOption... opts) {
+    SimpleReadOption mistyped = null;
+    for (ReadOption opt : opts) {
+      if (opt == SimpleReadOption.IGNORE_MISTYPED
+          || opt == SimpleReadOption.SKIP_MISTYPED
+          || opt == SimpleReadOption.FAIL_MISTYPED) {
+        if (mistyped == null) {
+          mistyped = (SimpleReadOption) opt;
+        } else {
+          throw new IllegalArgumentException(
+              "Conflicting options used: %s and %s".formatted(mistyped, opt));
+        }
+      }
+    }
+    return mistyped;
+  }
+
+  /**
+   * Returns a stream to get records from a CSV file. Options can configure how to read from the CSV
+   * file, for example supplying a {@link ReadErrorHandler} can allow custom recovery of a record if
+   * encountered. Some options are mutually exclusive and will result in an exception if conflicting
+   * options are provided.
    *
    * @apiNote Similar to {@link java.nio.file.Files#lines(Path)}, this should be used within a
    *     try-with-resources statement or similar to ensure the stream's file is closed promptly.
    * @param csvFile the file to read CSV data from
-   * @param partialSchema matching fields from the CSV will become the types specified in the
-   *     schema.
+   * @param schema matching fields from the CSV will become the types specified in the schema.
+   * @param opts The options for reading data.
    * @return A TabStream of the CSV data. The schema is a merge of the fields from the given schema
    *     and any fields from the file that were not listed in the schema.
    * @throws IOException if the file was not found or could not be opened.
    */
-  public static TabStream records(Path csvFile, TabSchema partialSchema) throws IOException {
+  public static TabStream records(Path csvFile, TabSchema schema, ReadOption... opts)
+      throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
     CsvParserSettings settings = new CsvParserSettings();
     CsvParser parser = new CsvParser(settings);
@@ -59,20 +164,26 @@ public class Csvs {
     iter.tryAdvance(headersGetter.fetcher());
 
     List<String> headers = headersGetter.headers();
-    List<String> givenFields = partialSchema.fields().stream().map(TabField::name).toList();
-    List<TabField.StrF> unlistedFields =
-        headers.stream()
-            .filter(Predicate.not(givenFields::contains))
-            .map(TabField.StrF::optional)
-            .toList();
+    List<String> givenFields = schema.fields().stream().map(TabField::name).toList();
     TabSchema resultSchema;
-    if (unlistedFields.isEmpty()) {
-      resultSchema = partialSchema;
+    if (hasSimpleReadOption(SimpleReadOption.ADD_UNKNOWN, opts)) {
+      List<TabField.StrF> unlistedFields =
+          headers.stream()
+              .filter(Predicate.not(givenFields::contains))
+              .map(TabField.StrF::optional)
+              .toList();
+      if (unlistedFields.isEmpty()) {
+        resultSchema = schema;
+      } else {
+        resultSchema =
+            new TabSchema(
+                Stream.concat(schema.fields().stream(), unlistedFields.stream()).toList());
+      }
     } else {
-      resultSchema =
-          new TabSchema(
-              Stream.concat(partialSchema.fields().stream(), unlistedFields.stream()).toList());
+      resultSchema = schema;
     }
+    SimpleReadOption mistypeOpt = findMistypeOption(opts);
+    boolean ignoreMistyped = mistypeOpt == SimpleReadOption.IGNORE_MISTYPED;
 
     // The resulting record may have a different order of fields than what the input CSV has,
     // depending on how the schema was specified.
@@ -89,10 +200,7 @@ public class Csvs {
     // Each converter is how to convert a string into the field type per position
     List<? extends Function<String, ?>> fieldConverters =
         IntStream.range(0, outPosToInPos.length)
-            .mapToObj(
-                i -> {
-                  return valConverter(resultSchema.fields().get(i));
-                })
+            .mapToObj(i -> valConverter(resultSchema.fields().get(i), ignoreMistyped))
             .toList();
     // Actual converter of a CSV row of Strings to a record with values converted to correct types
     Function<String[], TabRecord> toTabRecord =
@@ -101,11 +209,18 @@ public class Csvs {
               IntStream.range(0, outPosToInPos.length)
                   .mapToObj(
                       i -> {
+                        // TODO: It seems like this and the fieldConverters could be combined, so
+                        // that ifs don't need to happen every row.
                         int j = outPosToInPos[i];
                         if (j < 0) {
-                          // Schema specified a field that is not found in the CSV. Keep it null.
-                          // TODO: set to default value from schema (or null by "default" default)
-                          return null;
+                          // Schema specified a field that is not found in the CSV. Use the default
+                          // value, or report error if the field is required.
+                          TabField<?> field = schema.fields().get(i);
+                          if (field.isRequired()) {
+                            throw new IllegalArgumentException(
+                                "Not optional, but was null: " + field);
+                          }
+                          return field.defVal();
                         }
                         return fieldConverters.get(i).apply(row[j]);
                       })
@@ -127,7 +242,7 @@ public class Csvs {
    * @return A CsvStream which has the headers and the stream to read the lines from.
    * @throws IOException if the file was not found or could not be opened.
    */
-  public static TabStream records(Path csvFile) throws IOException {
+  public static TabStream recordsAsStrings(Path csvFile) throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
     CsvParserSettings settings = new CsvParserSettings();
     CsvParser parser = new CsvParser(settings);
@@ -177,9 +292,10 @@ public class Csvs {
     }
   }
 
-  private static Function<TabRecord, TabRecord> createCsvConverter(TabSchema schema) {
+  private static Function<TabRecord, TabRecord> createCsvConverter(
+      TabSchema schema, boolean ignoreMistyped) {
     List<? extends Function<String, ?>> valConvs =
-        schema.fields().stream().map(Csvs::valConverter).toList();
+        schema.fields().stream().map(field -> valConverter(field, ignoreMistyped)).toList();
     int size = valConvs.size();
     return (TabRecord sourceRow) -> {
       List<?> destVals =
@@ -190,28 +306,44 @@ public class Csvs {
     };
   }
 
-  private static <U> Function<String, U> valConverter(TabField<U> field) {
+  private static <U> Function<String, U> valConverter(TabField<U> field, boolean ignoreMistyped) {
     return switch (field) {
-      case TabField.StrF f -> (Function<String, U>) orOpt(Function.identity(), f);
-      case TabField.IntF f -> (Function<String, U>) orOpt(Integer::valueOf, f);
-      case TabField.LongF f -> (Function<String, U>) orOpt(Long::valueOf, f);
-      case TabField.FloatF f -> (Function<String, U>) orOpt(Float::valueOf, f);
-      case TabField.DoubleF f -> (Function<String, U>) orOpt(Double::valueOf, f);
-      case TabField.BooleanF f -> (Function<String, U>) orOpt(Boolean::valueOf, f);
-      case TabField.UnionF f -> (Function<String, U>) orOpt(unionFromCsv(f), f);
+      case TabField.StrF f -> (Function<String, U>) orOpt(Function.identity(), f, ignoreMistyped);
+      case TabField.IntF f -> (Function<String, U>) orOpt(Integer::valueOf, f, ignoreMistyped);
+      case TabField.LongF f -> (Function<String, U>) orOpt(Long::valueOf, f, ignoreMistyped);
+      case TabField.FloatF f -> (Function<String, U>) orOpt(Float::valueOf, f, ignoreMistyped);
+      case TabField.DoubleF f -> (Function<String, U>) orOpt(Double::valueOf, f, ignoreMistyped);
+      case TabField.BooleanF f -> (Function<String, U>) orOpt(Boolean::valueOf, f, ignoreMistyped);
+      case TabField.UnionF f -> (Function<String, U>) orOpt(unionFromCsv(f), f, ignoreMistyped);
     };
   }
 
-  private static <U> Function<String, U> orOpt(Function<String, U> fromString, TabField<U> field) {
+  private static <U> Function<String, U> orOpt(
+      Function<String, U> fromString, TabField<U> field, boolean ignoreMistyped) {
     U defVal = field.opt().defVal();
     // If field is optional, then when null is encountered, provide the default value
     if (field.isOptional()) {
-      return source -> {
-        if (source == null) {
-          return defVal;
-        }
-        return fromString.apply(source);
-      };
+      if (ignoreMistyped) {
+        // If a value of an unexpected type was given, toss it out and use the default value.
+        return source -> {
+          if (source == null) {
+            return defVal;
+          }
+          try {
+            return fromString.apply(source);
+          } catch (NumberFormatException ex) {
+            return defVal;
+          }
+        };
+      } else {
+        // Try to convert, and allow failures of an unexpected type.
+        return source -> {
+          if (source == null) {
+            return defVal;
+          }
+          return fromString.apply(source);
+        };
+      }
     }
     // otherwise if required, then when null is encountered, throw exception
     return source -> {

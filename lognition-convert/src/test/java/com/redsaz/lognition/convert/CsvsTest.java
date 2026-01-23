@@ -38,7 +38,7 @@ public class CsvsTest {
     // When the source CSV is read in and written back out without a provided schema,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        TabStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.recordsAsStrings(sourceFile.path())) {
 
       // and written back out into a CSV,
       Csvs.write(destFile.path(), records.schema(), records.stream());
@@ -297,6 +297,91 @@ public class CsvsTest {
     }
   }
 
+  @Test
+  public void testReadMissingOptionalColumnWithSchema() throws IOException {
+    // Given a schema that has optional fields, both with and without default values,
+    TabSchema schema =
+        TabSchema.of(
+            TabField.LongF.required("exampleLong"),
+            TabField.LongF.optional("exampleMissingLongDef", -1L),
+            TabField.LongF.optional("exampleMissingLong"),
+            TabField.IntF.required("exampleInt"),
+            TabField.IntF.optional("exampleMissingIntDef", -1),
+            TabField.IntF.optional("exampleMissingInt"),
+            TabField.StrF.required("exampleString"),
+            TabField.StrF.optional("exampleMissingStringDef", "missing"),
+            TabField.StrF.optional("exampleMissingString"),
+            TabField.FloatF.required("exampleFloat"),
+            TabField.FloatF.optional("exampleMissingFloatDef", -1.0F),
+            TabField.FloatF.optional("exampleMissingFloat"),
+            TabField.DoubleF.required("exampleDouble"),
+            TabField.DoubleF.optional("exampleMissingDoubleDef", -2.0d),
+            TabField.DoubleF.optional("exampleMissingDouble"),
+            TabField.BooleanF.required("exampleBoolean"),
+            TabField.BooleanF.optional("exampleMissingBooleanDef", true),
+            TabField.BooleanF.optional("exampleMissingBoolean"));
+
+    // and a CSV that does not have columns for those optional fields,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        1766362285195,104,GET /logs/test,1.5,3.25,true
+        1766362285191,111,PUT /logs/test,2.125,6.0625,false
+        """;
+
+    // When it is loaded as tabular data with the schema,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+      // Then the CSV schema should be identical to the given schema,
+      assertSame(records.schema(), schema);
+
+      // and each record should have the expected values in the types specified in the schema,
+      // including from the default values for the optionals.
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of(
+                  1766362285195L,
+                  -1L,
+                  null,
+                  104,
+                  -1,
+                  null,
+                  "GET /logs/test",
+                  "missing",
+                  null,
+                  1.5f,
+                  -1F,
+                  null,
+                  3.25d,
+                  -2D,
+                  null,
+                  true,
+                  true,
+                  null),
+              TabRecord.of(
+                  1766362285191L,
+                  -1L,
+                  null,
+                  111,
+                  -1,
+                  null,
+                  "PUT /logs/test",
+                  "missing",
+                  null,
+                  2.125F,
+                  -1F,
+                  null,
+                  6.0625d,
+                  -2D,
+                  null,
+                  false,
+                  true,
+                  null));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
   @Test(dataProvider = "requireds")
   public void testReadWriteRequired(String content, String message) throws IOException {
     // Given a CSV file with null values,
@@ -511,7 +596,7 @@ public class CsvsTest {
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        TabStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.recordsAsStrings(sourceFile.path())) {
 
       // and written back out into a CSV,
       Csvs.write(destFile.path(), records.schema(), records.stream());
@@ -530,13 +615,125 @@ public class CsvsTest {
     // When the source CSV is read in,
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destFile = TempContent.withName("converted", ".csv");
-        TabStream records = Csvs.records(sourceFile.path())) {
+        TabStream records = Csvs.recordsAsStrings(sourceFile.path())) {
 
       // and written back out into a CSV,
       Csvs.write(destFile.path(), records.schema(), records.stream());
 
       // Then the source CSV file and the result CSV file contents should be empty.
       assertContentEquals(destFile.content(), content, "Reconstituted CSV data");
+    }
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testSchemaBadDuplicateNames() {
+    // TODO: This should be in a TabSchemaTest
+    // When a schema is specified with two fields with the same name,
+    TabSchema.of(TabField.IntF.required("name"), TabField.IntF.required("name"));
+    // Then an exception is thrown explaining that duplicate names were detected.
+  }
+
+  @Test
+  public void testReadWriteCsvWithExtraAdded() throws IOException {
+    // Given a CSV file that has a column not covered by the schema,
+    String content =
+        """
+        exampleLong,exampleExtra
+        1766362285195,example1
+        1766362285191,example2
+        """;
+
+    TabSchema schema = TabSchema.of(TabField.LongF.required("exampleLong"));
+
+    // When the data is read and configured to allow extra columns,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records =
+            Csvs.records(sourceFile.path(), schema, Csvs.SimpleReadOption.ADD_UNKNOWN)) {
+
+      // Then the resulting schema includes the extra column as a string,
+      // and the records include the values from the column
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(
+              TabRecord.of(1766362285195L, "example1"), TabRecord.of(1766362285191L, "example2"));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test
+  public void testReadWriteCsvWithExtraIgnored() throws IOException {
+    // Given a CSV file that has a column not covered by the schema,
+    String content =
+        """
+        exampleLong,exampleExtra
+        1766362285195,example1
+        1766362285191,example2
+        """;
+
+    TabSchema schema = TabSchema.of(TabField.LongF.required("exampleLong"));
+
+    // When the data is read and configured to ignore extra columns (it is the default),
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records = Csvs.records(sourceFile.path(), schema)) {
+
+      // Then the resulting schema includes the extra column as a string,
+      // and the records include the values from the column
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(TabRecord.of(1766362285195L), TabRecord.of(1766362285191L));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test
+  public void testReadWriteCsvWithNonIntValueIgnore() throws IOException {
+    // Given a CSV file that has a value that is normally an int but is instead a string,
+    // and a schema with an optional int,
+    String content =
+        """
+        exampleLong,exampleMistyped
+        1766362285195,10
+        1766362285191,example2
+        """;
+
+    TabSchema schema =
+        TabSchema.of(
+            TabField.LongF.required("exampleLong"), TabField.IntF.optional("exampleMistyped"));
+
+    // When the value is read and configured to ignore mistyped info,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records =
+            Csvs.records(sourceFile.path(), schema, Csvs.SimpleReadOption.IGNORE_MISTYPED)) {
+
+      // Then any records with the value mistyped is included, but the mistyped value is null.
+      List<TabRecord> actualRows = records.stream().toList();
+      List<TabRecord> expectedRows =
+          List.of(TabRecord.of(1766362285195L, 10), TabRecord.of(1766362285191L, null));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
+
+  @Test(expectedExceptions = NumberFormatException.class)
+  public void testReadWriteCsvWithNonIntValueIgnoreFails() throws IOException {
+    // Given a CSV file that has a value that is normally an int but is instead a string,
+    // and a schema with a required int,
+    String content =
+        """
+        exampleLong,exampleMistyped
+        1766362285195,10
+        1766362285191,example2
+        """;
+
+    TabSchema schema =
+        TabSchema.of(
+            TabField.LongF.required("exampleLong"), TabField.IntF.required("exampleMistyped"));
+
+    // When the value is read and configured to ignore mistyped info,
+    try (TempContent sourceFile = TempContent.of(content);
+        TabStream records =
+            Csvs.records(sourceFile.path(), schema, Csvs.SimpleReadOption.IGNORE_MISTYPED)) {
+      // Then an exception is thrown because the value is required.
+      List<TabRecord> actualRows = records.stream().toList();
     }
   }
 }
