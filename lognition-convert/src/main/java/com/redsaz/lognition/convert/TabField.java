@@ -16,6 +16,8 @@ public sealed interface TabField<T>
 
   String name();
 
+  Class<T> type();
+
   /**
    * @return true if the value does not have to be provided, and the opt value can be used.
    */
@@ -114,6 +116,10 @@ public sealed interface TabField<T>
     public static StrF required(String name) {
       return new StrF(name, Opt.required());
     }
+
+    public Class<String> type() {
+      return String.class;
+    }
   }
 
   record IntF(String name, Opt<Integer> opt) implements TabField<Integer> {
@@ -127,6 +133,10 @@ public sealed interface TabField<T>
 
     public static IntF required(String name) {
       return new IntF(name, Opt.required());
+    }
+
+    public Class<Integer> type() {
+      return Integer.class;
     }
   }
 
@@ -142,6 +152,10 @@ public sealed interface TabField<T>
     public static LongF required(String name) {
       return new LongF(name, Opt.required());
     }
+
+    public Class<Long> type() {
+      return Long.class;
+    }
   }
 
   record FloatF(String name, Opt<Float> opt) implements TabField<Float> {
@@ -155,6 +169,10 @@ public sealed interface TabField<T>
 
     public static FloatF required(String name) {
       return new FloatF(name, Opt.required());
+    }
+
+    public Class<Float> type() {
+      return Float.class;
     }
   }
 
@@ -170,6 +188,10 @@ public sealed interface TabField<T>
     public static DoubleF required(String name) {
       return new DoubleF(name, Opt.required());
     }
+
+    public Class<Double> type() {
+      return Double.class;
+    }
   }
 
   record BooleanF(String name, Opt<Boolean> opt) implements TabField<Boolean> {
@@ -184,6 +206,10 @@ public sealed interface TabField<T>
     public static BooleanF required(String name) {
       return new BooleanF(name, Opt.required());
     }
+
+    public Class<Boolean> type() {
+      return Boolean.class;
+    }
   }
 
   record UnionF(String name, Opt<Object> opt, List<Class<?>> types) implements TabField<Object> {
@@ -197,6 +223,10 @@ public sealed interface TabField<T>
 
     public static UnionF required(String name, Class<?>... types) {
       return new UnionF(name, Opt.required(), List.copyOf(Arrays.asList(types)));
+    }
+
+    public Class<Object> type() {
+      return Object.class;
     }
   }
 }

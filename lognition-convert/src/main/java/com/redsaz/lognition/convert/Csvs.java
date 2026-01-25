@@ -35,14 +35,35 @@ public class Csvs {
   // Do not instantiate utility classes
   private Csvs() {}
 
+  private static final TabValueException SKIP_RECORD =
+      new TabValueException("Internal marker to skip record due to bad value.", null);
+
   /** See {@link SimpleReadOption} and {@link ReadErrorHandler} for more information. */
   public sealed interface ReadOption permits SimpleReadOption, ReadErrorHandler {}
 
+  public enum ErrorReason {
+    /** No error for the element. */
+    GOOD,
+    /** A value is required for the element, but none was given. */
+    MISSING_REQUIRED_VALUE,
+    ErrorReason,
+    /** A value was found for the element, but is not of the expected type. */
+    MISTYPED_VALUE
+  }
+
+  public sealed interface ErrorItem permits ErrorItem.MissingValue, ErrorItem.MistypedValue {
+    TabField<?> schema();
+
+    record MissingValue(TabField<?> schema) implements ErrorItem {}
+    ;
+
+    record MistypedValue(TabField<?> schema, String mistypedValue) implements ErrorItem {}
+    ;
+  }
+
   /** Any unhandled errors while processing the data will be reported to this handler. */
   public non-sealed interface ReadErrorHandler extends ReadOption {
-    ErrorAction missingRequiredValues(TabSchema schema, TabRecord recordInError);
-
-    ErrorAction mistypedValues(TabSchema schema, TabRecord recordInError);
+    <U> ErrorAction<U> handleError(TabValueException ex);
   }
 
   public enum SimpleReadOption implements ReadOption {
@@ -77,12 +98,12 @@ public class Csvs {
    * The action the reader should perform for a given error. One of:
    *
    * <ul>
-   *   <li>Recover - Use the provided record and continue reading further records
+   *   <li>Recover - Use the provided fixed value and continue reading
    *   <li>Skip - Skip over the failed record but read further records
    *   <li>Fail - Throw an error, do not read any more records
    * </ul>
    */
-  public static class ErrorAction {
+  public static class ErrorAction<U> {
     private enum ActionType {
       RECOVER,
       SKIP,
@@ -90,26 +111,26 @@ public class Csvs {
     }
 
     private final ActionType type;
-    private final TabRecord recovered;
+    private final U recovered;
 
-    private ErrorAction(ActionType type, TabRecord recovered) {
+    private ErrorAction(ActionType type, U recovered) {
       this.type = type;
       this.recovered = recovered;
     }
 
-    public static ErrorAction recover(TabRecord recovered) {
-      return new ErrorAction(ActionType.RECOVER, recovered);
+    public static <U> ErrorAction<U> recover(U recovered) {
+      return new ErrorAction<U>(ActionType.RECOVER, recovered);
     }
 
-    private static final ErrorAction SKIP = new ErrorAction(ActionType.SKIP, null);
+    private static final ErrorAction<?> SKIP = new ErrorAction<>(ActionType.SKIP, null);
 
-    public static ErrorAction skip() {
+    public static ErrorAction<?> skip() {
       return SKIP;
     }
 
-    private static final ErrorAction FAIL = new ErrorAction(ActionType.FAIL, null);
+    private static final ErrorAction<?> FAIL = new ErrorAction<>(ActionType.FAIL, null);
 
-    public static ErrorAction fail() {
+    public static ErrorAction<?> fail() {
       return FAIL;
     }
   }
@@ -130,12 +151,49 @@ public class Csvs {
         if (mistyped == null) {
           mistyped = (SimpleReadOption) opt;
         } else {
-          throw new IllegalArgumentException(
-              "Conflicting options used: %s and %s".formatted(mistyped, opt));
+          throw new TabException("Conflicting options used: %s and %s".formatted(mistyped, opt));
         }
       }
     }
     return mistyped;
+  }
+
+  private static ReadErrorHandler findErrorHandler(ReadOption... opts) {
+    for (ReadOption opt : opts) {
+      if (opt instanceof ReadErrorHandler o) {
+        return o;
+      }
+    }
+    return null;
+  }
+
+  private static <U> U handleException(TabValueException ex, ReadErrorHandler errHandler) {
+    if (errHandler == null) {
+      throw ex;
+    }
+
+    ErrorAction<U> action = errHandler.handleError(ex);
+    if (action == null) {
+      throw ex;
+    }
+    switch (action.type) {
+      case RECOVER -> {
+        // If the recovery itself does not conform to the schema, throw an exception.
+        if (action.recovered == null && ex.schema().isRequired()) {
+          TabValueException e = new TabValueRequiredException(ex.schema());
+          e.addSuppressed(ex);
+          throw e;
+        } else if (action.recovered != null
+            && !action.recovered.getClass().isAssignableFrom(ex.schema().type())) {
+          TabValueException e = new TabValueMistypedException(ex.schema(), action.recovered);
+          e.addSuppressed(ex);
+          throw e;
+        }
+      }
+      case FAIL -> throw ex;
+      case SKIP -> throw SKIP_RECORD;
+    }
+    return action.recovered;
   }
 
   /**
@@ -184,6 +242,7 @@ public class Csvs {
     }
     SimpleReadOption mistypeOpt = findMistypeOption(opts);
     boolean ignoreMistyped = mistypeOpt == SimpleReadOption.IGNORE_MISTYPED;
+    ReadErrorHandler errorHandler = findErrorHandler(opts);
 
     // The resulting record may have a different order of fields than what the input CSV has,
     // depending on how the schema was specified.
@@ -205,31 +264,46 @@ public class Csvs {
     // Actual converter of a CSV row of Strings to a record with values converted to correct types
     Function<String[], TabRecord> toTabRecord =
         row -> {
-          List<?> values =
-              IntStream.range(0, outPosToInPos.length)
-                  .mapToObj(
-                      i -> {
-                        // TODO: It seems like this and the fieldConverters could be combined, so
-                        // that ifs don't need to happen every row.
-                        int j = outPosToInPos[i];
-                        if (j < 0) {
-                          // Schema specified a field that is not found in the CSV. Use the default
-                          // value, or report error if the field is required.
-                          TabField<?> field = schema.fields().get(i);
-                          if (field.isRequired()) {
-                            throw new IllegalArgumentException(
-                                "Not optional, but was null: " + field);
+          try {
+            List<?> values =
+                IntStream.range(0, outPosToInPos.length)
+                    .mapToObj(
+                        i -> {
+                          try {
+                            // TODO: It seems like this and the fieldConverters could be combined,
+                            // so
+                            // that ifs don't need to happen every row.
+                            int j = outPosToInPos[i];
+                            if (j < 0) {
+                              // Schema specified a field that is not found in the CSV. Use the
+                              // default
+                              // value, or report error if the field is required.
+                              TabField<?> field = schema.fields().get(i);
+                              if (field.isRequired()) {
+                                throw new TabValueRequiredException(field);
+                              }
+                              return field.defVal();
+                            }
+                            return fieldConverters.get(i).apply(row[j]);
+                          } catch (TabValueException ex) {
+                            return handleException(ex, errorHandler);
                           }
-                          return field.defVal();
-                        }
-                        return fieldConverters.get(i).apply(row[j]);
-                      })
-                  .toList();
-          return new TabRecord(values);
+                        })
+                    .toList();
+            return new TabRecord(values);
+          } catch (TabValueException ex) {
+            if (ex == SKIP_RECORD) {
+              return null;
+            }
+            throw ex;
+          }
         };
     return new CsvTabStream(
         resultSchema,
-        StreamSupport.stream(iter, false).onClose(uncheckedCloser(br)).map(toTabRecord));
+        StreamSupport.stream(iter, false)
+            .onClose(uncheckedCloser(br))
+            .map(toTabRecord)
+            .filter(Objects::nonNull));
   }
 
   /**
@@ -336,21 +410,30 @@ public class Csvs {
           }
         };
       } else {
-        // Try to convert, and allow failures of an unexpected type.
+        // Try to convert, and allow mistyped exceptions
         return source -> {
-          if (source == null) {
-            return defVal;
+          try {
+            if (source == null) {
+              return defVal;
+            }
+            return fromString.apply(source);
+          } catch (RuntimeException ex) {
+            throw new TabValueMistypedException(field, source);
           }
-          return fromString.apply(source);
         };
       }
     }
     // otherwise if required, then when null is encountered, throw exception
     return source -> {
       if (source == null) {
-        throw new IllegalArgumentException("Not optional, but was null: " + field);
+        throw new TabValueRequiredException(field);
       }
-      return fromString.apply(source);
+      // Try to convert, and allow mistyped exceptions.
+      try {
+        return fromString.apply(source);
+      } catch (RuntimeException ex) {
+        throw new TabValueMistypedException(field, source);
+      }
     };
   }
 
