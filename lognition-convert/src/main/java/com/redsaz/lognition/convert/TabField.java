@@ -1,18 +1,21 @@
 package com.redsaz.lognition.convert;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.avro.Schema;
 
-public sealed interface TabField<T>
+public sealed interface TabField<T> extends TabSchema
     permits TabField.StrF,
         TabField.IntF,
         TabField.LongF,
         TabField.FloatF,
         TabField.DoubleF,
         TabField.BooleanF,
-        TabField.UnionF {
+        TabField.UnionF,
+        TabField.StructF {
 
   String name();
 
@@ -227,6 +230,53 @@ public sealed interface TabField<T>
 
     public Class<Object> type() {
       return Object.class;
+    }
+  }
+
+  record StructF(String name, List<? extends TabField<?>> fields) implements TabField<Object> {
+    public StructF {
+      // Must not have duplicate names.
+      Set<String> names = new HashSet<>();
+      fields.stream()
+          .map(TabField::name)
+          .forEach(
+              fname -> {
+                if (!names.add(fname)) {
+                  throw new IllegalArgumentException("Schema has duplicate names: " + fname);
+                }
+              });
+    }
+
+    /**
+     * Essentially an Avro spec. Kinda. Hmm. Keep it simple.
+     *
+     * @param spec an Avro spec in string form.
+     */
+    public static StructF of(String spec) {
+      return StructF.ofAvro((new Schema.Parser()).parse(spec));
+    }
+
+    public static StructF of(String name, TabField<?>... fields) {
+      return new StructF(name, List.copyOf(Arrays.asList(fields)));
+    }
+
+    static StructF ofAvro(Schema schema) {
+      return new StructF(
+          schema.getFullName(), schema.getFields().stream().map(TabField::fromAvro).toList());
+    }
+
+    @Override
+    public String name() {
+      return "";
+    }
+
+    public Class<Object> type() {
+      return Object.class;
+    }
+
+    @Override
+    public Opt<Object> opt() {
+      return null;
     }
   }
 }

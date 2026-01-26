@@ -42,7 +42,7 @@ public class Avros {
   public static TabStream records(Path tabFile) throws IOException {
     DataFileReader<GenericRecord> reader =
         new DataFileReader<>(tabFile.toFile(), new GenericDatumReader<>());
-    TabSchema schema = TabSchema.ofAvro(reader.getSchema());
+    TabField.StructF schema = TabField.StructF.ofAvro(reader.getSchema());
 
     Function<GenericRecord, TabRecord> converter =
         genRec -> {
@@ -86,7 +86,7 @@ public class Avros {
    * @return The SHA256 hash of the resulting file.
    * @throws IOException if an error while writing the file.
    */
-  public static String write(Path dest, TabSchema schema, Stream<TabRecord> rows)
+  public static String write(Path dest, TabField.StructF schema, Stream<TabRecord> rows)
       throws IOException {
     try (HashingOutputStream hos =
         new HashingOutputStream(
@@ -114,7 +114,7 @@ public class Avros {
     }
   }
 
-  private static Schema toAvroSchema(TabSchema schema) {
+  private static Schema toAvroSchema(TabField.StructF schema) {
     SchemaBuilder.FieldAssembler<Schema> builder =
         SchemaBuilder.builder().record("TabRecord").fields();
     schema
@@ -190,6 +190,10 @@ public class Avros {
                   }
                 }
                 case TabField.UnionF f -> addUnion(builder, f);
+                case TabField.StructF f ->
+                    throw new TabValueException(
+                        "StructF not supported as a field of a StructF when reading from an Avro file.",
+                        f);
               }
             });
     return builder.endRecord();
@@ -226,7 +230,8 @@ public class Avros {
     };
   }
 
-  private record ReaderTabStream(TabSchema schema, Stream<TabRecord> stream) implements TabStream {
+  private record ReaderTabStream(TabField.StructF schema, Stream<TabRecord> stream)
+      implements TabStream {
 
     public List<String> fieldNames() {
       return schema().fields().stream().map(TabField::name).toList();

@@ -36,7 +36,7 @@ public class AvrosTest {
         ]
         }
         """;
-    TabSchema schema = TabSchema.of(schemaStr);
+    TabField.StructF schema = TabField.StructF.of(schemaStr);
 
     // When it is loaded into tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -77,8 +77,9 @@ public class AvrosTest {
         """;
 
     // and a schema that accounts for every column,
-    TabSchema schema =
-        TabSchema.of(
+    TabField.StructF schema =
+        TabField.StructF.of(
+            "exampleRecord",
             TabField.UnionF.optional("exampleLongString", Long.class, String.class),
             TabField.UnionF.required("exampleIntString", Integer.class, String.class),
             TabField.UnionF.required("exampleFloatString", Float.class, String.class),
@@ -132,8 +133,9 @@ public class AvrosTest {
           1766362285310,1,GET /logs/test,Non HTTP response code: org.apache.http.conn.HttpHostConnectException,Non HTTP response message: Connect to 127.0.0.1:8080 [/127.0.0.1] failed: Connection refused,Thread Group 1-4,text,false,,2546,0,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key1=val1,0,0,1
           """;
 
-    TabSchema schema =
-        TabSchema.of(
+    TabField.StructF schema =
+        TabField.StructF.of(
+            "exampleRecord",
             TabField.LongF.required("timeStamp"),
             TabField.LongF.required("elapsed"),
             TabField.StrF.optional("label", ""),
@@ -173,7 +175,7 @@ public class AvrosTest {
       //
       //      // Sample schema looks like it's re-implementing an incomplete grafana/Prometheus,
       // poorly
-      //      TabSchema sampleSchema = TabSchema.of(
+      //      StructF sampleSchema = StructF.of(
       //          TabField.LongF.required("timeStamp"),
       //          TabField.LongF.required("elapsed"),
       //          TabField.StrF.optional("label"),

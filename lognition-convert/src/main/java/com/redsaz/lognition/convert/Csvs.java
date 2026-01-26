@@ -211,7 +211,7 @@ public class Csvs {
    *     and any fields from the file that were not listed in the schema.
    * @throws IOException if the file was not found or could not be opened.
    */
-  public static TabStream records(Path csvFile, TabSchema schema, ReadOption... opts)
+  public static TabStream records(Path csvFile, TabField.StructF schema, ReadOption... opts)
       throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
     CsvParserSettings settings = new CsvParserSettings();
@@ -223,7 +223,7 @@ public class Csvs {
 
     List<String> headers = headersGetter.headers();
     List<String> givenFields = schema.fields().stream().map(TabField::name).toList();
-    TabSchema resultSchema;
+    TabField.StructF resultSchema;
     if (hasSimpleReadOption(SimpleReadOption.ADD_UNKNOWN, opts)) {
       List<TabField.StrF> unlistedFields =
           headers.stream()
@@ -234,7 +234,8 @@ public class Csvs {
         resultSchema = schema;
       } else {
         resultSchema =
-            new TabSchema(
+            new TabField.StructF(
+                schema.name(),
                 Stream.concat(schema.fields().stream(), unlistedFields.stream()).toList());
       }
     } else {
@@ -326,7 +327,7 @@ public class Csvs {
     iter.tryAdvance(headersGetter.fetcher());
     List<String> headers = headersGetter.headers();
     List<? extends TabField<?>> fields = headers.stream().map(TabField.StrF::optional).toList();
-    TabSchema schema = new TabSchema(fields);
+    TabField.StructF schema = new TabField.StructF("record", fields);
 
     Function<String[], TabRecord> toTabRecord =
         row -> new TabRecord(Collections.unmodifiableList(Arrays.asList(row)));
@@ -334,7 +335,7 @@ public class Csvs {
         schema, StreamSupport.stream(iter, false).onClose(uncheckedCloser(br)).map(toTabRecord));
   }
 
-  public static String write(Path dest, TabSchema schema, Stream<TabRecord> rows)
+  public static String write(Path dest, TabField.StructF schema, Stream<TabRecord> rows)
       throws IOException {
     List<String> headers = schema.fields().stream().map(TabField::name).toList();
     return writeRecords(dest, headers, rows);
@@ -367,7 +368,7 @@ public class Csvs {
   }
 
   private static Function<TabRecord, TabRecord> createCsvConverter(
-      TabSchema schema, boolean ignoreMistyped) {
+      TabField.StructF schema, boolean ignoreMistyped) {
     List<? extends Function<String, ?>> valConvs =
         schema.fields().stream().map(field -> valConverter(field, ignoreMistyped)).toList();
     int size = valConvs.size();
@@ -389,6 +390,9 @@ public class Csvs {
       case TabField.DoubleF f -> (Function<String, U>) orOpt(Double::valueOf, f, ignoreMistyped);
       case TabField.BooleanF f -> (Function<String, U>) orOpt(Boolean::valueOf, f, ignoreMistyped);
       case TabField.UnionF f -> (Function<String, U>) orOpt(unionFromCsv(f), f, ignoreMistyped);
+      case TabField.StructF f ->
+          throw new TabValueException(
+              "StructF not supported as a field of a StructF when reading from CSV.", field);
     };
   }
 
@@ -641,7 +645,8 @@ public class Csvs {
     return true;
   }
 
-  private record CsvTabStream(TabSchema schema, Stream<TabRecord> stream) implements TabStream {
+  private record CsvTabStream(TabField.StructF schema, Stream<TabRecord> stream)
+      implements TabStream {
     @Override
     public void close() throws IOException {
       stream().close();
