@@ -66,6 +66,15 @@ public class Csvs {
     <U> ErrorAction<U> handleError(TabValueException ex);
   }
 
+  public static ReadErrorHandler handleErrors(Function<TabValueException, ErrorAction<?>> error) {
+    return new ReadErrorHandler() {
+      @Override
+      public ErrorAction<?> handleError(TabValueException ex) {
+        return error.apply(ex);
+      }
+    };
+  }
+
   public enum SimpleReadOption implements ReadOption {
     /**
      * If a value's type does not match the type specified in the schema, and the type is not

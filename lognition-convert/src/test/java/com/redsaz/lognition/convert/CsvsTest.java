@@ -7,6 +7,8 @@ import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Function;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -771,38 +773,35 @@ public class CsvsTest {
             TabField.IntF.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler,
-    Csvs.ReadErrorHandler errorHandler =
-        new Csvs.ReadErrorHandler() {
-          @Override
-          public Csvs.ErrorAction<?> handleError(TabValueException ex) {
-            // This simple error handler will use its own default values when encountering the
-            // error.
-            // (Why do this instead of specifying a field as optional with a default value? Unsure.)
-            return switch (ex) {
-              case TabValueRequiredException i -> {
-                if (i.schema().type() == Integer.class) {
-                  yield Csvs.ErrorAction.recover(1);
-                } else if (i.schema().type() == Long.class) {
-                  yield Csvs.ErrorAction.recover(2L);
-                }
-                yield Csvs.ErrorAction.fail();
+    Function<TabValueException, Csvs.ErrorAction<?>> handler =
+        ex -> {
+          // This simple error handler will use its own default values when encountering the
+          // error.
+          // (Why do this instead of specifying a field as optional with a default value? Unsure.)
+          return switch (ex) {
+            case TabValueRequiredException i -> {
+              if (i.schema().type() == Integer.class) {
+                yield Csvs.ErrorAction.recover(1);
+              } else if (i.schema().type() == Long.class) {
+                yield Csvs.ErrorAction.recover(2L);
               }
-              case TabValueMistypedException i -> {
-                if (i.schema().type() == Integer.class) {
-                  yield Csvs.ErrorAction.recover(3);
-                } else if (i.schema().type() == Long.class) {
-                  yield Csvs.ErrorAction.recover(4L);
-                }
-                yield Csvs.ErrorAction.fail();
+              yield Csvs.ErrorAction.fail();
+            }
+            case TabValueMistypedException i -> {
+              if (i.schema().type() == Integer.class) {
+                yield Csvs.ErrorAction.recover(3);
+              } else if (i.schema().type() == Long.class) {
+                yield Csvs.ErrorAction.recover(4L);
               }
-              case TabValueException i -> {
-                throw i;
-              }
-            };
-          }
+              yield Csvs.ErrorAction.fail();
+            }
+            case TabValueException i -> {
+              throw i;
+            }
+          };
         };
     try (TempContent sourceFile = TempContent.of(content);
-        TabStream records = Csvs.records(sourceFile.path(), schema, errorHandler)) {
+        TabStream records = Csvs.records(sourceFile.path(), schema, Csvs.handleErrors(handler))) {
       // Then the records are created and using the "recovered" values
       List<TabRecord> actualRows = records.stream().toList();
       List<TabRecord> expectedRows =
@@ -837,22 +836,19 @@ public class CsvsTest {
 
     // When the value is read and configured to use a custom error handler that erroneously returns
     // either a null or mistyped value for the "recovered" value,
-    Csvs.ReadErrorHandler errorHandler =
-        new Csvs.ReadErrorHandler() {
-          @Override
-          public Csvs.ErrorAction<?> handleError(TabValueException ex) {
-            // This simple error handler will use its own default values when encountering the
-            // error.
-            // (Why do this instead of specifying a field as optional with a default value? Unsure.)
-            return switch (ex) {
-              case TabValueRequiredException i -> Csvs.ErrorAction.recover(null);
-              case TabValueMistypedException i -> Csvs.ErrorAction.recover("Still bad");
-              case TabValueException i -> throw new RuntimeException("Fail this.");
-            };
-          }
+    Function<TabValueException, Csvs.ErrorAction<?>> handler =
+        ex -> {
+          // This simple error handler will use its own default values when encountering the
+          // error.
+          // (Why do this instead of specifying a field as optional with a default value? Unsure.)
+          return switch (ex) {
+            case TabValueRequiredException i -> Csvs.ErrorAction.recover(null);
+            case TabValueMistypedException i -> Csvs.ErrorAction.recover("Still bad");
+            case TabValueException i -> throw new RuntimeException("Fail this.");
+          };
         };
     try (TempContent sourceFile = TempContent.of(content);
-        TabStream records = Csvs.records(sourceFile.path(), schema, errorHandler)) {
+        TabStream records = Csvs.records(sourceFile.path(), schema, Csvs.handleErrors(handler))) {
       // Then an exception is thrown because the recovery is still bad.
       List<TabRecord> actualRows = records.stream().toList();
     }
@@ -878,16 +874,10 @@ public class CsvsTest {
             TabField.IntF.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler that skips records,
-    Csvs.ReadErrorHandler errorHandler =
-        new Csvs.ReadErrorHandler() {
-          @Override
-          public Csvs.ErrorAction<?> handleError(TabValueException ex) {
-            // This simple error handler skips any records with a bad value.
-            return Csvs.ErrorAction.skip();
-          }
-        };
     try (TempContent sourceFile = TempContent.of(content);
-        TabStream records = Csvs.records(sourceFile.path(), schema, errorHandler)) {
+        TabStream records =
+            Csvs.records(
+                sourceFile.path(), schema, Csvs.handleErrors(e -> Csvs.ErrorAction.skip()))) {
       // Then the records with bad values are skipped and good values are included.
       List<TabRecord> actualRows = records.stream().toList();
       List<TabRecord> expectedRows = List.of(TabRecord.of(1766362285205L, 10));
@@ -915,16 +905,10 @@ public class CsvsTest {
             TabField.IntF.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler that fails the operation,
-    Csvs.ReadErrorHandler errorHandler =
-        new Csvs.ReadErrorHandler() {
-          @Override
-          public Csvs.ErrorAction<?> handleError(TabValueException ex) {
-            // This simple error handler fails the read operation.
-            return Csvs.ErrorAction.fail();
-          }
-        };
     try (TempContent sourceFile = TempContent.of(content);
-        TabStream records = Csvs.records(sourceFile.path(), schema, errorHandler)) {
+        TabStream records =
+            Csvs.records(
+                sourceFile.path(), schema, Csvs.handleErrors(e -> Csvs.ErrorAction.fail()))) {
       // Then the operation fails when the first bad value is hit.
       List<TabRecord> actualRows = records.stream().toList();
     }
