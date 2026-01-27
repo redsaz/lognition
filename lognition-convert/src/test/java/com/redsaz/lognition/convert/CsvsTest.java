@@ -8,7 +8,6 @@ import static org.testng.Assert.fail;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -77,7 +76,7 @@ public class CsvsTest {
         ]
         }
         """;
-    TabField.StructF schema = TabField.StructF.of(schemaStr);
+    TabSchema.StructS schema = TabSchema.StructS.of(schemaStr);
 
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
@@ -120,7 +119,7 @@ public class CsvsTest {
         ]
         }
         """;
-    TabField.StructF schema = TabField.StructF.of(schemaStr);
+    TabSchema.StructS schema = TabSchema.StructS.of(schemaStr);
 
     // When it is loaded as tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -166,7 +165,7 @@ public class CsvsTest {
         ]
         }
         """;
-    TabField.StructF schema = TabField.StructF.of(schemaStr);
+    TabSchema.StructS schema = TabSchema.StructS.of(schemaStr);
 
     // When it is loaded as tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -200,15 +199,15 @@ public class CsvsTest {
         """;
 
     // and a schema that allows for nulls for the columns with nulls,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.optional("exampleLong"),
-            TabField.IntF.optional("exampleInt"),
-            TabField.StrF.optional("exampleString"),
-            TabField.FloatF.optional("exampleFloat"),
-            TabField.DoubleF.optional("exampleDouble"),
-            TabField.BooleanF.optional("exampleBoolean"));
+            TabSchema.LongS.optional("exampleLong"),
+            TabSchema.IntS.optional("exampleInt"),
+            TabSchema.StrS.optional("exampleString"),
+            TabSchema.FloatS.optional("exampleFloat"),
+            TabSchema.DoubleS.optional("exampleDouble"),
+            TabSchema.BooleanS.optional("exampleBoolean"));
 
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
@@ -252,15 +251,15 @@ public class CsvsTest {
         """;
 
     // and a schema that allows for default values for the columns with nulls,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.optional("exampleLong", 1L),
-            TabField.IntF.optional("exampleInt", 2),
-            TabField.StrF.optional("exampleString", "value"),
-            TabField.FloatF.optional("exampleFloat", 3.5f),
-            TabField.DoubleF.optional("exampleDouble", 4.25d),
-            TabField.BooleanF.optional("exampleBoolean", true));
+            TabSchema.LongS.optional("exampleLong", 1L),
+            TabSchema.IntS.optional("exampleInt", 2),
+            TabSchema.StrS.optional("exampleString", "value"),
+            TabSchema.FloatS.optional("exampleFloat", 3.5f),
+            TabSchema.DoubleS.optional("exampleDouble", 4.25d),
+            TabSchema.BooleanS.optional("exampleBoolean", true));
 
     try (TempContent sourceFile = TempContent.of(content);
         TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
@@ -304,27 +303,27 @@ public class CsvsTest {
   @Test
   public void testReadMissingOptionalColumnWithSchema() throws IOException {
     // Given a schema that has optional fields, both with and without default values,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.LongF.optional("exampleMissingLongDef", -1L),
-            TabField.LongF.optional("exampleMissingLong"),
-            TabField.IntF.required("exampleInt"),
-            TabField.IntF.optional("exampleMissingIntDef", -1),
-            TabField.IntF.optional("exampleMissingInt"),
-            TabField.StrF.required("exampleString"),
-            TabField.StrF.optional("exampleMissingStringDef", "missing"),
-            TabField.StrF.optional("exampleMissingString"),
-            TabField.FloatF.required("exampleFloat"),
-            TabField.FloatF.optional("exampleMissingFloatDef", -1.0F),
-            TabField.FloatF.optional("exampleMissingFloat"),
-            TabField.DoubleF.required("exampleDouble"),
-            TabField.DoubleF.optional("exampleMissingDoubleDef", -2.0d),
-            TabField.DoubleF.optional("exampleMissingDouble"),
-            TabField.BooleanF.required("exampleBoolean"),
-            TabField.BooleanF.optional("exampleMissingBooleanDef", true),
-            TabField.BooleanF.optional("exampleMissingBoolean"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.LongS.optional("exampleMissingLongDef", -1L),
+            TabSchema.LongS.optional("exampleMissingLong"),
+            TabSchema.IntS.required("exampleInt"),
+            TabSchema.IntS.optional("exampleMissingIntDef", -1),
+            TabSchema.IntS.optional("exampleMissingInt"),
+            TabSchema.StrS.required("exampleString"),
+            TabSchema.StrS.optional("exampleMissingStringDef", "missing"),
+            TabSchema.StrS.optional("exampleMissingString"),
+            TabSchema.FloatS.required("exampleFloat"),
+            TabSchema.FloatS.optional("exampleMissingFloatDef", -1.0F),
+            TabSchema.FloatS.optional("exampleMissingFloat"),
+            TabSchema.DoubleS.required("exampleDouble"),
+            TabSchema.DoubleS.optional("exampleMissingDoubleDef", -2.0d),
+            TabSchema.DoubleS.optional("exampleMissingDouble"),
+            TabSchema.BooleanS.required("exampleBoolean"),
+            TabSchema.BooleanS.optional("exampleMissingBooleanDef", true),
+            TabSchema.BooleanS.optional("exampleMissingBoolean"));
 
     // and a CSV that does not have columns for those optional fields,
     String content =
@@ -394,15 +393,15 @@ public class CsvsTest {
         TempContent destCsvFile = TempContent.withName("converted", ".csv")) {
 
       // and a schema that requires a value instead of null,
-      TabField.StructF schema =
-          TabField.StructF.of(
+      TabSchema.StructS schema =
+          TabSchema.StructS.of(
               "exampleRecord",
-              TabField.LongF.required("exampleLong"),
-              TabField.IntF.required("exampleInt"),
-              TabField.StrF.required("exampleString"),
-              TabField.FloatF.required("exampleFloat"),
-              TabField.DoubleF.required("exampleDouble"),
-              TabField.BooleanF.required("exampleBoolean"));
+              TabSchema.LongS.required("exampleLong"),
+              TabSchema.IntS.required("exampleInt"),
+              TabSchema.StrS.required("exampleString"),
+              TabSchema.FloatS.required("exampleFloat"),
+              TabSchema.DoubleS.required("exampleDouble"),
+              TabSchema.BooleanS.required("exampleBoolean"));
 
       // When it is loaded as tabular data with the schema and read,
       try (TabStream records = Csvs.records(sourceFile.path(), schema)) {
@@ -482,14 +481,14 @@ public class CsvsTest {
         """;
 
     // and a schema that accounts for every column,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.UnionF.required("exampleLongString", Long.class, String.class),
-            TabField.UnionF.required("exampleIntString", Integer.class, String.class),
-            TabField.UnionF.required("exampleFloatString", Float.class, String.class),
-            TabField.UnionF.required("exampleDoubleString", Double.class, String.class),
-            TabField.UnionF.required("exampleBooleanString", Boolean.class, String.class));
+            TabSchema.UnionS.required("exampleLongString", Long.class, String.class),
+            TabSchema.UnionS.required("exampleIntString", Integer.class, String.class),
+            TabSchema.UnionS.required("exampleFloatString", Float.class, String.class),
+            TabSchema.UnionS.required("exampleDoubleString", Double.class, String.class),
+            TabSchema.UnionS.required("exampleBooleanString", Boolean.class, String.class));
 
     // When it is loaded as tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -524,14 +523,14 @@ public class CsvsTest {
         """;
 
     // and a schema that accounts for every column,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
-            TabField.UnionF.optional("exampleIntString", Integer.class, String.class),
-            TabField.UnionF.optional("exampleFloatString", Float.class, String.class),
-            TabField.UnionF.optional("exampleDoubleString", Double.class, String.class),
-            TabField.UnionF.optional("exampleBooleanString", Boolean.class, String.class));
+            TabSchema.UnionS.optional("exampleLongString", Long.class, String.class),
+            TabSchema.UnionS.optional("exampleIntString", Integer.class, String.class),
+            TabSchema.UnionS.optional("exampleFloatString", Float.class, String.class),
+            TabSchema.UnionS.optional("exampleDoubleString", Double.class, String.class),
+            TabSchema.UnionS.optional("exampleBooleanString", Boolean.class, String.class));
 
     // When it is loaded as tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -566,15 +565,15 @@ public class CsvsTest {
         """;
 
     // and a schema that accounts for every column,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.UnionF.optional("exampleLongString", "test-def1", Long.class, String.class),
-            TabField.UnionF.optional("exampleIntString", "test-def2", Integer.class, String.class),
-            TabField.UnionF.optional("exampleFloatString", "test-def3", Float.class, String.class),
-            TabField.UnionF.optional(
+            TabSchema.UnionS.optional("exampleLongString", "test-def1", Long.class, String.class),
+            TabSchema.UnionS.optional("exampleIntString", "test-def2", Integer.class, String.class),
+            TabSchema.UnionS.optional("exampleFloatString", "test-def3", Float.class, String.class),
+            TabSchema.UnionS.optional(
                 "exampleDoubleString", "test-def4", Double.class, String.class),
-            TabField.UnionF.optional(
+            TabSchema.UnionS.optional(
                 "exampleBooleanString", "test-def5", Boolean.class, String.class));
 
     // When it is loaded as tabular data with the schema,
@@ -637,8 +636,8 @@ public class CsvsTest {
   public void testSchemaBadDuplicateNames() {
     // TODO: This should be in a TabSchemaTest
     // When a schema is specified with two fields with the same name,
-    TabField.StructF.of(
-        "exampleRecord", TabField.IntF.required("name"), TabField.IntF.required("name"));
+    TabSchema.StructS.of(
+        "exampleRecord", TabSchema.IntS.required("name"), TabSchema.IntS.required("name"));
     // Then an exception is thrown explaining that duplicate names were detected.
   }
 
@@ -652,8 +651,8 @@ public class CsvsTest {
         1766362285191,example2
         """;
 
-    TabField.StructF schema =
-        TabField.StructF.of("exampleRecord", TabField.LongF.required("exampleLong"));
+    TabSchema.StructS schema =
+        TabSchema.StructS.of("exampleRecord", TabSchema.LongS.required("exampleLong"));
 
     // When the data is read and configured to allow extra columns,
     try (TempContent sourceFile = TempContent.of(content);
@@ -680,8 +679,8 @@ public class CsvsTest {
         1766362285191,example2
         """;
 
-    TabField.StructF schema =
-        TabField.StructF.of("exampleRecord", TabField.LongF.required("exampleLong"));
+    TabSchema.StructS schema =
+        TabSchema.StructS.of("exampleRecord", TabSchema.LongS.required("exampleLong"));
 
     // When the data is read and configured to ignore extra columns (it is the default),
     try (TempContent sourceFile = TempContent.of(content);
@@ -707,11 +706,11 @@ public class CsvsTest {
         1766362285191,example2
         """;
 
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.optional("exampleMistyped"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.optional("exampleMistyped"));
 
     // When the value is read and configured to ignore mistyped info,
     try (TempContent sourceFile = TempContent.of(content);
@@ -737,11 +736,11 @@ public class CsvsTest {
         1766362285191,example2
         """;
 
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.required("exampleMistyped"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.required("exampleMistyped"));
 
     // When the value is read and configured to ignore mistyped info,
     try (TempContent sourceFile = TempContent.of(content);
@@ -766,11 +765,11 @@ public class CsvsTest {
         """;
 
     // and a schema with a required long and a required int
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.required("exampleInt"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler,
     Function<TabValueException, Csvs.ErrorAction<?>> handler =
@@ -828,11 +827,11 @@ public class CsvsTest {
         """;
 
     // and a schema with a required long and a required int
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.required("exampleInt"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler that erroneously returns
     // either a null or mistyped value for the "recovered" value,
@@ -867,11 +866,11 @@ public class CsvsTest {
         """;
 
     // and a schema with a required long and a required int
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.required("exampleInt"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler that skips records,
     try (TempContent sourceFile = TempContent.of(content);
@@ -898,11 +897,11 @@ public class CsvsTest {
         """;
 
     // and a schema with a required long and a required int
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("exampleLong"),
-            TabField.IntF.required("exampleInt"));
+            TabSchema.LongS.required("exampleLong"),
+            TabSchema.IntS.required("exampleInt"));
 
     // When the value is read and configured to use a custom error handler that fails the operation,
     try (TempContent sourceFile = TempContent.of(content);

@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.util.stream.Stream;
 
 public interface TabStream extends Closeable {
-  TabField.StructF schema();
+  TabSchema.StructS schema();
 
   Stream<TabRecord> stream();
 }

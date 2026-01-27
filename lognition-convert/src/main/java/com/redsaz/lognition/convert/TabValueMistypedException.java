@@ -4,7 +4,7 @@ package com.redsaz.lognition.convert;
 public final class TabValueMistypedException extends TabValueException {
   private final Object valueInError;
 
-  public TabValueMistypedException(TabField<?> schema, Object valueInError) {
+  public TabValueMistypedException(TabSchema<?> schema, Object valueInError) {
     super("Expected value of type " + schema + " but got " + valueInError.getClass(), schema);
     this.valueInError = valueInError;
   }

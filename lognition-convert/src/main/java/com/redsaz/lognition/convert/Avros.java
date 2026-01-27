@@ -42,7 +42,7 @@ public class Avros {
   public static TabStream records(Path tabFile) throws IOException {
     DataFileReader<GenericRecord> reader =
         new DataFileReader<>(tabFile.toFile(), new GenericDatumReader<>());
-    TabField.StructF schema = TabField.StructF.ofAvro(reader.getSchema());
+    TabSchema.StructS schema = TabSchema.StructS.ofAvro(reader.getSchema());
 
     Function<GenericRecord, TabRecord> converter =
         genRec -> {
@@ -86,7 +86,7 @@ public class Avros {
    * @return The SHA256 hash of the resulting file.
    * @throws IOException if an error while writing the file.
    */
-  public static String write(Path dest, TabField.StructF schema, Stream<TabRecord> rows)
+  public static String write(Path dest, TabSchema.StructS schema, Stream<TabRecord> rows)
       throws IOException {
     try (HashingOutputStream hos =
         new HashingOutputStream(
@@ -114,7 +114,7 @@ public class Avros {
     }
   }
 
-  private static Schema toAvroSchema(TabField.StructF schema) {
+  private static Schema toAvroSchema(TabSchema.StructS schema) {
     SchemaBuilder.FieldAssembler<Schema> builder =
         SchemaBuilder.builder().record("TabRecord").fields();
     schema
@@ -123,7 +123,7 @@ public class Avros {
             field -> {
               builder.name(field.name());
               switch (field) {
-                case TabField.StrF f -> {
+                case TabSchema.StrS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalString(f.name());
@@ -134,7 +134,7 @@ public class Avros {
                     builder.requiredString(field.name());
                   }
                 }
-                case TabField.IntF f -> {
+                case TabSchema.IntS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalInt(f.name());
@@ -145,7 +145,7 @@ public class Avros {
                     builder.requiredInt(field.name());
                   }
                 }
-                case TabField.LongF f -> {
+                case TabSchema.LongS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalLong(f.name());
@@ -156,7 +156,7 @@ public class Avros {
                     builder.requiredLong(field.name());
                   }
                 }
-                case TabField.FloatF f -> {
+                case TabSchema.FloatS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalFloat(f.name());
@@ -167,7 +167,7 @@ public class Avros {
                     builder.requiredFloat(field.name());
                   }
                 }
-                case TabField.DoubleF f -> {
+                case TabSchema.DoubleS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalDouble(f.name());
@@ -178,7 +178,7 @@ public class Avros {
                     builder.requiredDouble(field.name());
                   }
                 }
-                case TabField.BooleanF f -> {
+                case TabSchema.BooleanS f -> {
                   if (f.isOptional()) {
                     if (f.defVal() == null) {
                       builder.optionalBoolean(f.name());
@@ -189,10 +189,10 @@ public class Avros {
                     builder.requiredBoolean(field.name());
                   }
                 }
-                case TabField.UnionF f -> addUnion(builder, f);
-                case TabField.StructF f ->
+                case TabSchema.UnionS f -> addUnion(builder, f);
+                case TabSchema.StructS f ->
                     throw new TabValueException(
-                        "StructF not supported as a field of a StructF when reading from an Avro file.",
+                        "StructS is not yet supported as a field of a StructS when reading from an Avro file.",
                         f);
               }
             });
@@ -200,7 +200,7 @@ public class Avros {
   }
 
   private static SchemaBuilder.FieldAssembler<Schema> addUnion(
-      SchemaBuilder.FieldAssembler<Schema> builder, TabField.UnionF f) {
+      SchemaBuilder.FieldAssembler<Schema> builder, TabSchema.UnionS f) {
     SchemaBuilder.UnionAccumulator<SchemaBuilder.NullDefault<Schema>> b =
         builder.name(f.name()).type().unionOf().nullType();
     for (Class<?> c : f.types()) {
@@ -230,11 +230,11 @@ public class Avros {
     };
   }
 
-  private record ReaderTabStream(TabField.StructF schema, Stream<TabRecord> stream)
+  private record ReaderTabStream(TabSchema.StructS schema, Stream<TabRecord> stream)
       implements TabStream {
 
     public List<String> fieldNames() {
-      return schema().fields().stream().map(TabField::name).toList();
+      return schema().fields().stream().map(TabSchema::name).toList();
     }
 
     @Override

@@ -36,7 +36,7 @@ public class AvrosTest {
         ]
         }
         """;
-    TabField.StructF schema = TabField.StructF.of(schemaStr);
+    TabSchema.StructS schema = TabSchema.StructS.of(schemaStr);
 
     // When it is loaded into tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -77,14 +77,14 @@ public class AvrosTest {
         """;
 
     // and a schema that accounts for every column,
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.UnionF.optional("exampleLongString", Long.class, String.class),
-            TabField.UnionF.required("exampleIntString", Integer.class, String.class),
-            TabField.UnionF.required("exampleFloatString", Float.class, String.class),
-            TabField.UnionF.required("exampleDoubleString", Double.class, String.class),
-            TabField.UnionF.required("exampleBooleanString", Boolean.class, String.class));
+            TabSchema.UnionS.optional("exampleLongString", Long.class, String.class),
+            TabSchema.UnionS.required("exampleIntString", Integer.class, String.class),
+            TabSchema.UnionS.required("exampleFloatString", Float.class, String.class),
+            TabSchema.UnionS.required("exampleDoubleString", Double.class, String.class),
+            TabSchema.UnionS.required("exampleBooleanString", Boolean.class, String.class));
 
     // When it is loaded as tabular data with the schema,
     try (TempContent sourceFile = TempContent.of(content);
@@ -133,26 +133,26 @@ public class AvrosTest {
           1766362285310,1,GET /logs/test,Non HTTP response code: org.apache.http.conn.HttpHostConnectException,Non HTTP response message: Connect to 127.0.0.1:8080 [/127.0.0.1] failed: Connection refused,Thread Group 1-4,text,false,,2546,0,10,10,http://127.0.0.1:8080/logs/test?delay=100&delayrange=20&key1=val1,0,0,1
           """;
 
-    TabField.StructF schema =
-        TabField.StructF.of(
+    TabSchema.StructS schema =
+        TabSchema.StructS.of(
             "exampleRecord",
-            TabField.LongF.required("timeStamp"),
-            TabField.LongF.required("elapsed"),
-            TabField.StrF.optional("label", ""),
-            TabField.UnionF.optional("responseCode", Integer.class, String.class),
-            TabField.StrF.optional("responseMessage"),
-            TabField.StrF.optional("threadName"),
-            TabField.StrF.optional("dataType"),
-            TabField.BooleanF.optional("success"),
-            TabField.StrF.optional("failureMessage"),
-            TabField.LongF.optional("bytes"),
-            TabField.LongF.optional("sentBytes"),
-            TabField.IntF.optional("grpThreads"),
-            TabField.IntF.optional("allThreads"),
-            TabField.StrF.optional("URL"),
-            TabField.IntF.optional("Latency"),
-            TabField.IntF.optional("IdleTime"),
-            TabField.IntF.optional("Connect"));
+            TabSchema.LongS.required("timeStamp"),
+            TabSchema.LongS.required("elapsed"),
+            TabSchema.StrS.optional("label", ""),
+            TabSchema.UnionS.optional("responseCode", Integer.class, String.class),
+            TabSchema.StrS.optional("responseMessage"),
+            TabSchema.StrS.optional("threadName"),
+            TabSchema.StrS.optional("dataType"),
+            TabSchema.BooleanS.optional("success"),
+            TabSchema.StrS.optional("failureMessage"),
+            TabSchema.LongS.optional("bytes"),
+            TabSchema.LongS.optional("sentBytes"),
+            TabSchema.IntS.optional("grpThreads"),
+            TabSchema.IntS.optional("allThreads"),
+            TabSchema.StrS.optional("URL"),
+            TabSchema.IntS.optional("Latency"),
+            TabSchema.IntS.optional("IdleTime"),
+            TabSchema.IntS.optional("Connect"));
 
     // Given a JMeter JTL CSV file,
     try (TempContent sourceFile = TempContent.of(content);
@@ -175,12 +175,12 @@ public class AvrosTest {
       //
       //      // Sample schema looks like it's re-implementing an incomplete grafana/Prometheus,
       // poorly
-      //      StructF sampleSchema = StructF.of(
-      //          TabField.LongF.required("timeStamp"),
-      //          TabField.LongF.required("elapsed"),
-      //          TabField.StrF.optional("label"),
-      //          TabField.UnionF.optional("responseCode", Integer.class, String.class),
-      //          TabField.LongF.required("bytes")
+      //      StructS sampleSchema = StructS.of(
+      //          TabSchema.LongS.required("timeStamp"),
+      //          TabSchema.LongS.required("elapsed"),
+      //          TabSchema.StrS.optional("label"),
+      //          TabSchema.UnionS.optional("responseCode", Integer.class, String.class),
+      //          TabSchema.LongS.required("bytes")
       //      );
     }
   }
