@@ -376,20 +376,6 @@ public class Csvs {
     }
   }
 
-  private static Function<TabRecord, TabRecord> createCsvConverter(
-      TabSchema.StructS schema, boolean ignoreMistyped) {
-    List<? extends Function<String, ?>> valConvs =
-        schema.fields().stream().map(field -> valConverter(field, ignoreMistyped)).toList();
-    int size = valConvs.size();
-    return (TabRecord sourceRow) -> {
-      List<?> destVals =
-          IntStream.range(0, size)
-              .mapToObj(i -> valConvs.get(i).apply((String) sourceRow.get(i)))
-              .toList();
-      return new TabRecord(destVals);
-    };
-  }
-
   private static <U> Function<String, U> valConverter(TabSchema<U> field, boolean ignoreMistyped) {
     return switch (field) {
       case TabSchema.StrS f -> (Function<String, U>) orOpt(Function.identity(), f, ignoreMistyped);
