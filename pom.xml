@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.redsaz.lognition</groupId>
     <artifactId>lognition-parent</artifactId>
-    <version>0.16.0</version>
+    <version>0.17.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>lognition-api</module>
@@ -16,26 +16,26 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-        <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
-        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-        <maven-deploy-plugin.version>3.1.3</maven-deploy-plugin.version>
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+        <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
         <maven-install-plugin.version>3.1.3</maven-install-plugin.version>
         <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
-        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
-        <maven-failsafe-plugin.version>3.5.2</maven-failsafe-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
-        <flyway-maven-plugin.version>11.3.0</flyway-maven-plugin.version>
+        <flyway-maven-plugin.version>12.0.0</flyway-maven-plugin.version>
         <jooq-codegen-maven.version>3.19.18</jooq-codegen-maven.version>
-        <avro-maven-plugin.version>1.12.0</avro-maven-plugin.version>
-        <fmt-maven-plugin.version>2.25</fmt-maven-plugin.version>
+        <avro-maven-plugin.version>1.12.1</avro-maven-plugin.version>
+        <fmt-maven-plugin.version>2.29</fmt-maven-plugin.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -72,7 +72,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.20.0</version>
+                <version>2.21.0</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -89,7 +89,7 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.50.3.0</version>
+                <version>3.51.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
@@ -134,17 +134,17 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.20</version>
+                <version>1.5.26</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.5.20</version>
+                <version>1.5.26</version>
             </dependency>
             <dependency>
                 <groupId>org.commonmark</groupId>
                 <artifactId>commonmark</artifactId>
-                <version>0.27.0</version>
+                <version>0.27.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -154,12 +154,12 @@
             <dependency>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-meta</artifactId>
-                <version>3.20.8</version>
+                <version>3.20.11</version>
             </dependency>
             <dependency>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq</artifactId>
-                <version>3.20.8</version>
+                <version>3.20.11</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
@@ -170,7 +170,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.20.0</version>
+                <version>2.21.0</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -190,12 +190,12 @@
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
-                <version>11.15.0</version>
+                <version>12.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-database-hsqldb</artifactId>
-                <version>11.15.0</version>
+                <version>12.0.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.activation</groupId>
@@ -210,13 +210,13 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>5.20.0</version>
+                <version>5.21.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>7.11.0</version>
+                <version>7.12.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
