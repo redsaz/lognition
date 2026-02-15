@@ -1,11 +1,22 @@
 package com.redsaz.lognition.convert;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.apache.avro.Schema;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 
 public sealed interface TabSchema<T>
     permits TabSchema.StrS,
@@ -120,6 +131,7 @@ public sealed interface TabSchema<T>
       return new StrS(name, Opt.required());
     }
 
+    @Override
     public Class<String> type() {
       return String.class;
     }
@@ -138,6 +150,7 @@ public sealed interface TabSchema<T>
       return new IntS(name, Opt.required());
     }
 
+    @Override
     public Class<Integer> type() {
       return Integer.class;
     }
@@ -156,6 +169,7 @@ public sealed interface TabSchema<T>
       return new LongS(name, Opt.required());
     }
 
+    @Override
     public Class<Long> type() {
       return Long.class;
     }
@@ -174,6 +188,7 @@ public sealed interface TabSchema<T>
       return new FloatS(name, Opt.required());
     }
 
+    @Override
     public Class<Float> type() {
       return Float.class;
     }
@@ -192,6 +207,7 @@ public sealed interface TabSchema<T>
       return new DoubleS(name, Opt.required());
     }
 
+    @Override
     public Class<Double> type() {
       return Double.class;
     }
@@ -210,6 +226,7 @@ public sealed interface TabSchema<T>
       return new BooleanS(name, Opt.required());
     }
 
+    @Override
     public Class<Boolean> type() {
       return Boolean.class;
     }
@@ -228,6 +245,7 @@ public sealed interface TabSchema<T>
       return new UnionS(name, Opt.required(), List.copyOf(Arrays.asList(types)));
     }
 
+    @Override
     public Class<Object> type() {
       return Object.class;
     }
@@ -270,6 +288,7 @@ public sealed interface TabSchema<T>
       return "";
     }
 
+    @Override
     public Class<Object> type() {
       return Object.class;
     }
@@ -277,6 +296,189 @@ public sealed interface TabSchema<T>
     @Override
     public Opt<Object> opt() {
       return null;
+    }
+
+    //    private static class BoxApprox {
+    //      // Key: Source type, Value: Acceptable Dest types in order of greatest preference to
+    // lowest.
+    //      // (Obviously the source type isn't in the acceptable list, since it is an exact match)
+    //      private static final Map<Class<?>, Class<?>[]> APPROXES = Map.ofEntries(
+    //          Map.entry(Integer.class, new Class<?>[] {int.class, long.class, Long.class,
+    // double.class, Double.class, Number.class, float.class, Float.class}),
+    //          Map.entry(Long.class, new Class<?>[] {long.class, Number.class, double.class,
+    // Double.class, float.class, Float.class}),
+    //          Map.entry(Double.class, new Class<?>[] {double.class, Number.class}),
+    //          Map.entry(Float.class, new Class<?>[] {float.class, double.class, Double.class,
+    // Number.class}),
+    //          Map.entry(Boolean.class, new Class<?>[] {boolean.class})
+    //          );
+    //
+    //      private static final Class<?>[] EMPTY = new Class<?>[] {};
+    //      /**
+    //       * Calculate the distance from the source class to the destination class. 0 is
+    // identical.
+    //       * -1 means they do not "connection", they do not approximate. The idea is that, when
+    // there
+    //       * are multiple setters for a field, that the best candidate can be picked by using the
+    //       * one with the shortest distance.
+    //       * @param src The data type of the source
+    //       * @param dst The receiving type
+    //       * @return the approximate distance, or -1 if there is no connection.
+    //       */
+    //      public int calcDistance(Class<?> src, Class<?> dst) {
+    //        if (dst.equals(src)) {
+    //          return 0;
+    //        }
+    //        Class<?>[] candidates = APPROXES.getOrDefault(src, EMPTY);
+    //        for (int i = 0; i < candidates.length; ++i) {
+    //          Class<?> candidate = candidates[i];
+    //          if (candidate.equals(src)) {
+    //            return i + 1; // Must be +1 because 0 is reserved for exact match.
+    //          }
+    //        }
+    //        return hierarchyDistance(src, dst);
+    //      }
+    //
+    //      private int hierarchyDistance(Class<?> src, Class<?> dst) {
+    //        if (src.equals(dst)) {
+    //          return 0;
+    //        }
+    //        if (!dst.isAssignableFrom(src)) {
+    //          return -1;
+    //        }
+    //        // Make the distance from anything to (not)Object be a normal distance, and
+    //        // anything to Object be maximum possible distance, so that interfaces rank higher
+    // instead
+    //        int minDist = Integer.MAX_VALUE;
+    //        if (!dst.equals(Object.class) && src.getSuperclass() != null) {
+    //          minDist = hierarchyDistance(src.getSuperclass(), dst) + 1;
+    //        }
+    //        Class<?>[] ifaces = src.getInterfaces();
+    //        for (int i = 0; i < ifaces.length; ++i) {
+    //          Class<?> iface = ifaces[i];
+    //          if (!iface.isAssignableFrom(src)) {
+    //            continue;
+    //          }
+    //          int dist = hierarchyDistance(iface, dst) + 1;
+    //          if (dist >= 0 && dist < minDist) {
+    //            minDist = dist;
+    //          }
+    //        }
+    //        return minDist;
+    //      }
+    //    }
+
+
+    // Sooooo.... This doesn't work as planned, because the Csvs#recordsAsStrings call does as it says... makes
+    // everything strings, so it's a TabRecord of strings. It'll only work if the class to convert to is also only
+    // Strings.
+    public <U> Function<TabRecord, U> converter(Class<U> clazz) {
+      // TODO make all this more robust, and probably in its own class
+      MethodHandles.Lookup lookup = MethodHandles.lookup();
+      if (clazz.isRecord()) {
+        RecordComponent[] parts = clazz.getRecordComponents();
+        Class<?>[] ctorParams =
+            Arrays.stream(parts).map(RecordComponent::getType).toArray(Class<?>[]::new);
+        Constructor<U> ctorReflect = ConstructorUtils.getAccessibleConstructor(clazz, ctorParams);
+        if (ctorReflect == null) {
+          throw new TabException("Could not find an acceptable constructor for " + clazz.getName());
+        }
+        MethodHandle ctor;
+        try {
+          ctor = lookup.unreflectConstructor(ctorReflect);
+        } catch (IllegalAccessException e) {
+          throw new TabException("Could not access constructor for " + clazz.getName(), e);
+        }
+        TabSchema[] ordered = new TabSchema[parts.length];
+        int[] recPoses = new int[parts.length];
+        // Yeah this is O(n^2). I should hope there's only at most a few dozen params.
+        for (int i = 0; i < parts.length; ++i) {
+          TabSchema<?> matching = null;
+          int recPos = -1;
+          for (int j = 0; j < fields.size(); ++j) {
+            if (parts[i].getName().equals(fields.get(j).name())) {
+              matching = fields.get(j);
+              recPos = j;
+              break;
+            }
+          }
+          if (matching == null) {
+            throw new TabException(
+                "Schema for %s does not have field %s for class %s"
+                    .formatted(name(), parts[i].getName(), clazz.getName()));
+          }
+          ordered[i] = matching;
+          recPoses[i] = recPos;
+        }
+        return (TabRecord r) -> {
+          Object[] values = new Object[parts.length];
+          for (int i = 0; i < parts.length; ++i) {
+            values[i] = r.get(recPoses[i]);
+          }
+          try {
+            return (U) ctor.invoke(values);
+          } catch (Throwable e) {
+            throw new TabException(
+                "Could not create a new instance of %s".formatted(clazz.getName()), e);
+          }
+        };
+      }
+      // Was not a record, so go the no-param constructor and setters route.
+      MethodHandle ctor;
+      try {
+        ctor = lookup.findConstructor(clazz, MethodType.methodType(void.class));
+      } catch (IllegalAccessException e) {
+        throw new TabException("Could not access constructor for " + clazz.getName(), e);
+      } catch (NoSuchMethodException e) {
+        throw new TabException("No parameterless constructor found for " + clazz.getName(), e);
+      }
+      List<BiConsumer<TabRecord, U>> fillers = new ArrayList<>();
+      // Find the setters
+      for (int i = 0; i < fields().size(); ++i) {
+        TabSchema<?> field = fields.get(i);
+        String fname = field.name();
+        String setterName =
+            "set" + Character.toString(Character.toUpperCase(fname.codePointAt(0))) + fname.substring(1);
+        Method setterReflect =
+            MethodUtils.getMatchingAccessibleMethod(clazz, setterName, field.type());
+        if (setterReflect == null) {
+          // If there is no setter for the particular field, fine. It means we can't populate that
+          // particular part of the target object.
+          continue;
+        }
+        MethodHandle setter;
+        try {
+          setter = lookup.unreflect(setterReflect);
+        } catch (IllegalAccessException e) {
+          throw new TabException(
+              "Cannot access %s#%s".formatted(clazz.getName(), setterReflect.getName()), e);
+        }
+        final int recPos = i;
+        BiConsumer<TabRecord, U> filler =
+            (TabRecord r, U target) -> {
+              try {
+                setter.invoke(target, r.get(recPos));
+              } catch (Throwable e) {
+                throw new TabException(
+                    "Exception when calling %s#%s"
+                        .formatted(clazz.getName(), setterReflect.getName()),
+                    e);
+              }
+            };
+        fillers.add(filler);
+      }
+      return (TabRecord r) -> {
+        try {
+          U target = (U) ctor.invoke();
+          fillers.forEach(
+              filler -> {
+                filler.accept(r, target);
+              });
+          return target;
+        } catch (Throwable e) {
+          throw new TabException("Could not create new instance of class " + clazz.getName(), e);
+        }
+      };
     }
   }
 }

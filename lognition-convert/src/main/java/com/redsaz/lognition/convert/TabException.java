@@ -5,4 +5,12 @@ public class TabException extends RuntimeException {
   public TabException(String message) {
     super(message);
   }
+
+  public TabException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public TabException(Throwable cause) {
+    super(cause);
+  }
 }

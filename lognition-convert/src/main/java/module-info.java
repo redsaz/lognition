@@ -26,4 +26,5 @@ module LognitionConvert {
   requires com.google.common;
   requires org.slf4j;
   requires univocity.parsers;
+  requires org.apache.commons.lang3;
 }

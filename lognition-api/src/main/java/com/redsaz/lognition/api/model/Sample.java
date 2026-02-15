@@ -1,5 +1,6 @@
 package com.redsaz.lognition.api.model;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 public class Sample implements Comparable<Sample> {
@@ -13,6 +14,8 @@ public class Sample implements Comparable<Sample> {
   private boolean success;
   private long responseBytes;
   private int totalThreads;
+
+  private static final Comparator<String> STR_CMP = Comparator.nullsFirst(Comparator.naturalOrder());
 
   public Sample() {}
 
@@ -249,21 +252,12 @@ public class Sample implements Comparable<Sample> {
       return -1;
     } else if (this.duration > obj.duration) {
       return 1;
-    } else if (this.label == null && obj.label != null) {
-      return -1;
-    } else if (this.label != null && obj.label == null) {
-      return 1;
     }
-    int comp = this.label.compareTo(obj.label);
+    int comp = STR_CMP.compare(this.label, obj.label);
     if (comp != 0) {
       return comp;
     }
-    if (this.threadName == null && obj.threadName != null) {
-      return -1;
-    } else if (this.threadName != null && obj.threadName == null) {
-      return 1;
-    }
-    comp = this.threadName.compareTo(obj.threadName);
+    comp = STR_CMP.compare(this.threadName, obj.threadName);
     if (comp != 0) {
       return comp;
     }
@@ -272,11 +266,11 @@ public class Sample implements Comparable<Sample> {
     } else if (this.responseBytes > obj.responseBytes) {
       return 1;
     }
-    comp = this.statusCode.compareTo(obj.statusCode);
+    comp = STR_CMP.compare(this.statusCode, obj.statusCode);
     if (comp != 0) {
       return comp;
     }
-    comp = this.statusMessage.compareTo(obj.statusMessage);
+    comp = STR_CMP.compare(this.statusMessage, obj.statusMessage);
     if (comp != 0) {
       return comp;
     }

@@ -48,7 +48,7 @@ public class CsvAutoSource {
   }
 
   /** List of CSV source types that can be auto-detected. */
-  private enum CsvSourceType implements IdentifierByHeader, SamplesLoader {
+  public enum CsvSourceType implements IdentifierByHeader, SamplesLoader {
     LOADY {
       private List<String> mustHaves =
           List.of(
