@@ -2,12 +2,13 @@ package com.redsaz.lognition.convert;
 
 import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.Sample;
-
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 /**
  * Reads performance Samples from a CSV file, currently only JMeter and Loady McLoadface CSV result
@@ -16,37 +17,93 @@ import java.util.function.Function;
 public class CsvSamplesReader {
 
   public static void main(String[] args) throws IOException {
-    Samples samples = readSamples(Path.of("/home/shayne/code/lognition/jtls/target/real-smaller-with-alternate-header.jtl"));
-    System.out.println(samples);
+    Path csvFile = Path.of("/home/shayne/code/lognition/jtls/target/bighuge.jtl");
+    long startMs = System.currentTimeMillis();
+    Samples samples = readSamples(csvFile);
+    System.out.printf(
+        "Loaded %d samples with CsvSamplesReader in %dms\n",
+        samples.getSamples().size(), System.currentTimeMillis() - startMs);
+    samples = null;
+
+    startMs = System.currentTimeMillis();
+    samples = CsvJtlSource.readJtlFile(csvFile.toFile());
+    System.out.printf(
+        "Loaded %d samples from CsvJtlSource in %dms\n",
+        samples.getSamples().size(), System.currentTimeMillis() - startMs);
   }
 
   // Do not instantiate utility classes
-  private CsvSamplesReader() { }
+  private CsvSamplesReader() {}
 
-//  THIS NEEDS TO BE CALLED! SOMEWHERE!  THEN MAYBE WE CAN REMOVE THE UNNEEDED PARTS FROM CSVAUTOSOURCE AND
-//  BRING THE REST INTO HERE! AND GET RID OF CsvLoadySource and CsvAutoSource!
+  //  THIS NEEDS TO BE CALLED! SOMEWHERE!  THEN MAYBE WE CAN REMOVE THE UNNEEDED PARTS FROM
+  // CSVAUTOSOURCE AND
+  //  BRING THE REST INTO HERE! AND GET RID OF CsvLoadySource and CsvAutoSource!
   public static Samples readSamples(Path file) throws IOException {
-    TabStream stream = Csvs.recordsAsStrings(file);
-    ListSamples.Builder builder = ListSamples.builder();
-    stream.stream().map(schemaToConverter(file, stream.schema())).forEach(builder::add);
-    return builder.build();
+    try (Stream<Sample> stream = Csvs.recordsUsing(file, CsvSamplesReader::autoCsvDeserializer)) {
+      ListSamples.Builder builder = ListSamples.builder();
+      stream.forEach(builder::add);
+      return builder.build();
+    }
   }
 
-  private static Function<? super TabRecord, Sample> schemaToConverter(Path file, TabSchema.StructS schema) {
-    List<String> headers = schema.fields().stream().map(TabSchema::name).toList();
+  private static Csvs.Deserializer<Sample> autoCsvDeserializer(List<String> headers) {
 
-    CsvAutoSource.CsvSourceType srcType = Arrays.stream(CsvAutoSource.CsvSourceType.values())
-        .filter(type -> type.identifiedByHeaders(headers))
-        .findFirst()
-        .orElseThrow(() -> new AppServerException("No converter found for \"" + file + "\""));
+    CsvAutoSource.CsvSourceType srcType =
+        Arrays.stream(CsvAutoSource.CsvSourceType.values())
+            .filter(type -> type.identifiedByHeaders(headers))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new AppServerException(
+                        "Cannot find Sample deserializer for headers: " + headers));
 
     return switch (srcType) {
-      case JTL -> schema.converter(Sample.class);
-      case LOADY -> schema.converter(LoadySample.class).andThen(LoadySample::toSample);
+      case JTL -> sampleMaker(headers);
+      case LOADY -> fromLoadSampleMaker(headers);
     };
   }
 
-  private record LoadySample(long completedAtMs, long durationMs, int fail, String status, long bytesDown, String label, String thread) {
+  private static Csvs.Deserializer<Sample> sampleMaker(List<String> headers) {
+    final List<BiConsumer<Sample, String[]>> colConverters = new ArrayList<>(headers.size());
+    for (int i = 0; i < headers.size(); ++i) {
+      final int col = i;
+      BiConsumer<Sample, String[]> action =
+          switch (headers.get(col)) {
+            case "timeStamp" -> (sample, row) -> sample.setOffset(Long.parseLong(row[col]));
+            case "elapsed" -> (sample, row) -> sample.setDuration(Long.parseLong(row[col]));
+            case "label" -> (sample, row) -> sample.setLabel(row[col]);
+            case "responseCode" -> (sample, row) -> sample.setStatusCode(row[col]);
+            case "responseMessage" -> (sample, row) -> sample.setStatusMessage(row[col]);
+            case "threadName" -> (sample, row) -> sample.setThreadName(row[col]);
+            case "success" -> (sample, row) -> sample.setSuccess(Boolean.getBoolean(row[col]));
+            case "bytes" -> (sample, row) -> sample.setResponseBytes(Long.parseLong(row[col]));
+            case "allThreads" ->
+                (sample, row) -> sample.setTotalThreads(Integer.parseInt(row[col]));
+            default -> null;
+          };
+      if (action != null) {
+        colConverters.add(action);
+      }
+    }
+    return strings -> {
+      Sample sample = new Sample();
+      colConverters.forEach(c -> c.accept(sample, strings));
+      return Stream.of(sample);
+    };
+  }
+
+  private static Csvs.Deserializer<Sample> fromLoadSampleMaker(List<String> headers) {
+    return null;
+  }
+
+  private record LoadySample(
+      long completedAtMs,
+      long durationMs,
+      int fail,
+      String status,
+      long bytesDown,
+      String label,
+      String thread) {
     public Sample toSample() {
       Sample s = new Sample();
       s.setOffset(
@@ -64,5 +121,4 @@ public class CsvSamplesReader {
       return s;
     }
   }
-
 }

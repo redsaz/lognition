@@ -20,7 +20,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -206,6 +205,149 @@ public class Csvs {
   }
 
   /**
+   * A function that takes in a CSV row as an array of strings, and deserializes into a type.
+   *
+   * @param <U> The type to deserialize into.
+   */
+  public interface Deserializer<U> extends Function<String[], Stream<U>> {}
+
+  /**
+   * A function that takes in the headers of a CSV file and return the appropriate deserializer
+   * function.
+   *
+   * @param <U> The type to deserialize into.
+   */
+  public interface DeserializerPlanner<U> extends Function<List<String>, Deserializer<U>> {}
+
+  /**
+   * Fetch deserialized records from a CSV file, allowing the user to set up a deserializer based on
+   * the headers of the data.
+   *
+   * @apiNote Similar to {@link java.nio.file.Files#lines(Path)}, this should be used within a
+   *     try-with-resources statement or similar to ensure the stream's file is closed promptly.
+   * @param csvFile The CSV data to load.
+   * @param planner Receives the headers and returns a deserializer that can deserialize each row.
+   * @return a stream of records, deserialized
+   * @param <U> the type each record is deserialized into
+   * @throws IOException when encountering an error reading the file.
+   */
+  public static <U> Stream<U> recordsUsing(Path csvFile, DeserializerPlanner<U> planner)
+      throws IOException {
+    BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
+    CsvParserSettings settings = new CsvParserSettings();
+    CsvParser parser = new CsvParser(settings);
+    IterableResult<String[], ParsingContext> iterable = parser.iterate(br);
+    Spliterator<String[]> iter = iterable.spliterator();
+    HeadersGetter headersGetter = new HeadersGetter();
+    iter.tryAdvance(headersGetter.fetcher());
+
+    List<String> headers = headersGetter.headers();
+    Stream<String[]> rowStream =
+        StreamSupport.stream(iter, false).onClose(uncheckedCloser(br)).filter(Objects::nonNull);
+
+    Deserializer<U> deser = planner.apply(headers);
+    return rowStream.flatMap(deser);
+  }
+
+  private static class TabRecordPlanner implements DeserializerPlanner<TabRecord> {
+
+    private final TabSchema.StructS given;
+    private final boolean addUnknown;
+    private final boolean ignoreMistyped;
+    private final ReadErrorHandler errorHandler;
+    private TabSchema.StructS resultSchema;
+
+    public TabRecordPlanner(
+        TabSchema.StructS schema,
+        boolean addUnknown,
+        boolean ignoreMistyped,
+        ReadErrorHandler errorHandler) {
+      this.given = schema;
+      this.addUnknown = addUnknown;
+      this.ignoreMistyped = ignoreMistyped;
+      this.errorHandler = errorHandler;
+    }
+
+    @Override
+    public Deserializer<TabRecord> apply(List<String> headers) {
+      if (addUnknown) {
+        List<String> givenFields = given.fields().stream().map(TabSchema::name).toList();
+        List<TabSchema.StrS> unlistedFields =
+            headers.stream()
+                .filter(Predicate.not(givenFields::contains))
+                .map(TabSchema.StrS::optional)
+                .toList();
+        if (unlistedFields.isEmpty()) {
+          resultSchema = given;
+        } else {
+          resultSchema =
+              new TabSchema.StructS(
+                  given.name(),
+                  Stream.concat(given.fields().stream(), unlistedFields.stream()).toList());
+        }
+      } else {
+        resultSchema = given;
+      }
+
+      // The resulting record may have a different order of fields than what the input CSV has,
+      // depending on how the schema was specified.
+
+      // index is the position of the output schema, value is which header it maps to.
+      int[] outPosToInPos =
+          IntStream.range(0, resultSchema.fields().size())
+              .map(
+                  i -> {
+                    String name = resultSchema.fields().get(i).name();
+                    return headers.indexOf(name);
+                  })
+              .toArray();
+      // Each converter is how to convert a string into the field type per position
+      List<? extends Function<String, ?>> fieldConverters =
+          IntStream.range(0, outPosToInPos.length)
+              .mapToObj(i -> valConverter(resultSchema.fields().get(i), ignoreMistyped))
+              .toList();
+      // Actual converter of a CSV row of Strings to a record with values converted to correct types
+      return row -> {
+        try {
+          List<?> values =
+              IntStream.range(0, outPosToInPos.length)
+                  .mapToObj(
+                      i -> {
+                        try {
+                          // TODO: It seems like this and the fieldConverters could be combined,
+                          // so that ifs don't need to happen every row.
+                          int j = outPosToInPos[i];
+                          if (j < 0) {
+                            // Schema specified a field that is not found in the CSV. Use the
+                            // default value, or report error if the field is required.
+                            TabSchema<?> field = given.fields().get(i);
+                            if (field.isRequired()) {
+                              throw new TabValueRequiredException(field);
+                            }
+                            return field.defVal();
+                          }
+                          return fieldConverters.get(i).apply(row[j]);
+                        } catch (TabValueException ex) {
+                          return handleException(ex, errorHandler);
+                        }
+                      })
+                  .toList();
+          return Stream.of(new TabRecord(values));
+        } catch (TabValueException ex) {
+          if (ex == SKIP_RECORD) {
+            return Stream.empty();
+          }
+          throw ex;
+        }
+      };
+    }
+
+    public TabSchema.StructS getSchema() {
+      return resultSchema;
+    }
+  }
+
+  /**
    * Returns a stream to get records from a CSV file. Options can configure how to read from the CSV
    * file, for example supplying a {@link ReadErrorHandler} can allow custom recovery of a record if
    * encountered. Some options are mutually exclusive and will result in an exception if conflicting
@@ -222,99 +364,17 @@ public class Csvs {
    */
   public static TabStream records(Path csvFile, TabSchema.StructS schema, ReadOption... opts)
       throws IOException {
-    BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
-    CsvParserSettings settings = new CsvParserSettings();
-    CsvParser parser = new CsvParser(settings);
-    IterableResult<String[], ParsingContext> iterable = parser.iterate(br);
-    Spliterator<String[]> iter = iterable.spliterator();
-    HeadersGetter headersGetter = new HeadersGetter();
-    iter.tryAdvance(headersGetter.fetcher());
-
-    List<String> headers = headersGetter.headers();
-    List<String> givenFields = schema.fields().stream().map(TabSchema::name).toList();
-    TabSchema.StructS resultSchema;
-    if (hasSimpleReadOption(SimpleReadOption.ADD_UNKNOWN, opts)) {
-      List<TabSchema.StrS> unlistedFields =
-          headers.stream()
-              .filter(Predicate.not(givenFields::contains))
-              .map(TabSchema.StrS::optional)
-              .toList();
-      if (unlistedFields.isEmpty()) {
-        resultSchema = schema;
-      } else {
-        resultSchema =
-            new TabSchema.StructS(
-                schema.name(),
-                Stream.concat(schema.fields().stream(), unlistedFields.stream()).toList());
-      }
-    } else {
-      resultSchema = schema;
-    }
-    SimpleReadOption mistypeOpt = findMistypeOption(opts);
-    boolean ignoreMistyped = mistypeOpt == SimpleReadOption.IGNORE_MISTYPED;
-    ReadErrorHandler errorHandler = findErrorHandler(opts);
-
-    // The resulting record may have a different order of fields than what the input CSV has,
-    // depending on how the schema was specified.
-
-    // index is the position of the output schema, value is which header it maps to.
-    int[] outPosToInPos =
-        IntStream.range(0, resultSchema.fields().size())
-            .map(
-                i -> {
-                  String name = resultSchema.fields().get(i).name();
-                  return headers.indexOf(name);
-                })
-            .toArray();
-    // Each converter is how to convert a string into the field type per position
-    List<? extends Function<String, ?>> fieldConverters =
-        IntStream.range(0, outPosToInPos.length)
-            .mapToObj(i -> valConverter(resultSchema.fields().get(i), ignoreMistyped))
-            .toList();
-    // Actual converter of a CSV row of Strings to a record with values converted to correct types
-    Function<String[], TabRecord> toTabRecord =
-        row -> {
-          try {
-            List<?> values =
-                IntStream.range(0, outPosToInPos.length)
-                    .mapToObj(
-                        i -> {
-                          try {
-                            // TODO: It seems like this and the fieldConverters could be combined,
-                            // so
-                            // that ifs don't need to happen every row.
-                            int j = outPosToInPos[i];
-                            if (j < 0) {
-                              // Schema specified a field that is not found in the CSV. Use the
-                              // default
-                              // value, or report error if the field is required.
-                              TabSchema<?> field = schema.fields().get(i);
-                              if (field.isRequired()) {
-                                throw new TabValueRequiredException(field);
-                              }
-                              return field.defVal();
-                            }
-                            return fieldConverters.get(i).apply(row[j]);
-                          } catch (TabValueException ex) {
-                            return handleException(ex, errorHandler);
-                          }
-                        })
-                    .toList();
-            return new TabRecord(values);
-          } catch (TabValueException ex) {
-            if (ex == SKIP_RECORD) {
-              return null;
-            }
-            throw ex;
-          }
-        };
-    return new CsvTabStream(
-        resultSchema,
-        StreamSupport.stream(iter, false)
-            .onClose(uncheckedCloser(br))
-            .map(toTabRecord)
-            .filter(Objects::nonNull));
+    TabRecordPlanner planner =
+        new TabRecordPlanner(
+            schema,
+            hasSimpleReadOption(SimpleReadOption.ADD_UNKNOWN, opts),
+            hasSimpleReadOption(SimpleReadOption.IGNORE_MISTYPED, opts),
+            findErrorHandler(opts));
+    Stream<TabRecord> stream = recordsUsing(csvFile, planner);
+    return new CsvTabStream(planner.getSchema(), stream);
   }
+
+  private static final TabSchema.StructS EMPTY_STRUCT = new TabSchema.StructS("Record", List.of());
 
   /**
    * Returns a stream to get records from a CSV file and auto-generates a schema where all fields
@@ -327,21 +387,9 @@ public class Csvs {
    * @throws IOException if the file was not found or could not be opened.
    */
   public static TabStream recordsAsStrings(Path csvFile) throws IOException {
-    BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
-    CsvParserSettings settings = new CsvParserSettings();
-    CsvParser parser = new CsvParser(settings);
-    IterableResult<String[], ParsingContext> iterable = parser.iterate(br);
-    Spliterator<String[]> iter = iterable.spliterator();
-    HeadersGetter headersGetter = new HeadersGetter();
-    iter.tryAdvance(headersGetter.fetcher());
-    List<String> headers = headersGetter.headers();
-    List<? extends TabSchema<?>> fields = headers.stream().map(TabSchema.StrS::optional).toList();
-    TabSchema.StructS schema = new TabSchema.StructS("record", fields);
-
-    Function<String[], TabRecord> toTabRecord =
-        row -> new TabRecord(Collections.unmodifiableList(Arrays.asList(row)));
-    return new CsvTabStream(
-        schema, StreamSupport.stream(iter, false).onClose(uncheckedCloser(br)).map(toTabRecord));
+    TabRecordPlanner planner = new TabRecordPlanner(EMPTY_STRUCT, true, false, null);
+    Stream<TabRecord> stream = recordsUsing(csvFile, planner);
+    return new CsvTabStream(planner.getSchema(), stream);
   }
 
   public static String write(Path dest, TabSchema.StructS schema, Stream<TabRecord> rows)

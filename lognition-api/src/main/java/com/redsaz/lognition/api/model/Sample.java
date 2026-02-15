@@ -15,7 +15,8 @@ public class Sample implements Comparable<Sample> {
   private long responseBytes;
   private int totalThreads;
 
-  private static final Comparator<String> STR_CMP = Comparator.nullsFirst(Comparator.naturalOrder());
+  private static final Comparator<String> STR_CMP =
+      Comparator.nullsFirst(Comparator.naturalOrder());
 
   public Sample() {}
 

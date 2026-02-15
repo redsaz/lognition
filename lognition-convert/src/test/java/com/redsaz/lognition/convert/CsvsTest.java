@@ -6,12 +6,88 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
+
+import com.redsaz.lognition.api.exceptions.AppServerException;
+import com.redsaz.lognition.api.model.Sample;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class CsvsTest {
+  @Test
+  public void testRecordsUsing() throws IOException {
+    // Given a CSV file with no null/empty values with strings, ints, longs, floats, doubles, and
+    // booleans,
+    String content =
+        """
+        exampleLong,exampleInt,exampleString,exampleFloat,exampleDouble,exampleBoolean
+        1766362285195,104,GET /logs/test,1.5,3.25,true
+        1766362285191,111,PUT /logs/test,2.125,6.0625,false
+        """;
+
+    // When it is loaded as tabular data with a custom deserializer,
+    record ExampleItem(
+        long exampleLong,
+        int exampleInt,
+        String exampleString,
+        float exampleFloat,
+        double exampleDouble,
+        boolean exampleBoolean) {}
+
+    Csvs.DeserializerPlanner<ExampleItem> planner =
+        new Csvs.DeserializerPlanner<ExampleItem>() {
+          @Override
+          public Csvs.Deserializer<ExampleItem> apply(List<String> headers) {
+            final List<BiConsumer<Object[], String[]>> colConverters =
+                new ArrayList<>(headers.size());
+            for (int i = 0; i < headers.size(); ++i) {
+              final int col = i;
+              BiConsumer<Object[], String[]> action =
+                  switch (headers.get(col)) {
+                    case "exampleLong" -> (e, row) -> e[0] = Long.parseLong(row[col]);
+                    case "exampleInt" -> (e, row) -> e[1] = Integer.parseInt(row[col]);
+                    case "exampleString" -> (e, row) -> e[2] = row[col];
+                    case "exampleFloat" -> (e, row) -> e[3] = Float.parseFloat(row[col]);
+                    case "exampleDouble" -> (e, row) -> e[4] = Double.parseDouble(row[col]);
+                    case "exampleBoolean" -> (e, row) -> e[5] = Boolean.parseBoolean(row[col]);
+                    default -> null;
+                  };
+              if (action != null) {
+                colConverters.add(action);
+              }
+            }
+            return strings -> {
+              Object[] e = new Object[6];
+              colConverters.forEach(c -> c.accept(e, strings));
+              ExampleItem item =
+                  new ExampleItem(
+                      (long) e[0],
+                      (int) e[1],
+                      (String) e[2],
+                      (float) e[3],
+                      (double) e[4],
+                      (boolean) e[5]);
+              return Stream.of(item);
+            };
+          }
+        };
+    try (TempContent sourceFile = TempContent.of(content);
+        Stream<ExampleItem> records = Csvs.recordsUsing(sourceFile.path(), planner)) {
+
+      // and each result should have the expected values
+      List<ExampleItem> actualRows = records.toList();
+      List<ExampleItem> expectedRows =
+          List.of(
+              new ExampleItem(1766362285195L, 104, "GET /logs/test", 1.5f, 3.25d, true),
+              new ExampleItem(1766362285191L, 111, "PUT /logs/test", 2.125f, 6.0625d, false));
+      assertEquals(actualRows, expectedRows);
+    }
+  }
 
   @Test
   public void testReadWriteSchemaless() throws IOException {
