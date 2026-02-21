@@ -7,14 +7,10 @@ import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import com.redsaz.lognition.api.exceptions.AppServerException;
-import com.redsaz.lognition.api.model.Sample;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 

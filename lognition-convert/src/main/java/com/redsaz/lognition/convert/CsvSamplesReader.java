@@ -15,40 +15,30 @@ import java.util.stream.Stream;
  * files are supported automatically.
  */
 public class CsvSamplesReader {
-
-  public static void main(String[] args) throws IOException {
-    Path csvFile = Path.of("/home/shayne/code/lognition/jtls/target/bighuge.jtl");
-    long startMs = System.currentTimeMillis();
-    Samples samples = readSamples(csvFile);
-    System.out.printf(
-        "Loaded %d samples with CsvSamplesReader in %dms\n",
-        samples.getSamples().size(), System.currentTimeMillis() - startMs);
-    samples = null;
-
-    startMs = System.currentTimeMillis();
-    samples = CsvJtlSource.readJtlFile(csvFile.toFile());
-    System.out.printf(
-        "Loaded %d samples from CsvJtlSource in %dms\n",
-        samples.getSamples().size(), System.currentTimeMillis() - startMs);
-  }
+  private CsvAutoSource.CsvSourceType sourceType;
 
   // Do not instantiate utility classes
   private CsvSamplesReader() {}
 
-  //  THIS NEEDS TO BE CALLED! SOMEWHERE!  THEN MAYBE WE CAN REMOVE THE UNNEEDED PARTS FROM
-  // CSVAUTOSOURCE AND
-  //  BRING THE REST INTO HERE! AND GET RID OF CsvLoadySource and CsvAutoSource!
   public static Samples readSamples(Path file) throws IOException {
-    try (Stream<Sample> stream = Csvs.recordsUsing(file, CsvSamplesReader::autoCsvDeserializer)) {
+    CsvSamplesReader reader = new CsvSamplesReader();
+    try (Stream<Sample> stream = Csvs.recordsUsing(file, reader::pickCsvDeserializer)) {
       ListSamples.Builder builder = ListSamples.builder();
       stream.forEach(builder::add);
+
+      // JTL can have a varying total number of threads over time, but Loady is constant.
+      // So for Loady, get count of unique thread names, then adjust allThreads count.
+      if (reader.sourceType == CsvAutoSource.CsvSourceType.LOADY) {
+        int numThreads = builder.getThreadNames().size();
+        builder.forEach(sample -> sample.setTotalThreads(numThreads));
+      }
+
       return builder.build();
     }
   }
 
-  private static Csvs.Deserializer<Sample> autoCsvDeserializer(List<String> headers) {
-
-    CsvAutoSource.CsvSourceType srcType =
+  private Csvs.Deserializer<Sample> pickCsvDeserializer(List<String> headers) {
+    this.sourceType =
         Arrays.stream(CsvAutoSource.CsvSourceType.values())
             .filter(type -> type.identifiedByHeaders(headers))
             .findFirst()
@@ -57,7 +47,7 @@ public class CsvSamplesReader {
                     new AppServerException(
                         "Cannot find Sample deserializer for headers: " + headers));
 
-    return switch (srcType) {
+    return switch (this.sourceType) {
       case JTL -> sampleMaker(headers);
       case LOADY -> fromLoadSampleMaker(headers);
     };
@@ -75,7 +65,7 @@ public class CsvSamplesReader {
             case "responseCode" -> (sample, row) -> sample.setStatusCode(row[col]);
             case "responseMessage" -> (sample, row) -> sample.setStatusMessage(row[col]);
             case "threadName" -> (sample, row) -> sample.setThreadName(row[col]);
-            case "success" -> (sample, row) -> sample.setSuccess(Boolean.getBoolean(row[col]));
+            case "success" -> (sample, row) -> sample.setSuccess(Boolean.parseBoolean(row[col]));
             case "bytes" -> (sample, row) -> sample.setResponseBytes(Long.parseLong(row[col]));
             case "allThreads" ->
                 (sample, row) -> sample.setTotalThreads(Integer.parseInt(row[col]));
@@ -93,17 +83,42 @@ public class CsvSamplesReader {
   }
 
   private static Csvs.Deserializer<Sample> fromLoadSampleMaker(List<String> headers) {
-    return null;
+    // completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+    final List<BiConsumer<LoadySample, String[]>> colConverters = new ArrayList<>(headers.size());
+    for (int i = 0; i < headers.size(); ++i) {
+      final int col = i;
+      BiConsumer<LoadySample, String[]> action =
+          switch (headers.get(col)) {
+            case "completed_at_ms" ->
+                (sample, row) -> sample.completedAtMs = Long.parseLong(row[col]);
+            case "duration_ms" -> (sample, row) -> sample.durationMs = Long.parseLong(row[col]);
+            case "fail" -> (sample, row) -> sample.fail = Integer.parseInt(row[col]);
+            case "status" -> (sample, row) -> sample.status = row[col];
+            case "bytes_down" -> (sample, row) -> sample.bytesDown = Long.parseLong(row[col]);
+            case "label" -> (sample, row) -> sample.label = row[col];
+            case "thread" -> (sample, row) -> sample.thread = row[col];
+            default -> null;
+          };
+      if (action != null) {
+        colConverters.add(action);
+      }
+    }
+    return strings -> {
+      LoadySample sample = new LoadySample();
+      colConverters.forEach(c -> c.accept(sample, strings));
+      return Stream.of(sample.toSample());
+    };
   }
 
-  private record LoadySample(
-      long completedAtMs,
-      long durationMs,
-      int fail,
-      String status,
-      long bytesDown,
-      String label,
-      String thread) {
+  private static class LoadySample {
+    long completedAtMs;
+    long durationMs;
+    int fail;
+    String status;
+    long bytesDown;
+    String label;
+    String thread;
+
     public Sample toSample() {
       Sample s = new Sample();
       s.setOffset(

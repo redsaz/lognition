@@ -245,7 +245,8 @@ public class Csvs {
     Stream<String[]> rowStream =
         StreamSupport.stream(iter, false).onClose(uncheckedCloser(br)).filter(Objects::nonNull);
 
-    Deserializer<U> deser = planner.apply(headers);
+    Deserializer<U> deser =
+        Objects.requireNonNull(planner.apply(headers), "Must have a non-null deserializer.");
     return rowStream.flatMap(deser);
   }
 
