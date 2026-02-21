@@ -15,7 +15,7 @@ import java.util.stream.Stream;
  * files are supported automatically.
  */
 public class CsvSamplesReader {
-  private CsvAutoSource.CsvSourceType sourceType;
+  private CsvSourceType sourceType;
 
   // Do not instantiate utility classes
   private CsvSamplesReader() {}
@@ -28,7 +28,7 @@ public class CsvSamplesReader {
 
       // JTL can have a varying total number of threads over time, but Loady is constant.
       // So for Loady, get count of unique thread names, then adjust allThreads count.
-      if (reader.sourceType == CsvAutoSource.CsvSourceType.LOADY) {
+      if (reader.sourceType == CsvSourceType.LOADY) {
         int numThreads = builder.getThreadNames().size();
         builder.forEach(sample -> sample.setTotalThreads(numThreads));
       }
@@ -39,7 +39,7 @@ public class CsvSamplesReader {
 
   private Csvs.Deserializer<Sample> pickCsvDeserializer(List<String> headers) {
     this.sourceType =
-        Arrays.stream(CsvAutoSource.CsvSourceType.values())
+        Arrays.stream(CsvSourceType.values())
             .filter(type -> type.identifiedByHeaders(headers))
             .findFirst()
             .orElseThrow(
@@ -47,67 +47,106 @@ public class CsvSamplesReader {
                     new AppServerException(
                         "Cannot find Sample deserializer for headers: " + headers));
 
-    return switch (this.sourceType) {
-      case JTL -> sampleMaker(headers);
-      case LOADY -> fromLoadSampleMaker(headers);
-    };
+    return this.sourceType.apply(headers);
   }
 
-  private static Csvs.Deserializer<Sample> sampleMaker(List<String> headers) {
-    final List<BiConsumer<Sample, String[]>> colConverters = new ArrayList<>(headers.size());
-    for (int i = 0; i < headers.size(); ++i) {
-      final int col = i;
-      BiConsumer<Sample, String[]> action =
-          switch (headers.get(col)) {
-            case "timeStamp" -> (sample, row) -> sample.setOffset(Long.parseLong(row[col]));
-            case "elapsed" -> (sample, row) -> sample.setDuration(Long.parseLong(row[col]));
-            case "label" -> (sample, row) -> sample.setLabel(row[col]);
-            case "responseCode" -> (sample, row) -> sample.setStatusCode(row[col]);
-            case "responseMessage" -> (sample, row) -> sample.setStatusMessage(row[col]);
-            case "threadName" -> (sample, row) -> sample.setThreadName(row[col]);
-            case "success" -> (sample, row) -> sample.setSuccess(Boolean.parseBoolean(row[col]));
-            case "bytes" -> (sample, row) -> sample.setResponseBytes(Long.parseLong(row[col]));
-            case "allThreads" ->
-                (sample, row) -> sample.setTotalThreads(Integer.parseInt(row[col]));
-            default -> null;
-          };
-      if (action != null) {
-        colConverters.add(action);
+  /** List of CSV source types that can be auto-detected. */
+  public enum CsvSourceType implements IdentifierByHeader, Csvs.DeserializerPlanner<Sample> {
+    LOADY {
+      @Override
+      public Csvs.Deserializer<Sample> apply(List<String> headers) {
+        final List<BiConsumer<LoadySample, String[]>> colConverters =
+            new ArrayList<>(headers.size());
+        for (int i = 0; i < headers.size(); ++i) {
+          final int col = i;
+          BiConsumer<LoadySample, String[]> action =
+              switch (headers.get(col)) {
+                case "completed_at_ms" ->
+                    (sample, row) -> sample.completedAtMs = Long.parseLong(row[col]);
+                case "duration_ms" -> (sample, row) -> sample.durationMs = Long.parseLong(row[col]);
+                case "fail" -> (sample, row) -> sample.fail = Integer.parseInt(row[col]);
+                case "status" -> (sample, row) -> sample.status = row[col];
+                case "bytes_down" -> (sample, row) -> sample.bytesDown = Long.parseLong(row[col]);
+                case "label" -> (sample, row) -> sample.label = row[col];
+                case "thread" -> (sample, row) -> sample.thread = row[col];
+                default -> null;
+              };
+          if (action != null) {
+            colConverters.add(action);
+          }
+        }
+        return strings -> {
+          LoadySample sample = new LoadySample();
+          colConverters.forEach(c -> c.accept(sample, strings));
+          return Stream.of(sample.toSample());
+        };
+      }
+
+      private List<String> mustHaves =
+          List.of(
+              "completed_at_ms",
+              "duration_ms",
+              // Not required             "fail",
+              "status",
+              "bytes_up",
+              // Not required             "bytes_down",
+              // Not required             "call",
+              "label",
+              "thread");
+
+      @Override
+      public boolean identifiedByHeaders(List<String> headers) {
+        return headers.containsAll(mustHaves);
+      }
+    },
+    JTL {
+      @Override
+      public Csvs.Deserializer<Sample> apply(List<String> headers) {
+        final List<BiConsumer<Sample, String[]>> colConverters = new ArrayList<>(headers.size());
+        for (int i = 0; i < headers.size(); ++i) {
+          final int col = i;
+          BiConsumer<Sample, String[]> action =
+              switch (headers.get(col)) {
+                case "timeStamp" -> (sample, row) -> sample.setOffset(Long.parseLong(row[col]));
+                case "elapsed" -> (sample, row) -> sample.setDuration(Long.parseLong(row[col]));
+                case "label" -> (sample, row) -> sample.setLabel(row[col]);
+                case "responseCode" -> (sample, row) -> sample.setStatusCode(row[col]);
+                case "responseMessage" -> (sample, row) -> sample.setStatusMessage(row[col]);
+                case "threadName" -> (sample, row) -> sample.setThreadName(row[col]);
+                case "success" ->
+                    (sample, row) -> sample.setSuccess(Boolean.parseBoolean(row[col]));
+                case "bytes" -> (sample, row) -> sample.setResponseBytes(Long.parseLong(row[col]));
+                case "allThreads" ->
+                    (sample, row) -> sample.setTotalThreads(Integer.parseInt(row[col]));
+                default -> null;
+              };
+          if (action != null) {
+            colConverters.add(action);
+          }
+        }
+        return strings -> {
+          Sample sample = new Sample();
+          colConverters.forEach(c -> c.accept(sample, strings));
+          return Stream.of(sample);
+        };
+      }
+
+      @Override
+      public boolean identifiedByHeaders(List<String> headers) {
+        if (headers.isEmpty()) {
+          // No headers means that the file is empty, which can be handled by CsvJtlSource.
+          return true;
+        }
+        String[] headerArr = headers.toArray(new String[headers.size()]);
+        return HeaderCheckUtil.isJtlHeaderRow(headerArr)
+            || HeaderCheckUtil.canUseDefaultHeaderRow(headerArr);
       }
     }
-    return strings -> {
-      Sample sample = new Sample();
-      colConverters.forEach(c -> c.accept(sample, strings));
-      return Stream.of(sample);
-    };
   }
 
-  private static Csvs.Deserializer<Sample> fromLoadSampleMaker(List<String> headers) {
-    // completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
-    final List<BiConsumer<LoadySample, String[]>> colConverters = new ArrayList<>(headers.size());
-    for (int i = 0; i < headers.size(); ++i) {
-      final int col = i;
-      BiConsumer<LoadySample, String[]> action =
-          switch (headers.get(col)) {
-            case "completed_at_ms" ->
-                (sample, row) -> sample.completedAtMs = Long.parseLong(row[col]);
-            case "duration_ms" -> (sample, row) -> sample.durationMs = Long.parseLong(row[col]);
-            case "fail" -> (sample, row) -> sample.fail = Integer.parseInt(row[col]);
-            case "status" -> (sample, row) -> sample.status = row[col];
-            case "bytes_down" -> (sample, row) -> sample.bytesDown = Long.parseLong(row[col]);
-            case "label" -> (sample, row) -> sample.label = row[col];
-            case "thread" -> (sample, row) -> sample.thread = row[col];
-            default -> null;
-          };
-      if (action != null) {
-        colConverters.add(action);
-      }
-    }
-    return strings -> {
-      LoadySample sample = new LoadySample();
-      colConverters.forEach(c -> c.accept(sample, strings));
-      return Stream.of(sample.toSample());
-    };
+  private interface IdentifierByHeader {
+    /** True if the sourcetype can process CSVs with this set of headers. */
+    boolean identifiedByHeaders(List<String> headers);
   }
 
   private static class LoadySample {
