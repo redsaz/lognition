@@ -175,6 +175,97 @@ public class CsvSamplesReaderTest {
   }
 
   @Test
+  public void testLoadyConvertRowWithMissingColumnSkipped() throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1244,10,0,200,0,400,GET example/abcd1234,GET example/{itemId},1
+        1355,12,1,error: connection refused,0,123,GET fail/323,GET fail/{id}
+        1587,20,0,200,0,667,GET example/56789abc,GET example/{itemId},2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "GET example/{itemId}");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      // The middle sample is skipped because it had one less column than normal.
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "GET example/{itemId}");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of("GET example/{itemId}"));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+
+  @Test
+  public void testLoadyConvertRowWithExtraColumnSkipped() throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1244,10,0,200,0,400,GET example/abcd1234,GET example/{itemId},1
+        1355,12,1,error: connection refused,0,123,GET fail/323,GET fail/{id},1,extra
+        1587,20,0,200,0,667,GET example/56789abc,GET example/{itemId},2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "GET example/{itemId}");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      // The middle sample is skipped because it had one more column than normal.
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "GET example/{itemId}");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of("GET example/{itemId}"));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+  @Test
   public void testRealisticJtlFile() throws IOException {
     // This JTL data was (mostly) taken from a real 10-thread jmeter run.
     String content =
@@ -258,6 +349,80 @@ public class CsvSamplesReaderTest {
       // Then an exception is thrown explaining it could not be converted
     } catch (AppServerException ex) {
       assertTrue(ex.getMessage().startsWith("Cannot find Sample deserializer for "));
+    }
+  }
+
+  @Test
+  public void testJtlConvertRowWithMissingColumnSkipped() throws IOException {
+    // If a row is encountered that has a missing column, then skip the defective row.
+    String content =
+        """
+          timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+          1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2
+          1469546803635,496,GET test/thing,200,OK,example 1-1,true,280
+          1469546803636,497,GET test/thing,200,OK,example 1-1,true,280,2
+          """;
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, when the call started (not when it ends)
+      assertEquals(first.getOffset(), 0L);
+      assertEquals(first.getDuration(), 496L);
+      assertEquals(first.getLabel(), "GET test/thing");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "example 1-1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 280L);
+      assertEquals(first.getTotalThreads(), 2L);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 2L);
+      assertEquals(last.getDuration(), 497L);
+      assertEquals(last.getLabel(), "GET test/thing");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "example 1-1");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 280L);
+      assertEquals(last.getTotalThreads(), 2);
+    }
+  }
+
+  @Test
+  public void testConvertRowWithExtraColumnSkipped() throws IOException {
+    // If a row is encountered that has an extra column, then skip the defective row.
+    String content =
+        """
+          timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+          1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2
+          1469546803635,496,GET test/thing,200,OK,example 1-1,true,280,2,extra
+          1469546803636,497,GET test/thing,200,OK,example 1-1,true,280,2
+          """;
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, when the call started (not when it ends)
+      assertEquals(first.getOffset(), 0L);
+      assertEquals(first.getDuration(), 496L);
+      assertEquals(first.getLabel(), "GET test/thing");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "example 1-1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 280L);
+      assertEquals(first.getTotalThreads(), 2L);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 2L);
+      assertEquals(last.getDuration(), 497L);
+      assertEquals(last.getLabel(), "GET test/thing");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "example 1-1");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 280L);
+      assertEquals(last.getTotalThreads(), 2);
     }
   }
 }

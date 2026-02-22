@@ -9,12 +9,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads performance Samples from a CSV file, currently only JMeter and Loady McLoadface CSV result
  * files are supported automatically.
  */
 public class CsvSamplesReader {
+  private static final Logger LOG = LoggerFactory.getLogger(CsvSamplesReader.class);
+
   private CsvSourceType sourceType;
 
   // Do not instantiate utility classes
@@ -55,6 +59,7 @@ public class CsvSamplesReader {
     LOADY {
       @Override
       public Csvs.Deserializer<Sample> apply(List<String> headers) {
+        int expectedColumns = headers.size();
         final List<BiConsumer<LoadySample, String[]>> colConverters =
             new ArrayList<>(headers.size());
         for (int i = 0; i < headers.size(); ++i) {
@@ -77,6 +82,13 @@ public class CsvSamplesReader {
         }
         return strings -> {
           LoadySample sample = new LoadySample();
+          if (strings.length != expectedColumns) {
+            LOG.warn(
+                "Expected {} values, but got {} instead. Skipping row.",
+                expectedColumns,
+                strings.length);
+            return Stream.empty();
+          }
           colConverters.forEach(c -> c.accept(sample, strings));
           return Stream.of(sample.toSample());
         };
@@ -102,6 +114,7 @@ public class CsvSamplesReader {
     JTL {
       @Override
       public Csvs.Deserializer<Sample> apply(List<String> headers) {
+        int expectedColumns = headers.size();
         final List<BiConsumer<Sample, String[]>> colConverters = new ArrayList<>(headers.size());
         for (int i = 0; i < headers.size(); ++i) {
           final int col = i;
@@ -126,6 +139,13 @@ public class CsvSamplesReader {
         }
         return strings -> {
           Sample sample = new Sample();
+          if (strings.length != expectedColumns) {
+            LOG.warn(
+                "Expected {} values, but got {} instead. Skipping row.",
+                expectedColumns,
+                strings.length);
+            return Stream.empty();
+          }
           colConverters.forEach(c -> c.accept(sample, strings));
           return Stream.of(sample);
         };
