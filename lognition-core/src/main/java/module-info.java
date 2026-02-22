@@ -23,6 +23,7 @@ module LognitionCore {
   requires com.google.common;
   requires org.slf4j;
   requires org.apache.tika.core;
+  requires org.apache.commons.io;
   requires org.jooq;
   requires slugify;
   requires univocity.parsers;

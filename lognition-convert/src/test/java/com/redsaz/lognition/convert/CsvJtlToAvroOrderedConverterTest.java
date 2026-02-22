@@ -197,14 +197,14 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
     }
   }
 
-  @Test
+  @Test(expectedExceptions = {AppServerException.class})
   public void testConvertNoHeaderButDefaultColumns() throws IOException {
     // Given a JTL file with no header row but 12 columns,
 
     // Back in the day, some versions of jmeter did not provide the header row with the CSV, and
     // it only had data for these 12 columns:
     // timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
-    // Currently, lognition still has logic for handling this special case.
+    // There's not much use for this now, so lognition will not handle this special case anymore.
     String headerlessContent =
         """
         1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,text,true,468,10,10,104
@@ -219,17 +219,7 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
 
       Converter avro2jtl = new AvroToCsvJtlConverter();
       avro2jtl.convert(avroFile.file(), reconstitutedFile.file());
-
-      // Then the reconstituted csv data should match the original data, but with a header row and
-      // data ordered by timestamp and then elapsed, and just these columns:
-      // timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
-      String expectedStr =
-          """
-              timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
-              1766362285191,111,PUT /logs/test,200,OK,Thread Group 1-5,true,538,10
-              1766362285195,104,GET /logs/test,200,OK,Thread Group 1-1,true,468,10
-              """;
-      assertContentEquals(reconstitutedFile.content(), expectedStr, "Reconstituted CSV data");
+      // Then the operation should fail because the headers are unknown
     }
   }
 
@@ -337,7 +327,7 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
   }
 
   @DataProvider(name = "nonNumericColumnsDp", parallel = true)
-  public static Object[][] nonNumericColoumnsDp() {
+  public static Object[][] nonNumericColumnsDp() {
     return new Object[][] {
       new Object[] {
         "words,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599", "Bad timeStamp"

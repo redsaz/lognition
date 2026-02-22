@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -148,20 +149,34 @@ public class CsvSamplesReader {
                 strings.length);
             return Stream.empty();
           }
-          colConverters.forEach(c -> c.accept(sample, strings));
-          return Stream.of(sample);
+          try {
+            colConverters.forEach(c -> c.accept(sample, strings));
+            return Stream.of(sample);
+          } catch (AppServerException | NumberFormatException ex) {
+            LOG.debug("Skipping row, deserialization error", ex);
+            return Stream.empty();
+          }
         };
       }
+
+      private static final Set<String> REQUIRED_COLUMNS =
+          Set.of(
+              "timeStamp",
+              "elapsed",
+              "label",
+              "responseCode",
+              "threadName",
+              "success",
+              "bytes",
+              "allThreads");
 
       @Override
       public boolean identifiedByHeaders(List<String> headers) {
         if (headers.isEmpty()) {
-          // No headers means that the file is empty, which can be handled by CsvJtlSource.
+          // No headers means that the file is empty, which this deserializer handles.
           return true;
         }
-        String[] headerArr = headers.toArray(new String[headers.size()]);
-        return HeaderCheckUtil.isJtlHeaderRow(headerArr)
-            || HeaderCheckUtil.canUseDefaultHeaderRow(headerArr);
+        return headers.containsAll(REQUIRED_COLUMNS);
       }
     }
   }

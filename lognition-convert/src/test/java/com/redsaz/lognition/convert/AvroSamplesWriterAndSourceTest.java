@@ -61,7 +61,7 @@ public class AvroSamplesWriterAndSourceTest {
     try (TempContent jtlFile = TempContent.of(content);
         TempContent avroFile = TempContent.withName("converted", ".avro")) {
       // Given samples read from a Jmeter test results log (JTL) file (and sorted),
-      Samples samples = CsvJtlSource.readJtlFile(jtlFile.file());
+      Samples samples = CsvSamplesReader.readSamples(jtlFile.path());
 
       // When the data is saved to an Avro file and read back out,
       AvroSamplesWriter writer = new AvroSamplesWriter();
