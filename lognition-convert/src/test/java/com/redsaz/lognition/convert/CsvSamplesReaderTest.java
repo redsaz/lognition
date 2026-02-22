@@ -26,8 +26,14 @@ import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.Sample;
 import java.io.IOException;
 import java.util.List;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+/**
+ * Test the CSV (JTL or Loady) to Samples converter.
+ *
+ * @author Redsaz <redsaz@gmail.com>
+ */
 public class CsvSamplesReaderTest {
 
   @Test
@@ -219,7 +225,6 @@ public class CsvSamplesReaderTest {
     }
   }
 
-
   @Test
   public void testLoadyConvertRowWithExtraColumnSkipped() throws IOException {
     String content =
@@ -263,6 +268,223 @@ public class CsvSamplesReaderTest {
       assertEquals(samples.getLabels(), List.of("GET example/{itemId}"));
       assertEquals(samples.getThreadNames(), List.of("1", "2"));
     }
+  }
+
+  @Test
+  public void testLoadyFileNoLabelShouldSucceedWithEmptyLabel() throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1244,10,0,200,0,400,GET http://127.0.0.1:8080/example/abcd1234,,1
+        1355,12,1,error: connection refused,0,123,GET http://127.0.0.1:8080/fail/323,,1
+        1587,20,0,200,0,667,GET http://127.0.0.1:8080/example/56789abc,,2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 3);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      Sample next = samples.getSamples().get(1);
+      assertEquals(next.getOffset(), 109);
+      assertEquals(next.getDuration(), 12);
+      assertEquals(next.getLabel(), "");
+      assertEquals(next.getStatusCode(), "error: connection refused");
+      assertEquals(next.getThreadName(), "1");
+      assertFalse(next.isSuccess());
+      assertEquals(next.getResponseBytes(), 123);
+      assertEquals(next.getTotalThreads(), 2);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertEquals(
+          samples.getEarliestMillis(),
+          1234L,
+          "Earliest should be timestamp from epoch when the earliest start happened (completed_at minus duration).");
+      assertEquals(
+          samples.getLatestMillis(),
+          1587L,
+          "Latest should be timestamp from epoch when the latest finish happened.");
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of(""));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+  @Test
+  public void testLoadyFileNoLabelShouldSucceedWithBlankLabel() throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,thread
+        1244,10,0,200,0,400,GET example/abcd1234,1
+        1355,12,1,error: connection refused,0,123,GET fail/323,1
+        1587,20,0,200,0,667,GET example/56789abc,2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 3);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      Sample next = samples.getSamples().get(1);
+      assertEquals(next.getOffset(), 109);
+      assertEquals(next.getDuration(), 12);
+      assertEquals(next.getLabel(), "");
+      assertEquals(next.getStatusCode(), "error: connection refused");
+      assertEquals(next.getThreadName(), "1");
+      assertFalse(next.isSuccess());
+      assertEquals(next.getResponseBytes(), 123);
+      assertEquals(next.getTotalThreads(), 2);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertEquals(
+          samples.getEarliestMillis(),
+          1234L,
+          "Earliest should be timestamp from epoch when the earliest start happened (completed_at minus duration).");
+      assertEquals(
+          samples.getLatestMillis(),
+          1587L,
+          "Latest should be timestamp from epoch when the latest finish happened.");
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of(""));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+  @Test
+  public void testLoadyFileNoEntriesShouldSucceedWithNoSamples() throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+      assertEquals(samples.getSamples().size(), 0);
+    }
+  }
+
+  @Test
+  public void testEmptyFileShouldSucceedWithNoSamples() throws IOException {
+    String content = "";
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+      assertEquals(samples.getSamples().size(), 0);
+    }
+  }
+
+  @Test
+  public void testLoadyNoHeadersDoesNotConvert() {
+    String content =
+        """
+        1244,10,0,200,0,400,GET example/abcd1234,GET example/{itemId},1
+        1587,20,0,200,0,667,GET example/56789abc,GET example/{itemId},2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      expectThrows(AppServerException.class, () -> CsvSamplesReader.readSamples(tc.path()));
+    }
+  }
+
+  @Test(dataProvider = "loadyNonNumericColumnsDp")
+  public void testLoadyConvertRowNumericColumnsAreNonNumericAreSkipped(String badRow, String whyBad)
+      throws IOException {
+    String content =
+        """
+        completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+        1244,10,0,200,0,400,GET example/abcd1234,GET example/{itemId},1
+        %s
+        1587,20,0,200,0,667,GET example/56789abc,GET example/{itemId},2
+        """;
+
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, and is when the call started, not when it
+      // ended like in Loady.
+      assertEquals(first.getOffset(), 0);
+      assertEquals(first.getDuration(), 10);
+      assertEquals(first.getLabel(), "GET example/{itemId}");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 400);
+      assertEquals(first.getTotalThreads(), 2);
+
+      // The middle sample is skipped because it had a column non-numeric value when
+      // it should've been numeric.
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 333);
+      assertEquals(last.getDuration(), 20);
+      assertEquals(last.getLabel(), "GET example/{itemId}");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "2");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 667);
+      assertEquals(last.getTotalThreads(), 2);
+
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of("GET example/{itemId}"));
+      assertEquals(samples.getThreadNames(), List.of("1", "2"));
+    }
+  }
+
+  @DataProvider(name = "loadyNonNumericColumnsDp", parallel = true)
+  public static Object[][] loadyNonNumericColumnsDp() {
+    // completed_at_ms,duration_ms,fail,status,bytes_up,bytes_down,call,label,thread
+    return new Object[][] {
+      {"bad,10,0,200,0,400,GET example/abcd1234,GET example/{itemId},1", "Bad completed_at_ms"},
+      {"1244,bad,0,200,0,400,GET example/abcd1234,GET example/{itemId},1", "Bad duration_ms"},
+      {"1244,10,bad,200,0,400,GET example/abcd1234,GET example/{itemId},1", "Bad fail"},
+      {"1244,10,0,200,bad,400,GET example/abcd1234,GET example/{itemId},1", "Bad bytes_up"},
+      {"1244,10,0,200,0,bad,GET example/abcd1234,GET example/{itemId},1", "Bad bytes_down"},
+    };
   }
 
   @Test
@@ -317,6 +539,69 @@ public class CsvSamplesReaderTest {
           1766362285310,1,GET /logs/test,Non HTTP response code: org.apache.http.conn.HttpHostConnectException,Non HTTP response message: Connect to 127.0.0.1:8080 [/127.0.0.1] failed: Connection refused,Thread Group 1-4,false,2546,10
           """;
       assertContentEquals(reconstitutedFile.content(), expectedStr, "Reconstituted CSV data");
+    }
+  }
+
+  @Test
+  public void testJtlConvert() throws IOException {
+    String content =
+        """
+        timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+        1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2
+        1469546803635,496,GET test/thing,200,OK,example 1-1,true,280,2
+        1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2
+        1469546803635,497,GET test/thing,200,OK,example 1-1,true,280,2
+        1469546803635,497,GET test/thing,200,OK,example 1-2,true,280,2
+        1469546803635,497,GET test/thing,200,OK,example 1-2,true,281,2
+        1469546803635,497,GET test/thing,201,OK,example 1-2,true,281,2
+        1469546803635,497,GET test/thing,201,OKAY,example 1-2,true,281,2
+        1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,2
+        1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3
+        1469546803635,497,GET test/thing,201,OKAY,example 1-2,false,281,3
+        """;
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 11);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, when the call started (not when it ends)
+      assertEquals(first.getOffset(), 0L);
+      assertEquals(first.getDuration(), 496L);
+      assertEquals(first.getLabel(), "GET test/thing");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "example 1-1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 280L);
+      assertEquals(first.getTotalThreads(), 2L);
+
+      Sample next = samples.getSamples().get(1);
+      assertEquals(next.getOffset(), 1L);
+      assertEquals(next.getDuration(), 496L);
+      assertEquals(next.getLabel(), "GET test/thing");
+      assertEquals(next.getStatusCode(), "200");
+      assertEquals(next.getThreadName(), "example 1-1");
+      assertTrue(next.isSuccess());
+      assertEquals(next.getResponseBytes(), 280L);
+      assertEquals(next.getTotalThreads(), 2L);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 1L);
+      assertEquals(last.getDuration(), 497L);
+      assertEquals(last.getLabel(), "GET test/thing");
+      assertEquals(last.getStatusCode(), "201");
+      assertEquals(last.getThreadName(), "example 1-2");
+      assertFalse(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 281L);
+      assertEquals(last.getTotalThreads(), 3);
+
+      assertSame(samples.getEarliestSample(), samples.getSamples().getFirst());
+      // TODO: Hmm... when multiple samples have the same final timestamp and elapsed time,
+      // the first entry wins... should it?
+      // assertSame(samples.getLatestSample(), samples.getSamples().getLast());
+      assertEquals(samples.getLabels(), List.of("GET test/thing"));
+      assertEquals(samples.getThreadNames(), List.of("example 1-1", "example 1-2"));
+      assertEquals(samples.getEarliestMillis(), 1469546803634L);
+      assertEquals(samples.getLatestMillis(), 1469546804132L);
     }
   }
 
@@ -424,5 +709,94 @@ public class CsvSamplesReaderTest {
       assertEquals(last.getResponseBytes(), 280L);
       assertEquals(last.getTotalThreads(), 2);
     }
+  }
+
+  @Test(dataProvider = "jtlNonNumericColumnsDp")
+  public void testJtlConvertRowNumericColumnsAreNonNumericAreSkipped(String badRow, String whyBad)
+      throws IOException {
+    String content =
+        """
+            timeStamp,elapsed,label,responseCode,responseMessage,threadName,success,bytes,allThreads
+            1469546803634,496,GET test/thing,200,OK,example 1-1,true,280,2
+            %s
+            1469546803636,497,GET test/thing,200,OK,example 1-1,true,280,2
+            """
+            .formatted(badRow);
+    // If a row is encountered that should have a numerical value but has a text one, skip it
+    try (TempContent tc = TempContent.of(content)) {
+      Samples samples = CsvSamplesReader.readSamples(tc.path());
+
+      assertEquals(samples.getSamples().size(), 2);
+      Sample first = samples.getSamples().getFirst();
+      // A Sample offset has the earliest call start at 0, when the call started (not when it ends)
+      assertEquals(first.getOffset(), 0L);
+      assertEquals(first.getDuration(), 496L);
+      assertEquals(first.getLabel(), "GET test/thing");
+      assertEquals(first.getStatusCode(), "200");
+      assertEquals(first.getThreadName(), "example 1-1");
+      assertTrue(first.isSuccess());
+      assertEquals(first.getResponseBytes(), 280L);
+      assertEquals(first.getTotalThreads(), 2L);
+
+      Sample last = samples.getSamples().getLast();
+      assertEquals(last.getOffset(), 2L);
+      assertEquals(last.getDuration(), 497L);
+      assertEquals(last.getLabel(), "GET test/thing");
+      assertEquals(last.getStatusCode(), "200");
+      assertEquals(last.getThreadName(), "example 1-1");
+      assertTrue(last.isSuccess());
+      assertEquals(last.getResponseBytes(), 280L);
+      assertEquals(last.getTotalThreads(), 2);
+    }
+  }
+
+  @DataProvider(name = "jtlNonNumericColumnsDp", parallel = true)
+  public static Object[][] jtlNonNumericColumnsDp() {
+    return new Object[][] {
+      new Object[] {
+        "words,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599", "Bad timeStamp"
+      },
+      new Object[] {
+        "9223372036854775808,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599",
+        "timeStamp is longer than a long"
+      },
+      new Object[] {
+        "1469546803889,blah,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599", "Bad elapsed"
+      },
+      new Object[] {
+        "1469546803889,9223372036854775808,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599",
+        "elapsed is longer than a long"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,bogus,2,2,599", "bad bytes"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,9223372036854775808,2,2,599",
+        "bytes is longer than a long"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,bogus,2,599",
+        "bad grpThreads"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,9223372036854775808,599",
+        "allThreads longer than a long"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,bogus", "bad Latency"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,9223372036854775808",
+        "Latency longer than a long"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,yes,280,2,2,599",
+        "success is not a boolean"
+      },
+      new Object[] {
+        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,0,280,2,2,599",
+        "success is not a boolean"
+      },
+    };
   }
 }

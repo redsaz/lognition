@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -72,7 +73,8 @@ public class CsvSamplesReader {
                 case "fail" -> (sample, row) -> sample.fail = Integer.parseInt(row[col]);
                 case "status" -> (sample, row) -> sample.status = row[col];
                 case "bytes_down" -> (sample, row) -> sample.bytesDown = Long.parseLong(row[col]);
-                case "label" -> (sample, row) -> sample.label = row[col];
+                case "label" ->
+                    (sample, row) -> sample.label = Objects.requireNonNullElse(row[col], "");
                 case "thread" -> (sample, row) -> sample.thread = row[col];
                 default -> null;
               };
@@ -103,7 +105,7 @@ public class CsvSamplesReader {
               "bytes_up",
               // Not required             "bytes_down",
               // Not required             "call",
-              "label",
+              // *should* be required, but will default to "": "label",
               "thread");
 
       @Override
@@ -175,7 +177,7 @@ public class CsvSamplesReader {
     int fail;
     String status;
     long bytesDown;
-    String label;
+    String label = ""; // Default to blank if it isn't provided
     String thread;
 
     public Sample toSample() {
