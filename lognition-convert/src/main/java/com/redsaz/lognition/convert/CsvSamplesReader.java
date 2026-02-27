@@ -129,8 +129,7 @@ public class CsvSamplesReader {
                 case "responseCode" -> (sample, row) -> sample.setStatusCode(row[col]);
                 case "responseMessage" -> (sample, row) -> sample.setStatusMessage(row[col]);
                 case "threadName" -> (sample, row) -> sample.setThreadName(row[col]);
-                case "success" ->
-                    (sample, row) -> sample.setSuccess(Boolean.parseBoolean(row[col]));
+                case "success" -> (sample, row) -> sample.setSuccess(parseBooleanStrict(row[col]));
                 case "bytes" -> (sample, row) -> sample.setResponseBytes(Long.parseLong(row[col]));
                 case "allThreads" ->
                     (sample, row) -> sample.setTotalThreads(Integer.parseInt(row[col]));
@@ -179,6 +178,19 @@ public class CsvSamplesReader {
         return headers.containsAll(REQUIRED_COLUMNS);
       }
     }
+  }
+
+  private static boolean parseBooleanStrict(String s) {
+    // This looks like it could be simplified, but we
+    // need it to only deal with "tRuE" and "FaLsE" strings
+    // (Boolean.parseBoolean(str) will treat "fAlSe", "banana", "yes", "no", "maybe", etc
+    // all as false. We only want the "fAlSe" case to be treated as false, skip the rest)
+    if (Boolean.parseBoolean(s)) {
+      return true;
+    } else if ("false".equalsIgnoreCase(s)) {
+      return false;
+    }
+    throw new NumberFormatException("Not a boolean: " + s);
   }
 
   private interface IdentifierByHeader {

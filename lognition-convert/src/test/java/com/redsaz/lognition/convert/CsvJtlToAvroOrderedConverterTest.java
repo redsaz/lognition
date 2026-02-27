@@ -32,7 +32,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test The CSV-JTL to Avro converter.
+ * Test CSV to Avro conversion.
  *
  * @author Redsaz <redsaz@gmail.com>
  */
@@ -71,8 +71,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
         TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
 
       // When converted into avro format and then converted back into csv format,
-      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
-      String avroHash = jtl2Avro.convert(sourceFile.file(), avroFile.file());
+      Samples fromCsv = CsvSamplesReader.readSamples(sourceFile.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      String avroHash = writer.write(fromCsv, avroFile.file());
 
       Converter avro2Jtl = new AvroToCsvJtlConverter();
       String reconstitutedHash = avro2Jtl.convert(avroFile.file(), reconstitutedFile.file());
@@ -126,9 +127,11 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
         TempContent avroFile2 = TempContent.withName("converted2", ".avro")) {
 
       // When converted into avro format two different times,
-      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
-      String avroHash1 = jtl2Avro.convert(sourceFile.file(), avroFile1.file());
-      String avroHash2 = jtl2Avro.convert(sourceFile.file(), avroFile2.file());
+      Samples fromCsv = CsvSamplesReader.readSamples(sourceFile.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      String avroHash1 = writer.write(fromCsv, avroFile1.file());
+      writer = new AvroSamplesWriter();
+      String avroHash2 = writer.write(fromCsv, avroFile2.file());
 
       // Then the two files should be identical.
       assertEquals(avroHash1, avroHash2, "avro files should be identical content.");
@@ -184,8 +187,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       Files.write(sourceFile.path(), ordered.reversed(), StandardOpenOption.APPEND);
 
       // When converted into avro format using the ordered converter and converted back into a CSV,
-      Converter jtl2Avro = new CsvJtlToAvroOrderedConverter();
-      jtl2Avro.convert(sourceFile.file(), avroFile.file());
+      Samples fromCsv = CsvSamplesReader.readSamples(sourceFile.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, avroFile.file());
 
       // Then the data is there and in the correct order.
       Converter avro2Jtl = new AvroToCsvJtlConverter();
@@ -214,8 +218,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
         TempContent avroFile = TempContent.withName("converted", ".avro");
         TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
       // When converting to avro format and reconstituting back into a CSV,
-      Converter jtl2avro = new CsvJtlToAvroOrderedConverter();
-      jtl2avro.convert(sourceFile.file(), avroFile.file());
+      Samples fromCsv = CsvSamplesReader.readSamples(sourceFile.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, avroFile.file());
 
       Converter avro2jtl = new AvroToCsvJtlConverter();
       avro2jtl.convert(avroFile.file(), reconstitutedFile.file());
@@ -245,11 +250,14 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    writer.write(fromCsv, actualDest);
+
+    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
     File effectiveDest = createTempFile("effective", ".avro");
-    conv.convert(source, effectiveDest);
+    writer.write(fromCsvEffective, effectiveDest);
 
     assertAvroContentEquals(
         actualDest,
@@ -279,11 +287,14 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    writer.write(fromCsv, actualDest);
+
+    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
     File effectiveDest = createTempFile("effective", ".avro");
-    conv.convert(source, effectiveDest);
+    writer.write(fromCsvEffective, effectiveDest);
 
     assertAvroContentEquals(
         actualDest,
@@ -294,8 +305,7 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
   @Test(dataProvider = "nonNumericColumnsDp")
   public void testConvertRowNumericColumnsAreNonNumericAreSkipped(String badRow, String whyBad)
       throws IOException {
-    // If a row is encountered that has an extra column, then skip the
-    // defective row.
+    // If a row is encountered that has a numeric column that is non-numeric, it should be skipped.
     File source = createTempFile("sourceMissingColumn", ".jtl");
     try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
         PrintWriter pw = new PrintWriter(bw)) {
@@ -314,11 +324,14 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    writer.write(fromCsv, actualDest);
+
+    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
     File effectiveDest = createTempFile("effective", ".avro");
-    conv.convert(source, effectiveDest);
+    writer.write(fromCsvEffective, effectiveDest);
 
     assertAvroContentEquals(
         actualDest,
@@ -350,25 +363,29 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
         "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,9223372036854775808,2,2,599",
         "bytes is longer than a long"
       },
-      new Object[] {
-        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,bogus,2,599",
-        "bad grpThreads"
-      },
-      //            new Object[]{"1469546803889,600,GET test/thing,200,OK,example
+      // GrpThreads isn't used in a Sample, so we don't need to test for it.
+      //      new Object[] {
+      //        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,bogus,2,599",
+      //        "bad grpThreads"
+      //      },
+      //      new Object[]{"1469546803889,600,GET test/thing,200,OK,example
       // 1-1,text,true,280,9223372036854775808,2,599", "grpThreads longer than a long"},
-      //            new Object[]{"1469546803889,600,GET test/thing,200,OK,example
+      //      new Object[]{"1469546803889,600,GET test/thing,200,OK,example
       // 1-1,text,true,280,2,bogus,599", "bad allThreads"},
       new Object[] {
         "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,9223372036854775808,599",
         "allThreads longer than a long"
       },
-      new Object[] {
-        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,bogus", "bad Latency"
-      },
-      new Object[] {
-        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,9223372036854775808",
-        "Latency longer than a long"
-      },
+      // Latency isn't used in a Sample (yet), so we don't need to test for it (yet)
+      //      new Object[] {
+      //        "1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,bogus", "bad
+      // Latency"
+      //      },
+      //      new Object[] {
+      //        "1469546803889,600,GET test/thing,200,OK,example
+      // 1-1,text,true,280,2,2,9223372036854775808",
+      //        "Latency longer than a long"
+      //      },
       new Object[] {
         "1469546803889,600,GET test/thing,200,OK,example 1-1,text,yes,280,2,2,599",
         "success is not a boolean"
@@ -391,9 +408,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -407,9 +425,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599,extra");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -423,9 +442,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -439,9 +459,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -455,9 +476,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,200,OK,example 1-1,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -471,9 +493,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,OK,example 1-1,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -487,9 +510,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -503,9 +527,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,280,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -519,9 +544,10 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,2,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
@@ -535,8 +561,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,599");
     }
 
-    Converter conv = new CsvJtlToAvroOrderedConverter();
     File actualDest = createTempFile("actual", ".avro");
-    conv.convert(source, actualDest);
+    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
+    AvroSamplesWriter writer = new AvroSamplesWriter();
+    writer.write(fromCsv, actualDest);
   }
 }
