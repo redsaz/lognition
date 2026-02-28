@@ -31,7 +31,7 @@ public class AvroSamplesWriterAndSourceTest {
               .build();
       writer.write(samples, temp.file());
 
-      Samples result = AvroSamplesSource.loadFile(temp.path());
+      Samples result = AvroSamplesReader.readSamples(temp.path());
       assertEquals(result, samples);
     }
   }
@@ -66,7 +66,7 @@ public class AvroSamplesWriterAndSourceTest {
       // When the data is saved to an Avro file and read back out,
       AvroSamplesWriter writer = new AvroSamplesWriter();
       writer.write(samples, avroFile.file());
-      Samples result = AvroSamplesSource.loadFile(avroFile.path());
+      Samples result = AvroSamplesReader.readSamples(avroFile.path());
 
       // Then the samples fetched from the Avro file should be identical to the samples that were
       // saved to the file.
@@ -98,7 +98,7 @@ public class AvroSamplesWriterAndSourceTest {
               .build();
       writer.write(samples, temp.file());
 
-      Samples result = AvroSamplesSource.loadFile(temp.path());
+      Samples result = AvroSamplesReader.readSamples(temp.path());
       assertEquals(result.getSamples().get(0).getOffset(), 0L);
       assertEquals(result.getSamples().get(1).getOffset(), 113L);
       assertEquals(result.getSamples().get(2).getOffset(), 353L);

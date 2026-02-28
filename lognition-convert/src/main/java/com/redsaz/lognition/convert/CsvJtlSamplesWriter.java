@@ -25,9 +25,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +81,57 @@ public class CsvJtlSamplesWriter implements SamplesWriter {
       sha256Hash = hos.hash().toString();
     }
     return sha256Hash;
+  }
+
+  /**
+   * Writes a stream of {@link Sample}s to an {@link OutputStream} in CSV JTL (Jmeter) form.
+   *
+   * @param samples The samples to write.
+   * @return A function that takes an OutputStream and writes a CSV to it.
+   */
+  public static Consumer<OutputStream> outputStreamWriter(Stream<Sample> samples) {
+    return (OutputStream os) -> writeSamples(samples, os);
+  }
+
+  private static void writeSamples(Stream<Sample> samples, OutputStream os) {
+    try (BufferedWriter bw =
+        new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+      CsvWriter writer = null; // CsvWriter doesn't implement Closeable, boo
+      try {
+        writer = new CsvWriter(bw, new CsvWriterSettings());
+
+        writer.writeHeaders(
+            "timeStamp",
+            "elapsed",
+            "label",
+            "responseCode",
+            "responseMessage",
+            "threadName",
+            "success",
+            "bytes",
+            "allThreads");
+        Function<Sample, Object[]> toCsv =
+            sample ->
+                new Object[] {
+                  sample.getOffset(),
+                  sample.getDuration(),
+                  sample.getLabel(),
+                  sample.getStatusCode(),
+                  sample.getStatusMessage(),
+                  sample.getThreadName(),
+                  sample.isSuccess(),
+                  sample.getResponseBytes(),
+                  sample.getTotalThreads()
+                };
+        samples.map(toCsv).forEach(writer::writeRow);
+      } finally {
+        if (writer != null) {
+          writer.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   private static Object[] toCsv(long originTimestamp, Sample sample) {

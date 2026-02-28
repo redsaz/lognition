@@ -15,11 +15,12 @@
  */
 package com.redsaz.lognition.convert;
 
+import static com.redsaz.lognition.convert.TestUtil.assertAvroContentEquals;
+import static com.redsaz.lognition.convert.TestUtil.assertContentEquals;
 import static org.testng.Assert.assertEquals;
 
 import com.redsaz.lognition.api.exceptions.AppServerException;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -36,10 +37,10 @@ import org.testng.annotations.Test;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
+public class CsvSamplesReaderAndAvroSamplesWriterTest {
 
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(CsvJtlToAvroOrderedConverterTest.class);
+      LoggerFactory.getLogger(CsvSamplesReaderAndAvroSamplesWriterTest.class);
 
   // This JTL data was (mostly) taken from a real jmeter run.
   private static final String DEFAULT_CONTENT =
@@ -75,8 +76,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       AvroSamplesWriter writer = new AvroSamplesWriter();
       String avroHash = writer.write(fromCsv, avroFile.file());
 
-      Converter avro2Jtl = new AvroToCsvJtlConverter();
-      String reconstitutedHash = avro2Jtl.convert(avroFile.file(), reconstitutedFile.file());
+      Samples fromAvro = AvroSamplesReader.readSamples(avroFile.path());
+      CsvJtlSamplesWriter csvWriter = new CsvJtlSamplesWriter();
+      String reconstitutedHash = csvWriter.write(fromAvro, reconstitutedFile.file());
 
       // Then the reconstituted csv data should match the original data, but ordered by timestamp
       // and then elapsed, and just these columns:
@@ -192,8 +194,9 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
       writer.write(fromCsv, avroFile.file());
 
       // Then the data is there and in the correct order.
-      Converter avro2Jtl = new AvroToCsvJtlConverter();
-      avro2Jtl.convert(avroFile.file(), reconstitutedFile.file());
+      Samples fromAvro = AvroSamplesReader.readSamples(avroFile.path());
+      CsvJtlSamplesWriter csvWriter = new CsvJtlSamplesWriter();
+      csvWriter.write(fromAvro, reconstitutedFile.file());
       assertContentEquals(
           reconstitutedFile.file(),
           expectedOrderedFile.file(),
@@ -218,12 +221,7 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
         TempContent avroFile = TempContent.withName("converted", ".avro");
         TempContent reconstitutedFile = TempContent.withName("reconstituted", ".jtl")) {
       // When converting to avro format and reconstituting back into a CSV,
-      Samples fromCsv = CsvSamplesReader.readSamples(sourceFile.path());
-      AvroSamplesWriter writer = new AvroSamplesWriter();
-      writer.write(fromCsv, avroFile.file());
-
-      Converter avro2jtl = new AvroToCsvJtlConverter();
-      avro2jtl.convert(avroFile.file(), reconstitutedFile.file());
+      CsvSamplesReader.readSamples(sourceFile.path());
       // Then the operation should fail because the headers are unknown
     }
   }
@@ -232,111 +230,117 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
   public void testConvertRowWithMissingColumnSkipped() throws IOException {
     // If a row is encountered that has a missing column, then skip the
     // defective row.
-    File source = createTempFile("sourceMissingColumn", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+    try (TempContent source = TempContent.withName("sourceMissingColumn", ".jtl");
+        TempContent sourceEffective = TempContent.withName("sourceEffective", ".jtl");
+        TempContent actualDest = TempContent.withName("actual", ".avro");
+        TempContent effectiveDest = TempContent.withName("effective", ".avro"); ) {
+
+      try (BufferedWriter bw = Files.newBufferedWriter(source.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+        pw.println("600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+      }
+      // This jtl is the same as above, but the row with the missing column
+      // is removed. The resulting avro files from each should be equal.
+
+      try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+      }
+
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      writer.write(fromCsv, actualDest.file());
+
+      Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.path());
+      writer.write(fromCsvEffective, effectiveDest.file());
+
+      assertAvroContentEquals(
+          actualDest.file(),
+          effectiveDest.file(),
+          "The converter did not handle a malformed row in the way expected.");
     }
-    // This jtl is the same as above, but the row with the missing column
-    // is removed. The resulting avro files from each should be equal.
-    File sourceEffective = createTempFile("sourceEffective", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-    }
-
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    File actualDest = createTempFile("actual", ".avro");
-    writer.write(fromCsv, actualDest);
-
-    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
-    File effectiveDest = createTempFile("effective", ".avro");
-    writer.write(fromCsvEffective, effectiveDest);
-
-    assertAvroContentEquals(
-        actualDest,
-        effectiveDest,
-        "The converter did not handle a malformed row in the way expected.");
   }
 
   @Test
   public void testConvertRowWithExtraColumnSkipped() throws IOException {
     // If a row is encountered that has an extra column, then skip the
     // defective row.
-    File source = createTempFile("sourceMissingColumn", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("extra,1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+    try (TempContent source = TempContent.withName("sourceExtraColumn", ".jtl");
+        TempContent sourceEffective = TempContent.withName("sourceEffective", ".jtl");
+        TempContent actualDest = TempContent.withName("actual", ".avro");
+        TempContent effectiveDest = TempContent.withName("effective", ".avro"); ) {
+      try (BufferedWriter bw = Files.newBufferedWriter(source.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+        pw.println(
+            "extra,1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+      }
+      // This jtl is the same as above, but the row with the extra column
+      // is removed. The resulting avro files from each should be equal.
+      try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+      }
+
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      writer.write(fromCsv, actualDest.file());
+
+      Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.path());
+      writer.write(fromCsvEffective, effectiveDest.file());
+
+      assertAvroContentEquals(
+          actualDest.file(),
+          effectiveDest.file(),
+          "The converter did not handle a malformed row in the way expected.");
     }
-    // This jtl is the same as above, but the row with the extra column
-    // is removed. The resulting avro files from each should be equal.
-    File sourceEffective = createTempFile("sourceEffective", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-    }
-
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    File actualDest = createTempFile("actual", ".avro");
-    writer.write(fromCsv, actualDest);
-
-    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
-    File effectiveDest = createTempFile("effective", ".avro");
-    writer.write(fromCsvEffective, effectiveDest);
-
-    assertAvroContentEquals(
-        actualDest,
-        effectiveDest,
-        "The converter did not handle a malformed row in the way expected.");
   }
 
   @Test(dataProvider = "nonNumericColumnsDp")
   public void testConvertRowNumericColumnsAreNonNumericAreSkipped(String badRow, String whyBad)
       throws IOException {
     // If a row is encountered that has a numeric column that is non-numeric, it should be skipped.
-    File source = createTempFile("sourceMissingColumn", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println(badRow);
+    try (TempContent source = TempContent.withName("sourceMissingColumn", ".jtl");
+        TempContent sourceEffective = TempContent.withName("sourceEffective", ".jtl");
+        TempContent actualDest = TempContent.withName("actual", ".avro");
+        TempContent effectiveDest = TempContent.withName("effective", ".avro"); ) {
+      try (BufferedWriter bw = Files.newBufferedWriter(source.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+        pw.println(badRow);
+      }
+      // This jtl is the same as above, but the row with the extra column
+      // is removed. The resulting avro files from each should be equal.
+      try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.path());
+          PrintWriter pw = new PrintWriter(bw)) {
+        pw.println(
+            "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
+        pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
+      }
+
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      writer.write(fromCsv, actualDest.file());
+
+      Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.path());
+      writer.write(fromCsvEffective, effectiveDest.file());
+
+      assertAvroContentEquals(
+          actualDest.file(),
+          effectiveDest.file(),
+          "The converter did not handle a malformed row, \"" + whyBad + "\" in the way expected.");
     }
-    // This jtl is the same as above, but the row with the extra column
-    // is removed. The resulting avro files from each should be equal.
-    File sourceEffective = createTempFile("sourceEffective", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(sourceEffective.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-    }
-
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    File actualDest = createTempFile("actual", ".avro");
-    writer.write(fromCsv, actualDest);
-
-    Samples fromCsvEffective = CsvSamplesReader.readSamples(sourceEffective.toPath());
-    File effectiveDest = createTempFile("effective", ".avro");
-    writer.write(fromCsvEffective, effectiveDest);
-
-    assertAvroContentEquals(
-        actualDest,
-        effectiveDest,
-        "The converter did not handle a malformed row, \"" + whyBad + "\" in the way expected.");
   }
 
   @DataProvider(name = "nonNumericColumnsDp", parallel = true)
@@ -399,171 +403,162 @@ public class CsvJtlToAvroOrderedConverterTest extends ConverterBaseTest {
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertNoHeaderNotDefaultColumns() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      // The thread name is removed. This should not be convertible
-      // without a header row.
-      pw.println("1469546803634,496,GET test/thing,200,OK,text,true,280,2,2,495");
-      pw.println("1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599");
-    }
+    // The thread name is removed. This should not be convertible without a header row.
+    String content =
+        """
+        1469546803634,496,GET test/thing,200,OK,text,true,280,2,2,495
+        1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
 
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
+    }
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertNoHeaderMoreColumnsThanDefault() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      // An extra column is added at the end. This should not be
-      // convertable without a header row.
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495,extra");
-      pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599,extra");
+    // An extra column is added at the end. This should not be convertable without a header row.
+    String content =
+        """
+        1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495,extra
+        1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599,extra
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderTimestampMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+    String content =
+        """
+        elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+        496,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495
+        600,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderElapsedMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("1469546803889,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599");
+    String content =
+        """
+        timeStamp,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+        1469546803634,GET test/thing,200,OK,example 1-1,text,true,280,2,2,495
+        1469546803889,GET test/thing,200,OK,example 1-1,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderLabelMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,200,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("1469546803889,600,200,OK,example 1-1,text,true,280,2,2,599");
+    String content =
+        """
+        timeStamp,elapsed,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+        1469546803634,496,200,OK,example 1-1,text,true,280,2,2,495
+        1469546803889,600,200,OK,example 1-1,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderResponseCodeMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,OK,example 1-1,text,true,280,2,2,495");
-      pw.println("1469546803889,600,GET test/thing,OK,example 1-1,text,true,280,2,2,599");
+    String content =
+        """
+        timeStamp,elapsed,label,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency
+        1469546803634,496,GET test/thing,OK,example 1-1,text,true,280,2,2,495
+        1469546803889,600,GET test/thing,OK,example 1-1,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderThreadNameMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,dataType,success,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,text,true,280,2,2,495");
-      pw.println("1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599");
+    String content =
+        """
+        timeStamp,elapsed,label,responseCode,responseMessage,dataType,success,bytes,grpThreads,allThreads,Latency
+        1469546803634,496,GET test/thing,200,OK,text,true,280,2,2,495
+        1469546803889,600,GET test/thing,200,OK,text,true,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderSuccessMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,bytes,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,280,2,2,495");
-      pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,280,2,2,599");
+    String content =
+        """
+        timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,bytes,grpThreads,allThreads,Latency
+        1469546803634,496,GET test/thing,200,OK,example 1-1,text,280,2,2,495
+        1469546803889,600,GET test/thing,200,OK,example 1-1,text,280,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderBytesMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,grpThreads,allThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,2,2,495");
-      pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,2,2,599");
+    String content =
+        """
+        timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,grpThreads,allThreads,Latency
+        1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,2,2,495
+        1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,2,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 
   @Test(expectedExceptions = {AppServerException.class})
   public void testConvertRequiredHeaderAllThreadsMissing() throws IOException {
-    File source = createTempFile("source", ".jtl");
-    try (BufferedWriter bw = Files.newBufferedWriter(source.toPath());
-        PrintWriter pw = new PrintWriter(bw)) {
-      pw.println(
-          "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,Latency");
-      pw.println("1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,495");
-      pw.println("1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,599");
+    String content =
+        """
+        timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,Latency
+        1469546803634,496,GET test/thing,200,OK,example 1-1,text,true,280,2,495
+        1469546803889,600,GET test/thing,200,OK,example 1-1,text,true,280,2,599
+        """;
+    try (TempContent source = TempContent.of(content);
+        TempContent actualDest = TempContent.withName("actual", ".avro")) {
+      Samples fromCsv = CsvSamplesReader.readSamples(source.path());
+      AvroSamplesWriter writer = new AvroSamplesWriter();
+      writer.write(fromCsv, actualDest.file());
     }
-
-    File actualDest = createTempFile("actual", ".avro");
-    Samples fromCsv = CsvSamplesReader.readSamples(source.toPath());
-    AvroSamplesWriter writer = new AvroSamplesWriter();
-    writer.write(fromCsv, actualDest);
   }
 }

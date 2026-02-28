@@ -35,7 +35,7 @@ import com.redsaz.lognition.api.StatsService;
 import com.redsaz.lognition.api.model.ImportInfo;
 import com.redsaz.lognition.api.model.Log;
 import com.redsaz.lognition.api.model.Sample;
-import com.redsaz.lognition.convert.AvroSamplesSource;
+import com.redsaz.lognition.convert.AvroSamplesReader;
 import com.redsaz.lognition.convert.Samples;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,8 +96,8 @@ public class ProcessorImportServiceTest {
     Path avroFile = Paths.get(importDirStr, log.getId() + ".avro");
     assertTrue(avroFile + " should exist after import.", Files.exists(avroFile));
     // and the avro file contains the expected contents,
-    Samples actual = AvroSamplesSource.loadFile(avroFile);
-    Samples expected = AvroSamplesSource.loadFile(Path.of("src/test/resources/expected.avro"));
+    Samples actual = AvroSamplesReader.readSamples(avroFile);
+    Samples expected = AvroSamplesReader.readSamples(Path.of("src/test/resources/expected.avro"));
     List<Sample> actualSamples = actual.getSamples();
     List<Sample> expectedSamples = expected.getSamples();
     assertEquals("num Samples", expectedSamples.size(), actualSamples.size());

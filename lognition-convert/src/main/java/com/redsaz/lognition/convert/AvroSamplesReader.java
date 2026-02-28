@@ -19,10 +19,15 @@ import com.redsaz.lognition.api.exceptions.AppServerException;
 import com.redsaz.lognition.api.model.Sample;
 import com.redsaz.lognition.convert.model.HttpSample;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
@@ -37,14 +42,14 @@ import org.slf4j.LoggerFactory;
  *
  * @author Redsaz <redsaz@gmail.com>
  */
-public class AvroSamplesSource {
+public class AvroSamplesReader {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AvroSamplesSource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AvroSamplesReader.class);
 
   // Don't instantiate utility class.
-  private AvroSamplesSource() {}
+  private AvroSamplesReader() {}
 
-  public static Samples loadFile(Path avroFile) {
+  public static Samples readSamples(Path avroFile) {
     long startMillis = System.currentTimeMillis();
     LOGGER.debug("Loading from Avro file {}...", avroFile);
 
@@ -66,9 +71,11 @@ public class AvroSamplesSource {
       List<CharSequence> customMessages = readMetaStringArray(dataFileReader, "messages");
       StatusCodeLookup codes = new StatusCodeLookup(customCodes, customMessages);
 
+      Function<HttpSample, Sample> conv =
+          avroToSample(labels, threadNames, codes, absoluteStartTimestamp);
       while (dataFileReader.hasNext()) {
         HttpSample hs = dataFileReader.next();
-        Sample sample = fromHttpSample(hs, labels, threadNames, codes, absoluteStartTimestamp);
+        Sample sample = conv.apply(hs);
         samples.add(sample);
       }
     } catch (RuntimeException | IOException ex) {
@@ -83,24 +90,56 @@ public class AvroSamplesSource {
     return result;
   }
 
-  // TODO: This was copied from AvroToCsvJtlConverter. This should be unified.
-  private static Sample fromHttpSample(
-      HttpSample hs,
+  /**
+   * Returns a stream of {@link Sample}s from an avro file.
+   *
+   * @apiNote Similar to {@link java.nio.file.Files#lines(Path)}, this should be used within a
+   *     try-with-resources statement or similar to ensure the stream's file is closed promptly.
+   * @param avroFile the file to read from
+   * @return A CsvStream which has the headers and the stream to read the lines from.
+   * @throws IOException if the file was not found or could not be opened.
+   */
+  public static Stream<Sample> sampleStream(Path avroFile) throws IOException {
+    DatumReader<HttpSample> userDatumReader = new ReflectDatumReader<>(HttpSample.class);
+    DataFileReader<HttpSample> dataFileReader =
+        new DataFileReader<>(avroFile.toFile(), userDatumReader);
+    List<String> labels =
+        readMetaStringArray(dataFileReader, "labels").stream().map(CharSequence::toString).toList();
+    List<String> threadNames =
+        readMetaStringArray(dataFileReader, "threadNames").stream()
+            .map(CharSequence::toString)
+            .toList();
+
+    long absoluteStartTimestamp = dataFileReader.getMetaLong("earliest");
+    List<CharSequence> customCodes = readMetaStringArray(dataFileReader, "codes");
+    List<CharSequence> customMessages = readMetaStringArray(dataFileReader, "messages");
+    StatusCodeLookup codes = new StatusCodeLookup(customCodes, customMessages);
+
+    Function<HttpSample, Sample> conv =
+        avroToSample(labels, threadNames, codes, absoluteStartTimestamp);
+    return StreamSupport.stream(dataFileReader.spliterator(), false)
+        .map(conv)
+        .onClose(uncheckedCloser(dataFileReader));
+  }
+
+  private static Function<HttpSample, Sample> avroToSample(
       List<String> labels,
       List<String> threadNames,
       StatusCodeLookup code,
       long absoluteStartTimestamp) {
-    Sample s = new Sample();
-    s.setDuration(hs.getMillisElapsed());
-    s.setLabel(labels.get(hs.getLabelRef() - 1));
-    s.setOffset(hs.getMillisOffset() + absoluteStartTimestamp);
-    s.setResponseBytes(hs.getResponseBytes());
-    s.setStatusCode(code.getCode(hs.getResponseCodeRef()).toString());
-    s.setStatusMessage(code.getMessage(hs.getResponseCodeRef()).toString());
-    s.setSuccess(hs.getSuccess());
-    s.setThreadName(threadNames.get(hs.getThreadNameRef() - 1).toString());
-    s.setTotalThreads(hs.getTotalThreads());
-    return s;
+    return (HttpSample hs) -> {
+      Sample s = new Sample();
+      s.setDuration(hs.getMillisElapsed());
+      s.setLabel(labels.get(hs.getLabelRef() - 1));
+      s.setOffset(hs.getMillisOffset() + absoluteStartTimestamp);
+      s.setResponseBytes(hs.getResponseBytes());
+      s.setStatusCode(code.getCode(hs.getResponseCodeRef()).toString());
+      s.setStatusMessage(code.getMessage(hs.getResponseCodeRef()).toString());
+      s.setSuccess(hs.getSuccess());
+      s.setThreadName(threadNames.get(hs.getThreadNameRef() - 1).toString());
+      s.setTotalThreads(hs.getTotalThreads());
+      return s;
+    };
   }
 
   private static List<CharSequence> readMetaStringArray(
@@ -122,5 +161,15 @@ public class AvroSamplesSource {
       }
     }
     return items;
+  }
+
+  private static Runnable uncheckedCloser(Closeable closeable) {
+    return () -> {
+      try {
+        closeable.close();
+      } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
+    };
   }
 }

@@ -39,6 +39,7 @@ module LognitionApp {
   requires resteasy.multipart.provider;
   requires slugify;
   requires flyway.core;
+  requires io.smallrye.common.annotation;
 
   uses org.hsqldb.jdbc.JDBCDriver;
 }

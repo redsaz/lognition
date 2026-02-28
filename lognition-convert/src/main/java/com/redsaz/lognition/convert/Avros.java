@@ -36,7 +36,7 @@ public class Avros {
    * @apiNote Similar to {@link java.nio.file.Files#lines(Path)}, this should be used within a
    *     try-with-resources statement or similar to ensure the stream's file is closed promptly.
    * @param tabFile the file to read tabular data from
-   * @return A CsvStream which has the headers and the stream to read the lines from.
+   * @return A TabStream which has the headers and the stream to read the lines from.
    * @throws IOException if the file was not found or could not be opened.
    */
   public static TabStream records(Path tabFile) throws IOException {

@@ -17,8 +17,8 @@
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
@@ -255,9 +255,6 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                        <release>${maven.compiler.release}</release>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
