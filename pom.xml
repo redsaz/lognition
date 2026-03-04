@@ -16,9 +16,7 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.release>21</maven.compiler.release>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
@@ -72,7 +70,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.21.0</version>
+                <version>2.21.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -94,7 +92,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
             </dependency>
             <dependency>
                 <groupId>com.univocity</groupId>
@@ -134,12 +132,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.5.26</version>
+                <version>1.5.32</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.5.26</version>
+                <version>1.5.32</version>
             </dependency>
             <dependency>
                 <groupId>org.commonmark</groupId>
@@ -190,12 +188,12 @@
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
-                <version>12.0.0</version>
+                <version>12.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-database-hsqldb</artifactId>
-                <version>12.0.0</version>
+                <version>12.0.3</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.activation</groupId>
@@ -210,7 +208,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>5.21.0</version>
+                <version>5.22.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -242,10 +240,10 @@
                             <configuration>
                                 <rules>
                                     <requireMavenVersion>
-                                        <version>3.8.8</version>
+                                        <version>3.9.12</version>
                                     </requireMavenVersion>
                                     <requireJavaVersion>
-                                        <version>17.0</version>
+                                        <version>21.0</version>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
@@ -255,9 +253,6 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                        <release>${maven.compiler.release}</release>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>

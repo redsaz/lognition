@@ -5,12 +5,14 @@ Efficiently import, store, view, and export JMeter test results.
 
 ## Building and Running
 
-To build Lognition, you need at least Java 17. Lognition comes with Maven Wrapper v3.8.1, but if you want to use your own Maven make sure it is at least that version. Once you clone the repo:
+To build Lognition, you need at least Java 25. Build and run with the following:
 
-    cd lognition
-    ./mvnw clean install
-    cd lognition-app
-    ../mvnw quarkus:dev
+```bash
+cd lognition
+./mvnw clean install
+cd lognition-app
+../mvnw quarkus:dev
+```
 
 Once Lognition has started up, you can open http://localhost:8080 and start using Lognition.
 
