@@ -19,8 +19,7 @@ import com.redsaz.lognition.api.exceptions.AppServerException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,15 +32,7 @@ import org.apache.tika.mime.MediaType;
  */
 public class MediaTypeDetector {
 
-  private final TikaConfig tika;
-
-  public MediaTypeDetector() {
-    try {
-      tika = new TikaConfig();
-    } catch (TikaException | IOException ex) {
-      throw new AppServerException("Failed to initialize media type detector", ex);
-    }
-  }
+  private final Tika tika = new Tika();
 
   public String detect(InputStream source, String filename) {
     Metadata meta = new Metadata();
@@ -50,7 +41,7 @@ public class MediaTypeDetector {
     }
 
     try (TikaInputStream tis = TikaInputStream.get(source)) {
-      return tika.getDetector().detect(tis, meta).getBaseType().toString();
+      return tika.detect(tis, meta);
     } catch (IOException ex) {
       throw new AppServerException(
           "Error detecting media type for file=" + source + " filename=" + filename, ex);
@@ -63,11 +54,11 @@ public class MediaTypeDetector {
       meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
     }
     if (suggestedMimeType != null) {
-      meta.set(Metadata.CONTENT_TYPE, suggestedMimeType);
+      meta.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, suggestedMimeType);
     }
 
     try (TikaInputStream tis = TikaInputStream.get(source)) {
-      return tika.getDetector().detect(tis, meta).getBaseType().toString();
+      return tika.detect(tis, meta);
     } catch (IOException ex) {
       throw new AppServerException(
           "Error detecting media type for file="
