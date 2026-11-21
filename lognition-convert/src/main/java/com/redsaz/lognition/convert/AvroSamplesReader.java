@@ -46,6 +46,10 @@ public class AvroSamplesReader {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AvroSamplesReader.class);
 
+  static {
+    Avros.trustLognitionAvroClasses();
+  }
+
   // Don't instantiate utility class.
   private AvroSamplesReader() {}
 

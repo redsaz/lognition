@@ -30,13 +30,13 @@ module LognitionApp {
   requires jakarta.ws.rs;
   requires jakarta.cdi;
   requires jakarta.inject;
-  requires microprofile.config.api;
   requires org.commonmark;
+  requires org.eclipse.microprofile.config;
   requires org.hsqldb;
+  requires org.jboss.resteasy.plugins.providers.multipart;
   requires org.jooq;
   requires org.slf4j;
   requires quarkus.jackson;
-  requires resteasy.multipart.provider;
   requires slugify;
   requires flyway.core;
   requires io.smallrye.common.annotation;

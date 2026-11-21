@@ -22,13 +22,25 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.util.ClassSecurityValidator;
 import org.apache.avro.util.Utf8;
 
 /** Utility for reading and writing tabular data from Avro files. */
 public class Avros {
 
+  static {
+    trustLognitionAvroClasses();
+  }
+
   // Do not instantiate utility classes
   private Avros() {}
+
+  public static void trustLognitionAvroClasses() {
+    ClassSecurityValidator.setGlobal(
+        ClassSecurityValidator.composite(
+            ClassSecurityValidator.DEFAULT,
+            clazz -> clazz.getName().startsWith("com.redsaz.lognition.convert.model")));
+  }
 
   /**
    * Returns a stream to get tabular records from an avro file.

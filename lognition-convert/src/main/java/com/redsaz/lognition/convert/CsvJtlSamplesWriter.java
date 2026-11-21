@@ -44,6 +44,10 @@ public class CsvJtlSamplesWriter implements SamplesWriter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CsvJtlSamplesWriter.class);
 
+  static {
+    Avros.trustLognitionAvroClasses();
+  }
+
   @Override
   public String write(Samples sourceSamples, File dest) throws IOException {
     String sha256Hash = null;
