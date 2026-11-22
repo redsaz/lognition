@@ -828,7 +828,7 @@ public class BrowserReviewsResource {
         }
         // All logs must maintain the same index in each label's list.
         if (labelMetrics.size() < iBrief) {
-          for (int i = 0; i < iBrief; ++i) {
+          for (int i = labelMetrics.size(); i < iBrief; ++i) {
             labelMetrics.add(EMPTY_METRICS);
           }
         }
